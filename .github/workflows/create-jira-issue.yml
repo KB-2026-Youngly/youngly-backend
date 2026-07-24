@@ -45,7 +45,7 @@ jobs:
         env:
           ISSUE_TYPE: ${{ steps.issue-parser.outputs.issueparser_issue_type }}
           ISSUE_LABELS: ${{ steps.issue-parser.outputs.issueparser_issue_label }}
-          EPIC_NUMBER: ${{ steps.issue-parser.outputs.issueparser_epic_number }}
+          EPIC_NAME: ${{ steps.issue-parser.outputs.issueparser_epic }}
           BRANCH_TYPE: ${{ steps.issue-parser.outputs.issueparser_branch_type }}
           BRANCH_NAME: ${{ steps.issue-parser.outputs.issueparser_branch_name }}
           ISSUE_DESCRIPTION: ${{ steps.issue-parser.outputs.issueparser_issue_description }}
@@ -69,9 +69,42 @@ jobs:
             | jq -R . \
             | jq -s .)
 
+          if [ -z "$EPIC_NAME" ]; then
+            echo "Epic이 선택되지 않았습니다."
+            exit 1
+          fi
+
+          case "$EPIC_NAME" in
+            "Authentication")
+              EPIC_KEY="YL-4"
+              ;;
+            "User Management")
+              EPIC_KEY="YL-5"
+              ;;
+            "Group Management")
+              EPIC_KEY="YL-6"
+              ;;
+            "Challenge")
+              EPIC_KEY="YL-7"
+              ;;
+            "Recommendation")
+              EPIC_KEY="YL-8"
+              ;;
+            "Reward")
+              EPIC_KEY="YL-9"
+              ;;
+            "Notification")
+              EPIC_KEY="YL-10"
+              ;;
+            *)
+              echo "지원하지 않는 Epic입니다: $EPIC_NAME"
+              exit 1
+              ;;
+          esac          
+
           PAYLOAD=$(jq -n \
             --arg issueType "$ISSUE_TYPE" \
-            --arg parentKey "$EPIC_NUMBER" \
+            --arg parentKey "$EPIC_KEY" \
             --arg projectKey "$PROJECT_KEY" \
             --arg summary "[BE] $ISSUE_TITLE" \
             --arg branchType "$BRANCH_TYPE" \
@@ -194,7 +227,7 @@ jobs:
           set -euo pipefail
 
           case "$BRANCH_TYPE" in
-            feature|fix|refactor)
+            feature|fix|refactor|docs|chore|test)
               ;;
             *)
               echo "지원하지 않는 브랜치 유형입니다: $BRANCH_TYPE"
@@ -214,7 +247,7 @@ jobs:
             exit 1
           fi
 
-          NEW_BRANCH_NAME="${BRANCH_TYPE}/${TICKET_NUMBER}_${SAFE_BRANCH_NAME}"
+          NEW_BRANCH_NAME="${BRANCH_TYPE}/${TICKET_NUMBER}-${SAFE_BRANCH_NAME}"
 
           echo "생성할 브랜치: $NEW_BRANCH_NAME"
 

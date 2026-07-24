@@ -10,25 +10,34 @@ body:
       value: |
         GitHub 이슈를 생성하면 동일한 제목과 입력 내용을 바탕으로 Jira 이슈가 자동 생성됩니다.
 
-  - type: dropdown
-    id: issue_type
+  - type: markdown
     attributes:
-      label: ⚡️ 이슈 유형
-      description: Jira에서 생성할 이슈 유형을 선택해 주세요.
-      options:
-        - Feature
-        - Task
-        - Bug
-        - Chore
-    validations:
-      required: true
+      value: |
+        ## 📂 Epic 안내
 
-  - type: input
-    id: epic_number
+        Jira에서 연결할 상위 Epic을 선택해주세요.
+
+        - 🔐 **Authentication** : 회원가입, 로그인, 로그아웃, 비밀번호 변경
+        - 👤 **User Management** : 회원정보 관리, 계좌 관리, 마이페이지
+        - 👥 **Group Management** : 그룹 생성, 가입, 멤버 관리, 그룹 운영
+        - 🏆 **Challenge** : 인증, 라운드 진행, 게시글, 정산
+        - 🤖 **Recommendation** : AI 추천, 맞춤 추천 기능
+        - 🎁 **Reward** : 포인트, 아이템, 보상
+        - 🔔 **Notification** : 서비스 알림 및 리마인드
+
+  - type: dropdown
+    id: epic
     attributes:
-      label: 🎟️ 상위 에픽 Number
-      description: Jira에서 상위 이슈로 사용할 에픽 티켓 번호를 입력해 주세요.
-      placeholder: EPIC-1
+      label: 🎟️ Epic
+      description: 작업이 속하는 기능 영역을 선택해주세요.
+      options:
+        - Authentication
+        - User Management
+        - Group Management
+        - Challenge
+        - Recommendation
+        - Reward
+        - Notification
     validations:
       required: true
 
@@ -67,7 +76,7 @@ body:
     attributes:
       label: 🌿 브랜치명
       description: develop 브랜치에서 분기해 생성할 브랜치 이름을 입력해 주세요.
-      placeholder: user-login
+      placeholder: login-api
     validations:
       required: true
 
