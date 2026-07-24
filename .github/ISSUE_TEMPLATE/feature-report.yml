@@ -42,6 +42,19 @@ body:
       required: true
 
   - type: dropdown
+    id: issue_type
+    attributes:
+      label: ⚡️ 이슈 유형
+      description: 작업 성격에 맞는 Jira Issue Type을 선택해주세요.
+      options:
+        - Feature
+        - Task
+        - Bug
+        - Chore
+    validations:
+      required: true
+
+  - type: dropdown
     id: issue_label
     attributes:
       label: 🏷️ 레이블
