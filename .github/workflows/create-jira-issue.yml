@@ -106,7 +106,7 @@ jobs:
             --arg issueType "$ISSUE_TYPE" \
             --arg parentKey "$EPIC_KEY" \
             --arg projectKey "$PROJECT_KEY" \
-            --arg summary "[BE] $ISSUE_TITLE" \
+            --arg summary "$ISSUE_TITLE" \
             --arg branchType "$BRANCH_TYPE" \
             --arg branchName "$BRANCH_NAME" \
             --arg description "$ISSUE_DESCRIPTION" \
