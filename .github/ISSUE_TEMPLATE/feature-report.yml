@@ -1,6 +1,6 @@
 name: Project 이슈 생성
 description: Project Repository에 이슈를 생성하며, 생성된 이슈는 Jira와 연동됩니다.
-title: '[Feature] 로그인 API 구현'
+title: '[Feature] 제목을 입력하세요'
 labels:
   - order
 
@@ -72,15 +72,32 @@ body:
     validations:
       required: true
 
+  - type: markdown
+    attributes:
+      value: |
+        ## 🌿 Branch Type 안내
+
+        - **feature** : 새로운 기능 개발
+        - **fix** : 버그 수정
+        - **refactor** : 코드 리팩토링
+        - **docs** : 문서 수정
+        - **test** : 테스트 코드 작성 및 수정
+        - **chore** : 빌드, 설정, 의존성 등 유지보수
+        - **ci** : GitHub Actions, CI/CD, 자동화
+
   - type: dropdown
     id: branch_type
     attributes:
-      label: 브랜치 유형
-      description: 작업에 맞는 브랜치 유형을 선택해주세요.
+      label: 🌿 브랜치 유형
+      description: 작업 성격에 맞는 브랜치 유형을 선택해주세요.
       options:
         - feature
         - fix
         - refactor
+        - docs
+        - test
+        - chore
+        - ci
     validations:
       required: true
 
