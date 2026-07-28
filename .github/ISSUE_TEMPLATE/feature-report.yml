@@ -17,6 +17,7 @@ body:
 
         Jira에서 연결할 상위 Epic을 선택해주세요.
 
+        - ⚙ **Project Setup** : 프로젝트 초기 세팅, 디렉토리 구조, 개발 환경 구축
         - 🔐 **Authentication** : 회원가입, 로그인, 로그아웃, 비밀번호 변경
         - 👤 **User Management** : 회원정보 관리, 계좌 관리, 마이페이지
         - 👥 **Group Management** : 그룹 생성, 가입, 멤버 관리, 그룹 운영
@@ -31,6 +32,7 @@ body:
       label: 🎟️ Epic
       description: 작업이 속하는 기능 영역을 선택해주세요.
       options:
+        - Project Setup
         - Authentication
         - User Management
         - Group Management

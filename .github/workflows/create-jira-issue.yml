@@ -75,6 +75,9 @@ jobs:
           fi
 
           case "$EPIC_NAME" in
+            "Project Setup")
+              EPIC_KEY="YL-16"
+              ;;
             "Authentication")
               EPIC_KEY="YL-4"
               ;;
@@ -100,7 +103,7 @@ jobs:
               echo "지원하지 않는 Epic입니다: $EPIC_NAME"
               exit 1
               ;;
-          esac          
+          esac
 
           PAYLOAD=$(jq -n \
             --arg issueType "$ISSUE_TYPE" \
