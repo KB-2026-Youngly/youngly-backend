@@ -54,7 +54,7 @@ jobs:
           set -euo pipefail
 
           case "$BRANCH_TYPE" in
-            feature|fix|refactor)
+            feature|fix|refactor|docs|test|chore|ci)
               ;;
             *)
               echo "지원하지 않는 브랜치 유형입니다: $BRANCH_TYPE"
