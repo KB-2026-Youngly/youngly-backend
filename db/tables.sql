@@ -1,0 +1,33 @@
+-- ============================================================================
+-- Youngly - 테이블 생성 스크립트
+--
+-- [INFO] 담당 : BE / ERD 기준 (v4 ERD 이미지 참조)
+-- [TODO] ERD 확정본에 따라 아래 테이블을 채운다.
+--        users, groups, group_users, rounds, round_users, posts, post_approvals,
+--        comments, notifications, accounts, group_accounts, point_logs,
+--        survey_results, recommendations, collectibles, user_items 등
+--
+-- [WARN] 작성 규칙
+--   - 엔진 : InnoDB, 문자셋 : utf8mb4
+--   - 컬럼명은 snake_case (MyBatis mapUnderscoreToCamelCase 설정과 연동됨)
+--   - 모든 테이블에 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP 포함
+--   - 금액 컬럼은 DECIMAL 사용. FLOAT/DOUBLE 금지 (정산 오차 방지)
+-- ============================================================================
+
+USE youngly_db;
+
+-- 예시 (실제 컬럼은 ERD 확정 후 교체)
+-- CREATE TABLE users (
+--     user_id         BIGINT       NOT NULL AUTO_INCREMENT,
+--     login_id        VARCHAR(20)  NOT NULL,
+--     password        VARCHAR(255) NOT NULL,
+--     name            VARCHAR(50)  NOT NULL,
+--     nickname        VARCHAR(15)  NOT NULL,
+--     email           VARCHAR(100) NOT NULL,
+--     profile_image_url VARCHAR(255) NULL,
+--     created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     updated_at      DATETIME     NULL ON UPDATE CURRENT_TIMESTAMP,
+--     PRIMARY KEY (user_id),
+--     UNIQUE KEY uk_users_login_id (login_id),
+--     UNIQUE KEY uk_users_nickname (nickname)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Youngly Backend 로깅 설정
+
+  [INFO] 로그 레벨 : FATAL > ERROR > WARN > INFO > DEBUG > TRACE
+  [INFO] 운영 배포 시에는 Root 레벨을 WARN 으로 낮춘다.
+-->
+<Configuration status="WARN">
+
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss} [%-5level] %c{1}(%M:%L) - %m%n</Property>
+        <Property name="LOG_DIR">${sys:catalina.base:-.}/logs</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout charset="UTF-8" pattern="${LOG_PATTERN}"/>
+        </Console>
+
+        <!-- [INFO] 일자별 파일 로그. logs/ 디렉터리는 .gitignore 처리되어 있다. -->
+        <RollingFile name="file"
+                     fileName="${LOG_DIR}/youngly.log"
+                     filePattern="${LOG_DIR}/youngly-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout charset="UTF-8" pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- 우리 애플리케이션 코드 -->
+        <Logger name="com.kb.youngly" level="DEBUG" additivity="false">
+            <AppenderRef ref="console"/>
+            <AppenderRef ref="file"/>
+        </Logger>
+
+        <!-- 스프링 프레임워크 -->
+        <Logger name="org.springframework" level="INFO" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <!-- [INFO] MyBatis 매퍼의 실행 SQL 확인용 -->
+        <Logger name="com.kb.youngly.mapper" level="TRACE" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <!-- [INFO] log4jdbc 사용 시에만 의미가 있다.
+                    jdbc.sqlonly 만 INFO 로 두고 나머지는 WARN 으로 억제한다. -->
+        <Logger name="jdbc" level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="jdbc.sqlonly" level="INFO" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="jdbc.resultsettable" level="INFO" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <Root level="INFO">
+            <AppenderRef ref="console"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
