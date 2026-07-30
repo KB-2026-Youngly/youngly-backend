@@ -76,7 +76,7 @@ CREATE TABLE `moim_account_transactions` (
                                              `amount`	DECIMAL(19,2)	NOT NULL,
                                              `balance_after`	DECIMAL(19,2)	NOT NULL,
 
-                                             `idempotency_key`             VARCHAR(100) NOT NULL,
+                                             `idempotency_key`             VARCHAR(100) NULL,
 
                                              `description`	VARCHAR(255)	NULL,
                                              `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -131,7 +131,8 @@ CREATE TABLE `posts` (
                          `like_count`	INT	NOT NULL	DEFAULT 0,
                          `dislike_count`	INT	NOT NULL	DEFAULT 0,
                          `comment_count`	INT	NOT NULL	DEFAULT 0,
-                         `reject_count`	INT	NOT NULL    	DEFAULT 0	COMMENT '게시글의 승인 여부를 판단할 때, reject의 수를 사용'
+                         `reject_count`	INT	NOT NULL    	DEFAULT 0	COMMENT '게시글의 승인 여부를 판단할 때, reject의 수를 사용',
+                         `approve_count`	INT	NOT NULL    	DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `round_history` (
@@ -220,6 +221,7 @@ CREATE TABLE `notifications` (
 CREATE TABLE `post_history` (
                                 `post_history_id`	BIGINT	NOT NULL,
                                 `post_id`	BIGINT	NOT NULL,
+                                `post_history_version`	BIGINT	NOT NULL,
                                 `photo_url`	VARCHAR(255)	NULL,
                                 `content`	VARCHAR(500)	NULL,
                                 `post_status`	ENUM( 'PENDING', 'APPROVED', 'REJECTED','NONE')	NOT NULL,
@@ -265,6 +267,7 @@ CREATE TABLE `point_history` (
                                  `point_type`	ENUM( 'EARN', 'USE' )	NOT NULL,
                                  `amount`	INT	NOT NULL,
                                  `content`	VARCHAR(100)	NULL,
+                                 `idempotency_key`	VARCHAR(100)	NULL,
                                  `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -274,7 +277,7 @@ CREATE TABLE `collectible_items` (
                                      `item_name`	VARCHAR(50)	NOT NULL,
                                      `image_url`	VARCHAR(255)	NOT NULL,
                                      `drop_rate`	DECIMAL(5,2)	NOT NULL,
-                                     `base_character`	ENUM('KIKI','AGO','BB','LAMU','KOLLY','ETC')	NOT NULL,
+                                     `base_character`	ENUM('KIKI','AGO','BB','LAMU','KOLLY','ETC')	NULL,
                                      `acc_part`	ENUM('HAT','GLASSES','GLOVES','SHOES','ETC')	NULL,
                                      `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -447,6 +450,11 @@ ALTER TABLE `group_users` ADD CONSTRAINT `UK_GROUP_USERS_GROUP_USER` UNIQUE (
                                                                               `user_id`
     );
 
+ALTER TABLE `user_items` ADD CONSTRAINT `UK_USER_ITEMS_USER_ITEM` UNIQUE (
+                                                                            `user_id`,
+                                                                            `item_id`
+    );
+
 ALTER TABLE `rounds` ADD CONSTRAINT `UK_ROUNDS_GROUP_ROUND_NO` UNIQUE (
                                                                         `group_id`,
                                                                         `round_no`
@@ -462,9 +470,18 @@ ALTER TABLE `post_approvals` ADD CONSTRAINT `UK_POST_APPROVALS_POST_USER` UNIQUE
                                                                                   `user_id`
     );
 
+ALTER TABLE `post_history` ADD CONSTRAINT `UK_POST_HISTORY_POST_VERSION` UNIQUE (
+                                                                                   `post_id`,
+                                                                                   `post_history_version`
+    );
+
 ALTER TABLE `moim_account_transactions` ADD CONSTRAINT `UK_MOIM_ACCOUNT_TRANSACTIONS_IDEMPOTENCY_KEY` UNIQUE (
                                                                                                               `idempotency_key`
             );
+
+ALTER TABLE `point_history` ADD CONSTRAINT `UK_POINT_HISTORY_IDEMPOTENCY_KEY` UNIQUE (
+                                                                                        `idempotency_key`
+    );
 
 
         ALTER TABLE `interest_users` ADD CONSTRAINT `PK_INTEREST_USERS` PRIMARY KEY (
@@ -550,7 +567,9 @@ ALTER TABLE `posts`
     ADD CONSTRAINT `CK_POSTS_COMMENT_COUNT`
         CHECK (`comment_count` >= 0),
     ADD CONSTRAINT `CK_POSTS_REJECT_COUNT`
-        CHECK (`reject_count` >= 0);
+        CHECK (`reject_count` >= 0),
+    ADD CONSTRAINT `CK_POSTS_APPROVE_COUNT`
+        CHECK (`approve_count` >= 0);
 
 ALTER TABLE `round_history`
     ADD CONSTRAINT `CK_ROUND_HISTORY_SUCCESS_COUNT`
