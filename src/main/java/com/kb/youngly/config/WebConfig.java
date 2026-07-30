@@ -1,5 +1,7 @@
 package com.kb.youngly.config;
 
+import com.kb.youngly.jwt.JwtAuthenticationFilter;
+import com.kb.youngly.jwt.JwtTokenProvider;
 import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
@@ -47,10 +49,14 @@ public class WebConfig extends AbstractAnnotationConfigDispatcherServletInitiali
      */
     @Override
     protected Filter[] getServletFilters() {
+
         CharacterEncodingFilter encodingFilter = new CharacterEncodingFilter();
         encodingFilter.setEncoding("UTF-8");
         encodingFilter.setForceEncoding(true);
-        return new Filter[]{encodingFilter};
+
+        return new Filter[]{
+                encodingFilter
+        };
     }
 
     @Override
@@ -94,5 +100,20 @@ public class WebConfig extends AbstractAnnotationConfigDispatcherServletInitiali
         }
         System.out.println("[INFO] 업로드 디렉터리 : " + location);
         return location;
+    }
+
+    private String getProperty(String key) {
+
+        try (InputStream in =
+                     getClass().getResourceAsStream("/application.properties")) {
+
+            Properties props = new Properties();
+            props.load(in);
+
+            return props.getProperty(key);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

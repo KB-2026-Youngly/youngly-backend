@@ -33,7 +33,7 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @EnableTransactionManagement
 @ComponentScan(basePackages = {
-        "com.kb.youngly.service",
+        "com.kb.youngly"
 })
 @MapperScan(basePackages = {"com.kb.youngly.mapper"})
 @PropertySource(value = {"classpath:/application.properties"})

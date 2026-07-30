@@ -1,8 +1,7 @@
 package com.kb.youngly.mapper;
 
-import org.apache.ibatis.annotations.Param;
-
 import com.kb.youngly.vo.UserVO;
+import org.apache.ibatis.annotations.Param;
 
 public interface UserMapper {
 
@@ -13,4 +12,6 @@ public interface UserMapper {
     void insertUser(UserVO userVO);
 
     UserVO findByLoginId(@Param("loginId") String loginId);
+
+    UserVO findByUserId(@Param("userId") String userId);
 }
