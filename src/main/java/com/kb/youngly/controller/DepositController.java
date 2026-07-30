@@ -28,12 +28,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DepositController {
 
-    /** 로그인 연동 전 요청 사용자를 식별하는 임시 헤더. */
+    // 로그인 연동 전 요청 사용자를 식별하는 임시 헤더.
     private static final String USER_ID_HEADER = "X-User-Id";
 
     private final DepositService depositService;
 
-    /** 개인 계좌에서 그룹 모임통장으로 예치금을 납부한다. */
+    // 개인 계좌에서 그룹 모임통장으로 예치금을 납부한다.
     @PostMapping("/deposit")
     public ResponseEntity<DepositResponse> deposit(
             @RequestHeader(USER_ID_HEADER) String userId,
@@ -43,7 +43,7 @@ public class DepositController {
                 .body(depositService.deposit(userId, groupId, request));
     }
 
-    /** 요청 사용자의 현재 예치금 및 추가 납부 필요 금액을 조회한다. */
+    // 요청 사용자의 현재 예치금 및 추가 납부 필요 금액을 조회한다.
     @GetMapping("/deposit/me")
     public DepositResponse getMyDeposit(
             @RequestHeader(USER_ID_HEADER) String userId,
@@ -51,7 +51,7 @@ public class DepositController {
         return depositService.getMyDeposit(userId, groupId);
     }
 
-    /** 그룹에 참여한 사용자가 전체 참여자의 예치 현황을 조회한다. */
+    // 그룹에 참여한 사용자가 전체 참여자의 예치 현황을 조회한다.
     @GetMapping("/deposit")
     public List<MemberDepositStatusResponse> getMemberDepositStatuses(
             @RequestHeader(USER_ID_HEADER) String userId,

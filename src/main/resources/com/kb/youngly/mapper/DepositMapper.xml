@@ -17,8 +17,15 @@
 
     <!-- 예치금 현황·그룹 구성원 권한 확인용 일반 참여자 조회 -->
     <select id="findGroupUser" resultType="com.kb.youngly.vo.GroupUserVO">
-        SELECT group_user_id, group_id, user_id, group_user_status, approved_at,
-               current_deposit_amount, streak_count, created_at, updated_at
+        SELECT group_user_id,
+               group_id,
+               user_id,
+               group_user_status,
+               approved_at,
+               current_deposit_amount,
+               streak_count,
+               created_at,
+               updated_at
         FROM group_users
         WHERE group_id = #{groupId}
           AND user_id = #{userId}

@@ -21,50 +21,50 @@ import java.util.List;
  */
 public interface DepositMapper {
 
-    /** 기준 예치금과 연결 모임통장 정보를 포함한 그룹을 조회한다. */
+    //기준 예치금과 연결 모임통장 정보를 포함한 그룹을 조회한다.
     GroupVO findGroupById(String groupId);
 
-    /** 조회 권한과 현재 예치금 확인에 사용하는 일반 참여자 조회. */
+    //조회 권한과 현재 예치금 확인에 사용하는 일반 참여자 조회.
     GroupUserVO findGroupUser(@Param("groupId") String groupId,
                               @Param("userId") String userId);
 
-    /** 현재 예치금 동시 변경을 방지하기 위한 잠금 조회. */
+    //현재 예치금 동시 변경을 방지하기 위한 잠금 조회.
     GroupUserVO findGroupUserForUpdate(@Param("groupId") String groupId,
                                        @Param("userId") String userId);
 
-    /** 출금 계좌 소유 여부 확인 및 잔액 일관성을 위한 잠금 조회. */
+    //출금 계좌 소유 여부 확인 및 잔액 일관성을 위한 잠금 조회.
     AccountVO findAccountForUpdate(@Param("accountId") String accountId,
                                    @Param("userId") String userId);
 
-    /** 모임통장 입금과 balance_after 계산을 위한 잠금 조회. */
+    //모임통장 입금과 balance_after 계산을 위한 잠금 조회.
     MoimAccountVO findMoimAccountForUpdate(String moimAccountId);
 
-    /** 잔액이 충분할 때만 개인 계좌에서 출금한다. 실패하면 0을 반환한다. */
+    //잔액이 충분할 때만 개인 계좌에서 출금한다. 실패하면 0을 반환한다.
     int withdrawFromAccount(@Param("accountId") String accountId,
                             @Param("userId") String userId,
                             @Param("amount") BigDecimal amount);
 
-    /** 모임통장 잔액을 예치금만큼 증가시킨다. */
+    //모임통장 잔액을 예치금만큼 증가시킨다.
     int increaseMoimAccountBalance(@Param("moimAccountId") String moimAccountId,
                                    @Param("amount") BigDecimal amount);
 
-    /** 참여자별 현재 예치금에 이번 납부 금액을 더한다. */
+    //참여자별 현재 예치금에 이번 납부 금액을 더한다.
     int increaseCurrentDeposit(@Param("groupUserId") Long groupUserId,
                                @Param("amount") BigDecimal amount);
 
-    /** 전액 납부 여부에 따라 참여 상태를 ACTIVE 또는 PENDING_DEPOSIT으로 갱신한다. */
+    //전액 납부 여부에 따라 참여 상태를 ACTIVE 또는 PENDING_DEPOSIT으로 갱신한다.
     int updateGroupUserStatus(@Param("groupUserId") Long groupUserId,
                               @Param("status") GroupUserStatus status);
 
-    /** 개인 계좌 출금 거래 이력을 저장한다. */
+    //개인 계좌 출금 거래 이력을 저장한다.
     int insertAccountTransaction(AccountTransactionVO transaction);
 
-    /** 모임통장 입금·출금 거래 이력을 저장한다. */
+    //모임통장 입금·출금 거래 이력을 저장한다.
     int insertMoimAccountTransaction(MoimAccountTransactionVO transaction);
 
-    /** 같은 요청 키로 이미 완료된 모임통장 거래가 있는지 조회한다. */
+    //같은 요청 키로 이미 완료된 모임통장 거래가 있는지 조회한다.
     MoimAccountTransactionVO findMoimTransactionByIdempotencyKey(String idempotencyKey);
 
-    /** 그룹 참여자 전체의 프로필과 예치금 현황을 조회한다. */
+    //그룹 참여자 전체의 프로필과 예치금 현황을 조회한다.
     List<MemberDepositStatusResponse> findMemberDepositStatuses(String groupId);
 }
