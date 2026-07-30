@@ -1,5 +1,7 @@
 package com.kb.youngly.vo;
 
+import com.kb.youngly.enums.UserStatus;
+
 import java.time.LocalDateTime;
 
 public class UserVO {
@@ -22,7 +24,7 @@ public class UserVO {
 
     private String password;
 
-    private String userStatus;
+    private UserStatus userStatus;
 
     private Long point;
 
@@ -101,11 +103,11 @@ public class UserVO {
         this.password = password;
     }
 
-    public String getUserStatus() {
+    public UserStatus getUserStatus() {
         return userStatus;
     }
 
-    public void setUserStatus(String userStatus) {
+    public void setUserStatus(UserStatus userStatus) {
         this.userStatus = userStatus;
     }
 

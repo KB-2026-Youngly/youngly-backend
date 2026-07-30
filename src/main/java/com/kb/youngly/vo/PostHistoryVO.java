@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class PostHistoryVO {
     private Long postHistoryId;
     private Long postId;
+    private Long postHistoryVersion;
     private String photoUrl;
     private String content;
     private PostStatus postStatus;
