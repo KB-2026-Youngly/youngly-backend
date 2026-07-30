@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kb.youngly.mapper.PointMapper">
+
+    <select id="findUserPoint" resultType="long">
+        SELECT point
+        FROM users
+        WHERE user_id = #{userId}
+    </select>
+
+    <update id="increaseUserPoint">
+        UPDATE users
+        SET point = point + #{amount}
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="decreaseUserPoint">
+        UPDATE users
+        SET point = point - #{amount}
+        WHERE user_id = #{userId}
+          AND point >= #{amount}
+    </update>
+
+    <insert id="insertPointHistory"
+            parameterType="PointHistoryVO"
+            useGeneratedKeys="true"
+            keyProperty="pointLogId">
+        INSERT INTO point_history (
+            user_id,
+            item_id,
+            point_type,
+            amount,
+            content
+        ) VALUES (
+            #{userId},
+            #{itemId},
+            #{pointType},
+            #{amount},
+            #{content}
+        )
+    </insert>
+
+    <select id="findPointHistoriesByUserId" resultType="PointHistoryVO">
+        SELECT
+            point_log_id,
+            user_id,
+            item_id,
+            point_type,
+            amount,
+            content,
+            created_at
+        FROM point_history
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC, point_log_id DESC
+        LIMIT #{limit}
+        OFFSET #{offset}
+    </select>
+</mapper>
