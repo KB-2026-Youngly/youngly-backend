@@ -1,5 +1,7 @@
 package com.kb.youngly.controller;
 
+import com.kb.youngly.dto.auth.LoginRequest;
+import com.kb.youngly.dto.auth.LoginResponse;
 import com.kb.youngly.dto.auth.SignupResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,5 +29,14 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(
+            @RequestBody LoginRequest loginRequest) {
+
+        LoginResponse response = authService.login(loginRequest);
+
+        return ResponseEntity.ok(response);
     }
 }

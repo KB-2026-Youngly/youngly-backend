@@ -23,7 +23,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableWebMvc
 @ComponentScan(basePackages = {
         "com.kb.youngly.controller",
-        "com.kb.youngly.common.exception"
+        "com.kb.youngly.exception"
 })
 @PropertySource(value = {"classpath:/application.properties"})
 public class ServletConfig implements WebMvcConfigurer {
