@@ -32,12 +32,52 @@ USE youngly_db;
 --     UNIQUE KEY uk_users_nickname (nickname)
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--  테이블 삭제 (존재하면)
+DROP TABLE IF EXISTS `survey_results`;
+DROP TABLE IF EXISTS `post_comments`;
+DROP TABLE IF EXISTS `post_reactions`;
+DROP TABLE IF EXISTS `post_history`;
+DROP TABLE IF EXISTS `post_approvals`;
+DROP TABLE IF EXISTS `posts`;
+DROP TABLE IF EXISTS `notifications`;
+DROP TABLE IF EXISTS `point_history`;
+DROP TABLE IF EXISTS `user_items`;
+DROP TABLE IF EXISTS `recommendations`;
+DROP TABLE IF EXISTS `round_history`;
+DROP TABLE IF EXISTS `group_history`;
+DROP TABLE IF EXISTS `rounds`;
+DROP TABLE IF EXISTS `group_users`;
+DROP TABLE IF EXISTS `account_transactions`;
+DROP TABLE IF EXISTS `moim_account_transactions`;
+DROP TABLE IF EXISTS `accounts`;
+DROP TABLE IF EXISTS `groups`;
+DROP TABLE IF EXISTS `moim_accounts`;
+DROP TABLE IF EXISTS `interest_users`;
+DROP TABLE IF EXISTS `collectible_items`;
+DROP TABLE IF EXISTS `interests`;
+DROP TABLE IF EXISTS `users`;
+
+
 CREATE TABLE `moim_account_transactions` (
                                              `moim_account_transaction_id`	BIGINT	NOT NULL,
                                              `moim_account_id`	VARCHAR(50)	NOT NULL,
+
+                                             `group_user_id`               BIGINT NOT NULL,
+                                             `round_id`                    BIGINT NULL,
+                                             `account_id`                  VARCHAR(50) NOT NULL,
+
                                              `transaction_type`	ENUM('DEPOSIT','WITHDRAW')	NOT NULL,
+                                             `transaction_category` ENUM(
+                                                 'INITIAL_DEPOSIT',
+                                                 'RECHARGE',
+                                                 'SETTLEMENT',
+                                                 'REFUND'
+                                                 ) NOT NULL,
                                              `amount`	DECIMAL(19,2)	NOT NULL,
                                              `balance_after`	DECIMAL(19,2)	NOT NULL,
+
+                                             `idempotency_key`             VARCHAR(100) NULL,
+
                                              `description`	VARCHAR(255)	NULL,
                                              `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -420,6 +460,10 @@ ALTER TABLE `post_reactions` ADD CONSTRAINT `UK_POST_REACTIONS_POST_USER` UNIQUE
 ALTER TABLE `post_approvals` ADD CONSTRAINT `UK_POST_APPROVALS_POST_USER` UNIQUE (
                                                                                   `post_id`,
                                                                                   `user_id`
+    );
+
+ALTER TABLE 'moim_account_transactions' ADD CONSTRAINT 'UK_MOIM_ACCOUNT_TRANSACTIONS_IDEMPOTENCY_KEY' UNIQUE (
+                                                                                                    'idempotency_key'
     );
 
 ALTER TABLE `interest_users` ADD CONSTRAINT `PK_INTEREST_USERS` PRIMARY KEY (
