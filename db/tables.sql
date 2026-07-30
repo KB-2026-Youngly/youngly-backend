@@ -14,7 +14,38 @@
 --   - 금액 컬럼은 DECIMAL 사용. FLOAT/DOUBLE 금지 (정산 오차 방지)
 -- ============================================================================
 
+SET FOREIGN_KEY_CHECKS = 0;
+
 USE youngly_db;
+
+-- FK 의존 관계의 자식 테이블부터 제거한다. FOREIGN_KEY_CHECKS는 순서 실수 방지용이다.
+DROP TABLE IF EXISTS `survey_result_interest`;
+DROP TABLE IF EXISTS `survey_results`;
+DROP TABLE IF EXISTS `survey_choices`;
+DROP TABLE IF EXISTS `survey_questions`;
+DROP TABLE IF EXISTS `interest_industry`;
+DROP TABLE IF EXISTS `post_comments`;
+DROP TABLE IF EXISTS `post_reactions`;
+DROP TABLE IF EXISTS `post_history`;
+DROP TABLE IF EXISTS `post_approvals`;
+DROP TABLE IF EXISTS `posts`;
+DROP TABLE IF EXISTS `notifications`;
+DROP TABLE IF EXISTS `point_history`;
+DROP TABLE IF EXISTS `user_items`;
+DROP TABLE IF EXISTS `recommendations`;
+DROP TABLE IF EXISTS `round_history`;
+DROP TABLE IF EXISTS `group_history`;
+DROP TABLE IF EXISTS `rounds`;
+DROP TABLE IF EXISTS `group_users`;
+DROP TABLE IF EXISTS `account_transactions`;
+DROP TABLE IF EXISTS `moim_account_transactions`;
+DROP TABLE IF EXISTS `accounts`;
+DROP TABLE IF EXISTS `groups`;
+DROP TABLE IF EXISTS `moim_accounts`;
+DROP TABLE IF EXISTS `interest_users`;
+DROP TABLE IF EXISTS `collectible_items`;
+DROP TABLE IF EXISTS `interests`;
+DROP TABLE IF EXISTS `users`;
 
 -- 예시 (실제 컬럼은 ERD 확정 후 교체)
 -- CREATE TABLE users (
@@ -132,9 +163,10 @@ CREATE TABLE `groups` (
 CREATE TABLE `interests` (
                              `interest_id`	BIGINT	NOT NULL,
                              `interest_name`	VARCHAR(50)	NOT NULL,
-                             `is_investment`	BOOLEAN	NOT NULL,
+                             `is_investment`	BOOLEAN	NOT NULL, -- true: 투자 # false: 관심사
                              `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 CREATE TABLE `moim_accounts` (
                             `moim_account_id`	VARCHAR(50)	NOT NULL,
@@ -239,14 +271,39 @@ CREATE TABLE `collectible_items` (
                                      `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE `survey_questions` (
+                                    `question_id`	BIGINT	NOT NULL,
+                                    `question_no`	INT	NOT NULL,
+                                    `question_text`	VARCHAR(200)	NOT NULL,
+                                    `is_multiple`	BOOLEAN	NOT NULL DEFAULT FALSE,
+                                    `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `survey_choices` (
+                                  `choice_id`	BIGINT	NOT NULL,
+                                  `question_id`	BIGINT	NOT NULL,
+                                  `choice_text`	VARCHAR(200)	NOT NULL,
+                                  `score`	INT	NOT NULL,
+                                  `display_order`	INT	NOT NULL,
+                                  `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
 CREATE TABLE `survey_results` (
                                   `survey_result_id`	BIGINT	NOT NULL,
                                   `user_id`	VARCHAR(50)	NOT NULL,
                                   `answers_json`	JSON	NOT NULL,
                                   `total_score`	INT	NOT NULL,
-                                  `baseline`	ENUM( 'STABLE', 'CONSERVATIVE', 'NEUTRAL', 'AGGRESSIVE', 'VERY_AGGRESSIVE' )	NOT NULL,
-                                  `completed_at`	DATETIME	NOT NULL,
+                                  `baseline`	VARCHAR(50)	NOT NULL,
+                                  `submitted_at`	DATETIME	NOT NULL,
+                                  `calculated_at`	DATETIME	NOT NULL,
                                   `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `survey_result_interest` (
+                                          `survey_result_id` BIGINT NOT NULL,
+                                          `interest_id` BIGINT NOT NULL,
+                                          PRIMARY KEY (`survey_result_id`, `interest_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `group_history` (
@@ -370,9 +427,36 @@ ALTER TABLE `collectible_items` ADD CONSTRAINT `PK_COLLECTIBLE_ITEMS` PRIMARY KE
                                                                                    `item_id`
     );
 
+ALTER TABLE `survey_questions` ADD CONSTRAINT `PK_SURVEY_QUESTIONS` PRIMARY KEY (
+                                                                                  `question_id`
+    );
+
+ALTER TABLE `survey_questions` ADD CONSTRAINT `UK_SURVEY_QUESTIONS_QUESTION_NO` UNIQUE (
+                                                                                          `question_no`
+    );
+
+ALTER TABLE `survey_choices` ADD CONSTRAINT `PK_SURVEY_CHOICES` PRIMARY KEY (
+                                                                              `choice_id`
+    );
+
+ALTER TABLE `survey_choices` ADD CONSTRAINT `UK_SURVEY_CHOICES_QUESTION_DISPLAY_ORDER` UNIQUE (
+                                                                                                  `question_id`,
+                                                                                                  `display_order`
+    );
+
+ALTER TABLE `interests` ADD CONSTRAINT `UK_INTERESTS_NAME` UNIQUE (`interest_name`);
+
 ALTER TABLE `survey_results` ADD CONSTRAINT `PK_SURVEY_RESULTS` PRIMARY KEY (
                                                                              `survey_result_id`
     );
+
+
+-- 사용자별 최신 설문 결과 조회(selectLatestResultByUserId)를 위한 복합 인덱스
+CREATE INDEX `IDX_SURVEY_RESULTS_USER_SUBMITTED_AT`
+    ON `survey_results` (`user_id`, `submitted_at` DESC);
+
+CREATE INDEX `IDX_SURVEY_CHOICES_QUESTION_DISPLAY_ORDER`
+    ON `survey_choices` (`question_id`, `display_order`);
 
 ALTER TABLE `group_history` ADD CONSTRAINT `PK_GROUP_HISTORY` PRIMARY KEY (
                                                                            `group_history_id`
@@ -473,6 +557,12 @@ ALTER TABLE `point_history`
 
 ALTER TABLE `collectible_items`
     MODIFY `item_id` BIGINT NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `survey_questions`
+    MODIFY `question_id` BIGINT NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `survey_choices`
+    MODIFY `choice_id` BIGINT NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `survey_results`
     MODIFY `survey_result_id` BIGINT NOT NULL AUTO_INCREMENT;
@@ -643,7 +733,18 @@ ALTER TABLE `point_history`
 ALTER TABLE `survey_results`
     ADD CONSTRAINT `FK_survey_results_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
 
--- 18. group_history
+-- 18. survey_questions / survey_choices
+ALTER TABLE `survey_choices`
+    ADD CONSTRAINT `FK_survey_choices_question_id` FOREIGN KEY (`question_id`) REFERENCES `survey_questions` (`question_id`);
+
+-- 19 survey_result_interest
+ALTER TABLE `survey_result_interest`
+    ADD CONSTRAINT `FK_SURVEY_RESULT_INTEREST_RESULT_ID`
+        FOREIGN KEY (`survey_result_id`) REFERENCES `survey_results` (`survey_result_id`),
+    ADD CONSTRAINT `FK_SURVEY_RESULT_INTEREST_INTEREST_ID`
+        FOREIGN KEY (`interest_id`) REFERENCES `interests` (`interest_id`);
+
+-- 20. group_history
 ALTER TABLE `group_history`
     ADD CONSTRAINT `FK_group_history_moim_account_id` FOREIGN KEY (`moim_account_id`) REFERENCES `moim_accounts` (`moim_account_id`),
     ADD CONSTRAINT `FK_group_history_group_id` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`);
@@ -659,3 +760,5 @@ ALTER TABLE `interest_users`
 
 ALTER TABLE `interest_users`
     ADD CONSTRAINT `FK_users_TO_interest_users_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+
+SET FOREIGN_KEY_CHECKS = 1;
