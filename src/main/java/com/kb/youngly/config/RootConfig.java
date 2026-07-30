@@ -32,7 +32,8 @@ import javax.sql.DataSource;
 @EnableTransactionManagement
 @ComponentScan(basePackages = {
         "com.kb.youngly.service",
-        "com.kb.youngly.common"
+        "com.kb.youngly.common",
+        "com.kb.youngly.util"
 })
 @MapperScan(basePackages = {"com.kb.youngly.mapper"})
 @PropertySource(value = {"classpath:/application.properties"})
