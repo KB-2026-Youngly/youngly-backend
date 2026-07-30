@@ -25,11 +25,13 @@ import javax.sql.DataSource;
  * 비밀번호, API Key 등 민감 정보는 application-secret.properties 에 두며
  * 이 파일은 .gitignore 로 제외되어 있다.
  */
+
 @Import({SecurityConfig.class})
+
 @Configuration
 @EnableTransactionManagement
 @ComponentScan(basePackages = {
-        "com.kb.youngly",
+        "com.kb.youngly"
 })
 @MapperScan(basePackages = {"com.kb.youngly.mapper"})
 @PropertySource(value = {"classpath:/application.properties"})
