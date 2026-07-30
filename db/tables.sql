@@ -76,7 +76,7 @@ CREATE TABLE `moim_account_transactions` (
                                              `amount`	DECIMAL(19,2)	NOT NULL,
                                              `balance_after`	DECIMAL(19,2)	NOT NULL,
 
-                                             `idempotency_key`             VARCHAR(100) NULL,
+                                             `idempotency_key`             VARCHAR(100) NOT NULL,
 
                                              `description`	VARCHAR(255)	NULL,
                                              `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -462,11 +462,12 @@ ALTER TABLE `post_approvals` ADD CONSTRAINT `UK_POST_APPROVALS_POST_USER` UNIQUE
                                                                                   `user_id`
     );
 
-ALTER TABLE 'moim_account_transactions' ADD CONSTRAINT 'UK_MOIM_ACCOUNT_TRANSACTIONS_IDEMPOTENCY_KEY' UNIQUE (
-                                                                                                    'idempotency_key'
-    );
+ALTER TABLE `moim_account_transactions` ADD CONSTRAINT `UK_MOIM_ACCOUNT_TRANSACTIONS_IDEMPOTENCY_KEY` UNIQUE (
+                                                                                                              `idempotency_key`
+            );
 
-ALTER TABLE `interest_users` ADD CONSTRAINT `PK_INTEREST_USERS` PRIMARY KEY (
+
+        ALTER TABLE `interest_users` ADD CONSTRAINT `PK_INTEREST_USERS` PRIMARY KEY (
                                                                              `interest_id`,
                                                                              `user_id`
     );
