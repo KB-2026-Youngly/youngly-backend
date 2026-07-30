@@ -32,29 +32,29 @@ USE youngly_db;
 --     UNIQUE KEY uk_users_nickname (nickname)
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
---  테이블 삭제 (존재하면)
-DROP TABLE IF EXISTS `survey_results`;
+-- 테이블 삭제 (외래키를 참조하는 자식 테이블부터 삭제)
+DROP TABLE IF EXISTS `moim_account_transactions`;
+DROP TABLE IF EXISTS `post_approvals`;
 DROP TABLE IF EXISTS `post_comments`;
 DROP TABLE IF EXISTS `post_reactions`;
 DROP TABLE IF EXISTS `post_history`;
-DROP TABLE IF EXISTS `post_approvals`;
 DROP TABLE IF EXISTS `posts`;
-DROP TABLE IF EXISTS `notifications`;
-DROP TABLE IF EXISTS `point_history`;
-DROP TABLE IF EXISTS `user_items`;
-DROP TABLE IF EXISTS `recommendations`;
 DROP TABLE IF EXISTS `round_history`;
 DROP TABLE IF EXISTS `group_history`;
-DROP TABLE IF EXISTS `rounds`;
 DROP TABLE IF EXISTS `group_users`;
+DROP TABLE IF EXISTS `rounds`;
 DROP TABLE IF EXISTS `account_transactions`;
-DROP TABLE IF EXISTS `moim_account_transactions`;
+DROP TABLE IF EXISTS `user_items`;
+DROP TABLE IF EXISTS `point_history`;
+DROP TABLE IF EXISTS `recommendations`;
+DROP TABLE IF EXISTS `notifications`;
+DROP TABLE IF EXISTS `survey_results`;
+DROP TABLE IF EXISTS `interest_users`;
 DROP TABLE IF EXISTS `accounts`;
 DROP TABLE IF EXISTS `groups`;
-DROP TABLE IF EXISTS `moim_accounts`;
-DROP TABLE IF EXISTS `interest_users`;
 DROP TABLE IF EXISTS `collectible_items`;
 DROP TABLE IF EXISTS `interests`;
+DROP TABLE IF EXISTS `moim_accounts`;
 DROP TABLE IF EXISTS `users`;
 
 
@@ -616,7 +616,10 @@ ALTER TABLE `user_items`
 
 -- 2. moim_account_transactions
 ALTER TABLE `moim_account_transactions`
-    ADD CONSTRAINT `FK_moim_account_transactions_moim_account_id` FOREIGN KEY (`moim_account_id`) REFERENCES `moim_accounts` (`moim_account_id`);
+    ADD CONSTRAINT `FK_moim_account_transactions_moim_account_id` FOREIGN KEY (`moim_account_id`) REFERENCES `moim_accounts` (`moim_account_id`),
+    ADD CONSTRAINT `FK_moim_account_transactions_group_user_id` FOREIGN KEY (`group_user_id`) REFERENCES `group_users` (`group_user_id`),
+    ADD CONSTRAINT `FK_moim_account_transactions_round_id` FOREIGN KEY (`round_id`) REFERENCES `rounds` (`round_id`),
+    ADD CONSTRAINT `FK_moim_account_transactions_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`);
 
 -- 3. recommendations
 ALTER TABLE `recommendations`
