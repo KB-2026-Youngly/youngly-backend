@@ -12,4 +12,5 @@ public interface UserMapper {
 
     void insertUser(UserVO userVO);
 
+    UserVO findByLoginId(@Param("loginId") String loginId);
 }
