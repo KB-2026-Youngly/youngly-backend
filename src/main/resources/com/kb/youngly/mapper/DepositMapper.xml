@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kb.youngly.mapper.DepositMapper">
+
+    <!-- 기준 예치금과 연결된 모임통장을 확인하기 위한 그룹 조회 -->
+    <select id="findGroupById" parameterType="string"
+            resultType="com.kb.youngly.vo.GroupVO">
+        SELECT group_id, moim_account_id, user_id, invite_code, group_name,
+               group_count, created_at, custom_rule, challenge_type, content,
+               future_deposit_ratio_rule, duration_days, min_count,
+               round_cycle_days, base_deposit_amount, group_status, updated_at
+        FROM groups
+        WHERE group_id = #{groupId}
+    </select>
+
+    <!-- 예치금 현황·그룹 구성원 권한 확인용 일반 참여자 조회 -->
+    <select id="findGroupUser" resultType="com.kb.youngly.vo.GroupUserVO">
+        SELECT group_user_id, group_id, user_id, group_user_status, approved_at,
+               current_deposit_amount, streak_count, created_at, updated_at
+        FROM group_users
+        WHERE group_id = #{groupId}
+          AND user_id = #{userId}
+    </select>
+
+    <!-- 동시 납부 시 current_deposit_amount를 보호하는 잠금 조회 -->
+    <select id="findGroupUserForUpdate" resultType="com.kb.youngly.vo.GroupUserVO">
+        SELECT group_user_id, group_id, user_id, group_user_status, approved_at,
+               current_deposit_amount, streak_count, created_at, updated_at
+        FROM group_users
+        WHERE group_id = #{groupId}
+          AND user_id = #{userId}
+        FOR UPDATE
+    </select>
+
+    <!-- 출금 계좌의 소유자·잔액을 일관되게 확인하는 잠금 조회 -->
+    <select id="findAccountForUpdate" resultType="com.kb.youngly.vo.AccountVO">
+        SELECT account_id, user_id, account_type, account_number, bank_name,
+               balance, created_at, account_status, account_name, updated_at
+        FROM accounts
+        WHERE account_id = #{accountId}
+          AND user_id = #{userId}
+        FOR UPDATE
+    </select>
+
+    <!-- 모임통장 입금과 balance_after 계산을 위한 잠금 조회 -->
+    <select id="findMoimAccountForUpdate" parameterType="string"
+            resultType="com.kb.youngly.vo.MoimAccountVO">
+        SELECT moim_account_id, user_id, account_number, bank_name, balance,
+               created_at, updated_at, interest_rate, account_name
+        FROM moim_accounts
+        WHERE moim_account_id = #{moimAccountId}
+        FOR UPDATE
+    </select>
+
+    <!-- WHERE 절의 잔액 조건으로 음수 출금을 방지한다. -->
+    <update id="withdrawFromAccount">
+        UPDATE accounts
+        SET balance = balance - #{amount}
+        WHERE account_id = #{accountId}
+          AND user_id = #{userId}
+          AND balance &gt;= #{amount}
+    </update>
+
+    <!-- 개인 계좌 출금과 같은 트랜잭션에서 모임통장 잔액을 증가시킨다. -->
+    <update id="increaseMoimAccountBalance">
+        UPDATE moim_accounts
+        SET balance = balance + #{amount}
+        WHERE moim_account_id = #{moimAccountId}
+    </update>
+
+    <!-- 참여자별 현재 예치금은 group_users에 누적 관리한다. -->
+    <update id="increaseCurrentDeposit">
+        UPDATE group_users
+        SET current_deposit_amount = current_deposit_amount + #{amount}
+        WHERE group_user_id = #{groupUserId}
+    </update>
+
+    <update id="updateGroupUserStatus">
+        UPDATE group_users
+        SET group_user_status = #{status}
+        WHERE group_user_id = #{groupUserId}
+    </update>
+
+    <!-- 사용자 개인 계좌의 예치금 출금 기록 -->
+    <insert id="insertAccountTransaction"
+            parameterType="com.kb.youngly.vo.AccountTransactionVO"
+            useGeneratedKeys="true"
+            keyProperty="accountTransactionId"
+            keyColumn="account_transaction_id">
+        INSERT INTO account_transactions (
+            account_id, transaction_type, amount, balance_after, description
+        ) VALUES (
+            #{accountId}, #{transactionType}, #{amount}, #{balanceAfter}, #{description}
+        )
+    </insert>
+
+    <!-- 모임통장 원장: 참여자·계좌·거래 목적·멱등성 키를 함께 저장 -->
+    <insert id="insertMoimAccountTransaction"
+            parameterType="com.kb.youngly.vo.MoimAccountTransactionVO"
+            useGeneratedKeys="true"
+            keyProperty="moimAccountTransactionId"
+            keyColumn="moim_account_transaction_id">
+        INSERT INTO moim_account_transactions (
+            moim_account_id, group_user_id, round_id, account_id,
+            transaction_type, transaction_category, amount, balance_after,
+            idempotency_key, description
+        ) VALUES (
+            #{moimAccountId}, #{groupUserId}, #{roundId}, #{accountId},
+            #{transactionType}, #{transactionCategory}, #{amount}, #{balanceAfter},
+            #{idempotencyKey}, #{description}
+        )
+    </insert>
+
+    <!-- 중복 요청일 때 기존 결과를 반환하기 위한 멱등성 키 조회 -->
+    <select id="findMoimTransactionByIdempotencyKey" parameterType="string"
+            resultType="com.kb.youngly.vo.MoimAccountTransactionVO">
+        SELECT moim_account_transaction_id, moim_account_id, group_user_id,
+               round_id, account_id, transaction_type, transaction_category,
+               amount, balance_after, idempotency_key, description, created_at
+        FROM moim_account_transactions
+        WHERE idempotency_key = #{idempotencyKey}
+    </select>
+
+    <!-- 참여자 목록 화면용 프로필과 예치금 현황 조회 -->
+    <select id="findMemberDepositStatuses" parameterType="string"
+            resultType="com.kb.youngly.dto.deposit.MemberDepositStatusResponse">
+        SELECT gu.user_id,
+               u.nickname,
+               u.profile_image_url,
+               g.base_deposit_amount AS required_amount,
+               gu.current_deposit_amount,
+               gu.group_user_status
+        FROM group_users gu
+        JOIN groups g ON g.group_id = gu.group_id
+        JOIN users u ON u.user_id = gu.user_id
+        WHERE gu.group_id = #{groupId}
+        ORDER BY gu.created_at ASC
+    </select>
+
+</mapper>
