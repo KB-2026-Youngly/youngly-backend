@@ -1,5 +1,6 @@
 package com.kb.youngly.vo.user;
 
+import com.kb.youngly.enums.UserStatus;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -14,14 +15,27 @@ import java.time.LocalDateTime;
 public class UserVO {
 
     private String userId;
+
     private String name;
+
     private String loginId;
+
     private String nickname;
+
     private String email;
+
     private String profileImageUrl;
+
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
+
     private String password;
-    private String userStatus;
+
+    private UserStatus userStatus;
+
     private Long point;
+
+    private LocalDateTime birthday;
 }
+

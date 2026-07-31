@@ -88,24 +88,24 @@ DROP TABLE IF EXISTS `users`;
 
 
 CREATE TABLE `account_transactions` (
-                                             `account_transaction_id`	BIGINT	NOT NULL,
-                                             `kb_account_id`	VARCHAR(50)	NOT NULL,
-                                             `group_user_id`               BIGINT NOT NULL,
-                                             `round_id`                    BIGINT NULL,
-                                             `transaction_type`	ENUM('DEPOSIT','WITHDRAW')	NOT NULL,
-                                             `transaction_category` ENUM(
-                                                 'CHARGE',
-                                                 'SETTLEMENT',
-                                                 'REFUND'
-                                                 ) NOT NULL,
-                                             `amount`	DECIMAL(19,2)	NOT NULL,
-                                             `balance_after`	DECIMAL(19,2)	NOT NULL,
-                                             `idempotency_key`             VARCHAR(100) NULL,
-                                             `description`	VARCHAR(255)	NULL,
-                                             `another_account_number` VARCHAR(50) NULL,
-                                             `another_bank_name` VARCHAR(50) NULL DEFAULT '국민',
-                                             `another_name` VARCHAR(50) NULL,
-                                             `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                        `account_transaction_id`	BIGINT	NOT NULL,
+                                        `kb_account_id`	VARCHAR(50)	NOT NULL,
+                                        `group_user_id`               BIGINT NOT NULL,
+                                        `round_id`                    BIGINT NULL,
+                                        `transaction_type`	ENUM('DEPOSIT','WITHDRAW')	NOT NULL,
+                                        `transaction_category` ENUM(
+                                            'CHARGE',
+                                            'SETTLEMENT',
+                                            'REFUND'
+                                            ) NOT NULL,
+                                        `amount`	DECIMAL(19,2)	NOT NULL,
+                                        `balance_after`	DECIMAL(19,2)	NOT NULL,
+                                        `idempotency_key`             VARCHAR(100) NULL,
+                                        `description`	VARCHAR(255)	NULL,
+                                        `another_account_number` VARCHAR(50) NULL,
+                                        `another_bank_name` VARCHAR(50) NULL DEFAULT '국민',
+                                        `another_name` VARCHAR(50) NULL,
+                                        `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `recommendations` (
@@ -205,12 +205,12 @@ CREATE TABLE `interests` (
 
 
 CREATE TABLE `moim_accounts` (
-                            `moim_account_id`	VARCHAR(50)	NOT NULL,
-                            `user_id`	VARCHAR(50)	NOT NULL,
-                            `kb_account_id`	VARCHAR(50)	NOT NULL,
-                            `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                            `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                            `account_name`	VARCHAR(50)	NOT NULL	COMMENT 'default로 bank_name(모임) + account_number'
+                                 `moim_account_id`	VARCHAR(50)	NOT NULL,
+                                 `user_id`	VARCHAR(50)	NOT NULL,
+                                 `kb_account_id`	VARCHAR(50)	NOT NULL,
+                                 `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                 `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                 `account_name`	VARCHAR(50)	NOT NULL	COMMENT 'default로 bank_name(모임) + account_number'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `rounds` (
@@ -272,16 +272,16 @@ CREATE TABLE `accounts` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `kb_accounts` (
-                            `kb_account_id`	VARCHAR(50)	NOT NULL,
-                            `account_type`	ENUM('DEPOSIT', 'PENSION','MOIM')	NOT NULL,
-                            `account_number`	VARCHAR(50)	NOT NULL,
-                            `bank_name`	VARCHAR(30)	NOT NULL DEFAULT '국민',
-                            `balance`	DECIMAL(19,2)	NOT NULL,
-                            `interest_rate`	DECIMAL(7,2)	NOT NULL,
-                            `name`	VARCHAR(30)	NOT NULL,
-                            `birthday` DATETIME NOT NULL,
-                            `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                            `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                               `kb_account_id`	VARCHAR(50)	NOT NULL,
+                               `account_type`	ENUM('DEPOSIT', 'PENSION','MOIM')	NOT NULL,
+                               `account_number`	VARCHAR(50)	NOT NULL,
+                               `bank_name`	VARCHAR(30)	NOT NULL DEFAULT '국민',
+                               `balance`	DECIMAL(19,2)	NOT NULL,
+                               `interest_rate`	DECIMAL(7,2)	NOT NULL,
+                               `name`	VARCHAR(30)	NOT NULL,
+                               `birthday` DATETIME NOT NULL,
+                               `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                               `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `point_history` (
@@ -396,7 +396,7 @@ ALTER TABLE `user_items` ADD CONSTRAINT `PK_USER_ITEMS` PRIMARY KEY (
     );
 
 ALTER TABLE `account_transactions` ADD CONSTRAINT `PK_ACCOUNT_TRANSACTIONS` PRIMARY KEY (
-                                                                                                   `account_transaction_id`
+                                                                                         `account_transaction_id`
     );
 
 ALTER TABLE `recommendations` ADD CONSTRAINT `PK_RECOMMENDATIONS` PRIMARY KEY (
@@ -424,7 +424,7 @@ ALTER TABLE `interests` ADD CONSTRAINT `PK_INTERESTS` PRIMARY KEY (
     );
 
 ALTER TABLE `moim_accounts` ADD CONSTRAINT `PK_MOIM_ACCOUNTS` PRIMARY KEY (
-                                                                 `moim_account_id`
+                                                                           `moim_account_id`
     );
 
 ALTER TABLE `rounds` ADD CONSTRAINT `PK_ROUNDS` PRIMARY KEY (
@@ -452,7 +452,7 @@ ALTER TABLE `accounts` ADD CONSTRAINT `PK_ACCOUNTS` PRIMARY KEY (
     );
 
 ALTER TABLE `kb_accounts` ADD CONSTRAINT `PK_KB_ACCOUNTS` PRIMARY KEY (
-                                                                         `kb_account_id`
+                                                                       `kb_account_id`
     );
 
 ALTER TABLE `point_history` ADD CONSTRAINT `PK_POINT_HISTORY` PRIMARY KEY (
@@ -464,20 +464,20 @@ ALTER TABLE `collectible_items` ADD CONSTRAINT `PK_COLLECTIBLE_ITEMS` PRIMARY KE
     );
 
 ALTER TABLE `survey_questions` ADD CONSTRAINT `PK_SURVEY_QUESTIONS` PRIMARY KEY (
-                                                                                  `question_id`
+                                                                                 `question_id`
     );
 
 ALTER TABLE `survey_questions` ADD CONSTRAINT `UK_SURVEY_QUESTIONS_QUESTION_NO` UNIQUE (
-                                                                                          `question_no`
+                                                                                        `question_no`
     );
 
 ALTER TABLE `survey_choices` ADD CONSTRAINT `PK_SURVEY_CHOICES` PRIMARY KEY (
-                                                                              `choice_id`
+                                                                             `choice_id`
     );
 
 ALTER TABLE `survey_choices` ADD CONSTRAINT `UK_SURVEY_CHOICES_QUESTION_DISPLAY_ORDER` UNIQUE (
-                                                                                                  `question_id`,
-                                                                                                  `display_order`
+                                                                                               `question_id`,
+                                                                                               `display_order`
     );
 
 ALTER TABLE `interests` ADD CONSTRAINT `UK_INTERESTS_NAME` UNIQUE (`interest_name`);
@@ -507,34 +507,34 @@ ALTER TABLE `post_comments` ADD CONSTRAINT `PK_POST_COMMENTS` PRIMARY KEY (
     );
 
 ALTER TABLE `users` ADD CONSTRAINT `UK_USERS_LOGIN_ID` UNIQUE (
-                                                                `login_id`
+                                                               `login_id`
     );
 
 ALTER TABLE `users` ADD CONSTRAINT `UK_USERS_EMAIL` UNIQUE (
-                                                             `email`
+                                                            `email`
     );
 
 ALTER TABLE `users` ADD CONSTRAINT `UK_USERS_NICKNAME` UNIQUE (
-                                                                `nickname`
+                                                               `nickname`
     );
 
 ALTER TABLE `groups` ADD CONSTRAINT `UK_GROUPS_INVITE_CODE` UNIQUE (
-                                                                     `invite_code`
+                                                                    `invite_code`
     );
 
 ALTER TABLE `group_users` ADD CONSTRAINT `UK_GROUP_USERS_GROUP_USER` UNIQUE (
-                                                                              `group_id`,
-                                                                              `user_id`
+                                                                             `group_id`,
+                                                                             `user_id`
     );
 
 ALTER TABLE `user_items` ADD CONSTRAINT `UK_USER_ITEMS_USER_ITEM` UNIQUE (
-                                                                            `user_id`,
-                                                                            `item_id`
+                                                                          `user_id`,
+                                                                          `item_id`
     );
 
 ALTER TABLE `rounds` ADD CONSTRAINT `UK_ROUNDS_GROUP_ROUND_NO` UNIQUE (
-                                                                        `group_id`,
-                                                                        `round_no`
+                                                                       `group_id`,
+                                                                       `round_no`
     );
 
 ALTER TABLE `post_reactions` ADD CONSTRAINT `UK_POST_REACTIONS_POST_USER` UNIQUE (
@@ -548,20 +548,20 @@ ALTER TABLE `post_approvals` ADD CONSTRAINT `UK_POST_APPROVALS_POST_USER` UNIQUE
     );
 
 ALTER TABLE `post_history` ADD CONSTRAINT `UK_POST_HISTORY_POST_VERSION` UNIQUE (
-                                                                                   `post_id`,
-                                                                                   `post_history_version`
+                                                                                 `post_id`,
+                                                                                 `post_history_version`
     );
 
 ALTER TABLE `account_transactions` ADD CONSTRAINT `UK_ACCOUNT_TRANSACTIONS_IDEMPOTENCY_KEY` UNIQUE (
-                                                                                                        `idempotency_key`
-            );
+                                                                                                    `idempotency_key`
+    );
 
 ALTER TABLE `point_history` ADD CONSTRAINT `UK_POINT_HISTORY_IDEMPOTENCY_KEY` UNIQUE (
-                                                                                        `idempotency_key`
+                                                                                      `idempotency_key`
     );
 
 
-        ALTER TABLE `interest_users` ADD CONSTRAINT `PK_INTEREST_USERS` PRIMARY KEY (
+ALTER TABLE `interest_users` ADD CONSTRAINT `PK_INTEREST_USERS` PRIMARY KEY (
                                                                              `interest_id`,
                                                                              `user_id`
     );

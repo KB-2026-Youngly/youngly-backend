@@ -3,7 +3,7 @@ package com.kb.youngly.service.impl;
 import com.kb.youngly.dto.user.UserResponse;
 import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.service.UserService;
-import com.kb.youngly.vo.UserVO;
+import com.kb.youngly.vo.user.UserVO;
 import org.springframework.stereotype.Service;
 
 @Service
