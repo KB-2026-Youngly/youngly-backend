@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.survey;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
