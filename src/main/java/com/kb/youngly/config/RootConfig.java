@@ -34,8 +34,6 @@ import org.springframework.context.annotation.Import;
 @EnableTransactionManagement
 @ComponentScan(basePackages = {
         "com.kb.youngly"
-        "com.kb.youngly.service",
-        "com.kb.youngly.util"
 })
 @MapperScan(basePackages = {"com.kb.youngly.mapper"})
 @PropertySource(value = {"classpath:/application.properties"})
