@@ -1,8 +1,4 @@
-<<<<<<<< Updated upstream:src/main/java/com/kb/youngly/vo/survey/InterestVO.java
 package com.kb.youngly.vo.survey;
-========
-package com.kb.youngly.vo.interest;
->>>>>>>> Stashed changes:src/main/java/com/kb/youngly/vo/interest/InterestVO.java
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
