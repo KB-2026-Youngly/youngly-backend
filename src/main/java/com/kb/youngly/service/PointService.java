@@ -71,7 +71,11 @@ public class PointService {
             throw new IllegalArgumentException("존재하지 않는 사용자입니다.");
         }
 
-        pointMapper.insertPointHistory(history);
+        // 내역이 저장되지 않은 경우에도 예외를 발생시켜 잔액 변경을 함께 롤백합니다.
+        int insertedRows = pointMapper.insertPointHistory(history);
+        if (insertedRows != 1) {
+            throw new IllegalStateException("포인트 내역 저장에 실패했습니다.");
+        }
         return history;
     }
 
@@ -98,7 +102,11 @@ public class PointService {
             throw new IllegalArgumentException("포인트가 부족하거나 존재하지 않는 사용자입니다.");
         }
 
-        pointMapper.insertPointHistory(history);
+        // 사용 내역 저장 실패 시 앞서 수행한 잔액 차감도 함께 롤백합니다.
+        int insertedRows = pointMapper.insertPointHistory(history);
+        if (insertedRows != 1) {
+            throw new IllegalStateException("포인트 내역 저장에 실패했습니다.");
+        }
         return history;
     }
 
@@ -131,11 +139,14 @@ public class PointService {
     }
 
     /**
-     * 적립하거나 사용할 포인트가 양수인지 확인합니다.
+     * 적립하거나 사용할 포인트가 양수이면서 10의 배수인지 확인합니다.
      */
     private void validateAmount(int amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("포인트는 1 이상이어야 합니다.");
+        }
+        if (amount % 10 != 0) {
+            throw new IllegalArgumentException("포인트는 10의 배수여야 합니다.");
         }
     }
 
