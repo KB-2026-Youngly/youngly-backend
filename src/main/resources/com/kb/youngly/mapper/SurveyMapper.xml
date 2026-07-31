@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kb.youngly.mapper.SurveyMapper">
+
+    <resultMap id="surveyQuestionWithChoices" type="com.kb.youngly.dto.survey.SurveyQuestionDTO">
+        <id property="questionId" column="question_id"/>
+        <result property="questionNo" column="question_no"/>
+        <result property="questionText" column="question_text"/>
+        <result property="multiple" column="is_multiple"/>
+        <collection property="choices" ofType="com.kb.youngly.dto.survey.SurveyChoiceDTO">
+            <id property="choiceId" column="choice_id"/>
+            <result property="choiceText" column="choice_text"/>
+            <result property="score" column="score"/>
+            <result property="displayOrder" column="display_order"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectSurveyQuestionsWithChoices" resultMap="surveyQuestionWithChoices">
+        SELECT q.question_id,
+               q.question_no,
+               q.question_text,
+               q.is_multiple,
+               c.choice_id,
+               c.choice_text,
+               c.score,
+               c.display_order
+        FROM survey_questions q
+                 INNER JOIN survey_choices c
+                            ON c.question_id = q.question_id
+        ORDER BY q.question_no ASC, c.display_order ASC
+    </select>
+
+    <insert id="insertSurveyResult"
+            parameterType="com.kb.youngly.vo.survey.SurveyResultVO"
+            useGeneratedKeys="true"
+            keyProperty="surveyResultId"
+            keyColumn="survey_result_id">
+        INSERT INTO survey_results (
+            user_id,
+            answers_json,
+            total_score,
+            baseline,
+            submitted_at,
+            calculated_at
+        )
+        VALUES (
+                   #{userId},
+                   #{answersJson},
+                   #{totalScore},
+                   #{baseline},
+                   #{submittedAt},
+                   #{calculatedAt}
+               )
+    </insert>
+
+    <select id="selectLatestResultByUserId"
+            parameterType="string"
+            resultType="com.kb.youngly.vo.survey.SurveyResultVO">
+        SELECT survey_result_id,
+               user_id,
+               answers_json,
+               total_score,
+               baseline,
+               submitted_at,
+               calculated_at,
+               created_at
+        FROM survey_results
+        WHERE user_id = #{userId}
+        ORDER BY submitted_at DESC, survey_result_id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insertSurveyResultInterest">
+        INSERT INTO survey_result_interest (
+        survey_result_id,
+        interest_id
+        )
+        VALUES
+        <foreach collection="interestIds" item="interestId" separator=",">
+            (#{surveyResultId}, #{interestId})
+        </foreach>
+    </insert>
+
+    <select id="selectInterestsBySurveyResultId"
+            parameterType="long"
+            resultType="com.kb.youngly.dto.auth.InterestOptionDTO">
+        SELECT i.interest_id,
+               i.interest_name,
+               i.is_investment,
+               i.created_at
+        FROM survey_result_interest sri
+                 INNER JOIN interests i
+                            ON i.interest_id = sri.interest_id
+        WHERE sri.survey_result_id = #{surveyResultId}
+        ORDER BY i.interest_id ASC
+    </select>
+
+</mapper>
