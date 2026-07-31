@@ -1,22 +1,21 @@
-package com.kb.youngly.dto.auth;
+package com.kb.youngly.dto.user;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginResponse {
-
-    private String accessToken;
+public class UserResponse {
 
     private String userId;
-
+    private String name;
     private String loginId;
-
     private String nickname;
-
+    private String email;
+    private String profileImageUrl;
+    private Long point;
 }

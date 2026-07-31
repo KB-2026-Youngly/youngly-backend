@@ -47,7 +47,7 @@
                    #{profileImageUrl},
                    NOW(),
                    #{password}
-        )
+               )
 
     </insert>
 
@@ -71,4 +71,26 @@
         WHERE login_id = #{loginId}
 
     </select>
+
+    <select id="findByUserId"
+            parameterType="java.lang.String"
+            resultType="com.kb.youngly.vo.UserVO">
+
+        SELECT
+            user_id,
+            name,
+            login_id,
+            nickname,
+            email,
+            profile_image_url,
+            created_at,
+            updated_at,
+            password,
+            user_status,
+            point
+        FROM users
+        WHERE user_id = #{userId}
+
+    </select>
+
 </mapper>
