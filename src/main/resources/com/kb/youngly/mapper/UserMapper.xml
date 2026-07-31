@@ -93,4 +93,15 @@
 
     </select>
 
+    <update id="updateUser"
+            parameterType="com.kb.youngly.vo.UserVO">
+
+        UPDATE users
+        SET
+            nickname = #{nickname},
+            profile_image_url = #{profileImageUrl},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+
+    </update>
 </mapper>
