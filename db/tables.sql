@@ -86,30 +86,28 @@ DROP TABLE IF EXISTS `groups`;
 DROP TABLE IF EXISTS `collectible_items`;
 DROP TABLE IF EXISTS `interests`;
 DROP TABLE IF EXISTS `moim_accounts`;
+DROP TABLE IF EXISTS `kb_accounts`;
 DROP TABLE IF EXISTS `users`;
 
 
 CREATE TABLE `moim_account_transactions` (
-                                             `moim_account_transaction_id`	BIGINT	NOT NULL,
-                                             `moim_account_id`	VARCHAR(50)	NOT NULL,
-
+                                             `account_transaction_id`	BIGINT	NOT NULL,
+                                             `kb_account_id`	VARCHAR(50)	NOT NULL,
                                              `group_user_id`               BIGINT NOT NULL,
                                              `round_id`                    BIGINT NULL,
-                                             `account_id`                  VARCHAR(50) NOT NULL,
-
                                              `transaction_type`	ENUM('DEPOSIT','WITHDRAW')	NOT NULL,
                                              `transaction_category` ENUM(
-                                                 'INITIAL_DEPOSIT',
-                                                 'RECHARGE',
+                                                 'CHARGE',
                                                  'SETTLEMENT',
                                                  'REFUND'
                                                  ) NOT NULL,
                                              `amount`	DECIMAL(19,2)	NOT NULL,
                                              `balance_after`	DECIMAL(19,2)	NOT NULL,
-
                                              `idempotency_key`             VARCHAR(100) NULL,
-
                                              `description`	VARCHAR(255)	NULL,
+                                             `another_account_number` VARCHAR(50) NULL,
+                                             `another_bank_name` VARCHAR(50) NULL DEFAULT '국민',
+                                             `another_name` VARCHAR(50) NULL,
                                              `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -212,12 +210,9 @@ CREATE TABLE `interests` (
 CREATE TABLE `moim_accounts` (
                             `moim_account_id`	VARCHAR(50)	NOT NULL,
                             `user_id`	VARCHAR(50)	NOT NULL,
-                            `account_number`	VARCHAR(50)	NOT NULL,
-                            `bank_name`	VARCHAR(50)	NOT NULL,
-                            `balance`	DECIMAL(19,2)	NOT NULL,
+                            `kb_account_id`	VARCHAR(50)	NOT NULL,
                             `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
                             `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                            `interest_rate`	DECIMAL(7,4)	NOT NULL,
                             `account_name`	VARCHAR(50)	NOT NULL	COMMENT 'default로 bank_name(모임) + account_number'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -282,13 +277,23 @@ CREATE TABLE `account_transactions` (
 CREATE TABLE `accounts` (
                             `account_id`	VARCHAR(50)	NOT NULL,
                             `user_id`	VARCHAR(50)	NOT NULL,
-                            `account_type`	ENUM('DEPOSIT','PENSION')	NOT NULL,
-                            `account_number`	VARCHAR(50)	NOT NULL,
-                            `bank_name`	VARCHAR(30)	NOT NULL 	DEFAULT '국민',
-                            `balance`	DECIMAL(19,2)	NOT NULL	DEFAULT 0,
+                            `kb_account_id`	VARCHAR(50)	NOT NULL,
                             `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                            `account_status`	ENUM('INCOME','OUTCOME','NONE')	NOT NULL,
+                            `account_status`	ENUM('INCOME','OUTCOME', 'INOUTCOME','NONE')	NOT NULL,
                             `account_name`	VARCHAR(50)	NOT NULL	COMMENT 'default로 bank_name + account_number로 설정',
+                            `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `kb_accounts` (
+                            `kb_account_id`	VARCHAR(50)	NOT NULL,
+                            `account_type`	ENUM('DEPOSIT', 'PENSION','MOIM')	NOT NULL,
+                            `account_number`	VARCHAR(50)	NOT NULL,
+                            `bank_name`	VARCHAR(30)	NOT NULL DEFAULT '국민',
+                            `balance`	DECIMAL(19,2)	NOT NULL,
+                            `interest_rate`	DECIMAL(7,2)	NOT NULL,
+                            `name`	VARCHAR(30)	NOT NULL,
+                            `birthday` DATETIME NOT NULL,
+                            `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
                             `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -379,8 +384,9 @@ CREATE TABLE `users` (
                          `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
                          `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                          `password`	VARCHAR(255)	NOT NULL,
-                         `user_status`	ENUM('ACTIVE', 'DEACTIVATED')	NOT NULL,
-                         `point`	BIGINT	NOT NULL
+                         `user_status`	ENUM('ACTIVE', 'DEACTIVATED')	NOT NULL DEFAULT 'ACTIVE',
+                         `point`	BIGINT	NOT NULL DEFAULT 0,
+                         `birthday`	DATETIME	NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `post_comments` (
@@ -403,7 +409,7 @@ ALTER TABLE `user_items` ADD CONSTRAINT `PK_USER_ITEMS` PRIMARY KEY (
     );
 
 ALTER TABLE `moim_account_transactions` ADD CONSTRAINT `PK_MOIM_ACCOUNT_TRANSACTIONS` PRIMARY KEY (
-                                                                                                   `moim_account_transaction_id`
+                                                                                                   `account_transaction_id`
     );
 
 ALTER TABLE `recommendations` ADD CONSTRAINT `PK_RECOMMENDATIONS` PRIMARY KEY (
@@ -460,6 +466,10 @@ ALTER TABLE `account_transactions` ADD CONSTRAINT `PK_ACCOUNT_TRANSACTIONS` PRIM
 
 ALTER TABLE `accounts` ADD CONSTRAINT `PK_ACCOUNTS` PRIMARY KEY (
                                                                  `account_id`
+    );
+
+ALTER TABLE `kb_accounts` ADD CONSTRAINT `PK_KB_ACCOUNTS` PRIMARY KEY (
+                                                                         `kb_account_id`
     );
 
 ALTER TABLE `point_history` ADD CONSTRAINT `PK_POINT_HISTORY` PRIMARY KEY (
@@ -579,7 +589,7 @@ ALTER TABLE `user_items`
     MODIFY `user_item_id` BIGINT NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `moim_account_transactions`
-    MODIFY `moim_account_transaction_id` BIGINT NOT NULL AUTO_INCREMENT;
+    MODIFY `account_transaction_id` BIGINT NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `recommendations`
     MODIFY `recommendation_id` BIGINT NOT NULL AUTO_INCREMENT;
@@ -675,10 +685,10 @@ ALTER TABLE `groups`
     ADD CONSTRAINT `CK_GROUPS_BASE_DEPOSIT_AMOUNT`
         CHECK (`base_deposit_amount` >= 0);
 
-ALTER TABLE `moim_accounts`
-    ADD CONSTRAINT `CK_MOIM_ACCOUNTS_BALANCE`
+ALTER TABLE `kb_accounts`
+    ADD CONSTRAINT `CK_KB_ACCOUNTS_BALANCE`
         CHECK (`balance` >= 0),
-    ADD CONSTRAINT `CK_MOIM_ACCOUNTS_INTEREST_RATE`
+    ADD CONSTRAINT `CK_KB_ACCOUNTS_INTEREST_RATE`
         CHECK (`interest_rate` >= 0);
 
 ALTER TABLE `rounds`
@@ -688,10 +698,6 @@ ALTER TABLE `rounds`
 ALTER TABLE `account_transactions`
     ADD CONSTRAINT `CK_ACCOUNT_TRANSACTIONS_AMOUNT`
         CHECK (`amount` >= 0);
-
-ALTER TABLE `accounts`
-    ADD CONSTRAINT `CK_ACCOUNTS_BALANCE`
-        CHECK (`balance` >= 0);
 
 ALTER TABLE `point_history`
     ADD CONSTRAINT `CK_POINT_HISTORY_AMOUNT`
@@ -726,10 +732,9 @@ ALTER TABLE `user_items`
 
 -- 2. moim_account_transactions
 ALTER TABLE `moim_account_transactions`
-    ADD CONSTRAINT `FK_moim_account_transactions_moim_account_id` FOREIGN KEY (`moim_account_id`) REFERENCES `moim_accounts` (`moim_account_id`),
+    ADD CONSTRAINT `FK_moim_account_transactions_kb_account_id` FOREIGN KEY (`kb_account_id`) REFERENCES `kb_accounts` (`kb_account_id`),
     ADD CONSTRAINT `FK_moim_account_transactions_group_user_id` FOREIGN KEY (`group_user_id`) REFERENCES `group_users` (`group_user_id`),
-    ADD CONSTRAINT `FK_moim_account_transactions_round_id` FOREIGN KEY (`round_id`) REFERENCES `rounds` (`round_id`),
-    ADD CONSTRAINT `FK_moim_account_transactions_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`);
+    ADD CONSTRAINT `FK_moim_account_transactions_round_id` FOREIGN KEY (`round_id`) REFERENCES `rounds` (`round_id`);
 
 -- 3. recommendations
 ALTER TABLE `recommendations`
@@ -759,7 +764,8 @@ ALTER TABLE `groups`
 
 -- 8. moim_accounts
 ALTER TABLE `moim_accounts`
-    ADD CONSTRAINT `FK_moim_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+    ADD CONSTRAINT `FK_moim_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
+    ADD CONSTRAINT `FK_moim_accounts_kb_account_id` FOREIGN KEY (`kb_account_id`) REFERENCES `kb_accounts` (`kb_account_id`);
 
 -- 9. rounds
 ALTER TABLE `rounds`
@@ -789,7 +795,8 @@ ALTER TABLE `account_transactions`
 
 -- 15. accounts
 ALTER TABLE `accounts`
-    ADD CONSTRAINT `FK_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+    ADD CONSTRAINT `FK_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
+    ADD CONSTRAINT `FK_accounts_kb_account_id` FOREIGN KEY (`kb_account_id`) REFERENCES `kb_accounts` (`kb_account_id`);
 
 -- 16. point_history
 ALTER TABLE `point_history`

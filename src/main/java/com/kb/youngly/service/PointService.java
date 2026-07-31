@@ -2,7 +2,7 @@ package com.kb.youngly.service;
 
 import com.kb.youngly.enums.PointType;
 import com.kb.youngly.mapper.PointMapper;
-import com.kb.youngly.vo.PointHistoryVO;
+import com.kb.youngly.vo.point.PointHistoryVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

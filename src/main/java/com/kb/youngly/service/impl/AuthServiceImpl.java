@@ -9,9 +9,13 @@ import com.kb.youngly.dto.auth.SignupResponse;
 import com.kb.youngly.jwt.JwtTokenProvider;
 import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.service.AuthService;
+<<<<<<< Updated upstream
 import com.kb.youngly.vo.UserVO;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+=======
+import com.kb.youngly.vo.user.UserVO;
+>>>>>>> Stashed changes
 
 @Service
 public class AuthServiceImpl implements AuthService {

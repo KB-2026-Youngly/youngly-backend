@@ -1,7 +1,13 @@
 package com.kb.youngly.mapper;
 
+<<<<<<< Updated upstream
 import com.kb.youngly.vo.UserVO;
 import org.apache.ibatis.annotations.Param;
+=======
+import org.apache.ibatis.annotations.Param;
+
+import com.kb.youngly.vo.user.UserVO;
+>>>>>>> Stashed changes
 
 public interface UserMapper {
 

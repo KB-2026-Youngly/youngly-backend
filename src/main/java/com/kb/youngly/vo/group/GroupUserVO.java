@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.group;
 
 import com.kb.youngly.enums.GroupUserStatus;
 import lombok.AllArgsConstructor;

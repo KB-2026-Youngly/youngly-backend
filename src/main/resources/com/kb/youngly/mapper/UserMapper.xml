@@ -26,7 +26,7 @@
     </select>
 
     <insert id="insertUser"
-            parameterType="com.kb.youngly.vo.UserVO">
+            parameterType="com.kb.youngly.vo.user.UserVO">
 
         INSERT INTO users (
             user_id,

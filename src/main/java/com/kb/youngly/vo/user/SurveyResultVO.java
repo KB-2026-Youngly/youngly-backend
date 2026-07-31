@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.user;
 
 import com.kb.youngly.enums.Baseline;
 import lombok.AllArgsConstructor;
@@ -12,14 +12,12 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RecommendationVO {
-    private Long recommendationId;
+public class SurveyResultVO {
+    private Long surveyResultId;
     private String userId;
+    private String answersJson;
+    private Integer totalScore;
     private Baseline baseline;
-    private String savingsPlan;
-    private String financialProduct;
-    private String investmentPortfolio;
-    private String recommendationReason;
-    private String referencedRoundRange;
+    private LocalDateTime completedAt;
     private LocalDateTime createdAt;
 }

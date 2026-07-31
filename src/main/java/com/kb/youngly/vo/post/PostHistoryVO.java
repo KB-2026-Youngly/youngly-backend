@@ -1,6 +1,6 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.post;
 
-import com.kb.youngly.enums.NotificationType;
+import com.kb.youngly.enums.PostStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,11 +12,12 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationVO {
-    private Long notificationId;
-    private String userId;
-    private NotificationType notificationType;
+public class PostHistoryVO {
+    private Long postHistoryId;
+    private Long postId;
+    private Long postHistoryVersion;
+    private String photoUrl;
     private String content;
-    private Boolean isRead;
+    private PostStatus postStatus;
     private LocalDateTime createdAt;
 }

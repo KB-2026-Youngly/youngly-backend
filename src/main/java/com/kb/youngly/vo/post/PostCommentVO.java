@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.post;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,10 +11,11 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserItemVO {
-    private Long userItemId;
-    private Long itemId;
+public class PostCommentVO {
+    private Long postCommentId;
     private String userId;
-    private Boolean isEquipped;
+    private Long postId;
+    private String content;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

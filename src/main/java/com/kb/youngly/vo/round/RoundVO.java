@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.round;
 
 import com.kb.youngly.enums.RoundStatus;
 import lombok.AllArgsConstructor;

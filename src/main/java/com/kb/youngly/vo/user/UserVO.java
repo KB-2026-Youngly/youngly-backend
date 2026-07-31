@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.user;
 
 import lombok.Getter;
 import lombok.Setter;
