@@ -93,4 +93,14 @@
 
     </select>
 
+    <update id="updatePassword"
+            parameterType="com.kb.youngly.vo.UserVO">
+
+        UPDATE users
+        SET
+            password = #{password},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+
+    </update>
 </mapper>
