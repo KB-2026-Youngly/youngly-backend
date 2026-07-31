@@ -4,27 +4,29 @@ import java.util.UUID;
 
 import com.kb.youngly.dto.auth.LoginRequest;
 import com.kb.youngly.dto.auth.LoginResponse;
-import com.kb.youngly.dto.auth.SignupResponse;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-
 import com.kb.youngly.dto.auth.SignupRequest;
+import com.kb.youngly.dto.auth.SignupResponse;
+import com.kb.youngly.jwt.JwtTokenProvider;
 import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.service.AuthService;
 import com.kb.youngly.vo.UserVO;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
 
 @Service
 public class AuthServiceImpl implements AuthService {
 
     private final UserMapper userMapper;
-
     private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public AuthServiceImpl(UserMapper userMapper,
-                           BCryptPasswordEncoder passwordEncoder) {
+                           BCryptPasswordEncoder passwordEncoder,
+                           JwtTokenProvider jwtTokenProvider) {
 
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @Override
@@ -58,18 +60,10 @@ public class AuthServiceImpl implements AuthService {
 
         // 기본값
         userVO.setProfileImageUrl(null);
-//        userVO.setUserStatus("ACTIVE");
-//        userVO.setPoint(0L);
 
         // 회원 저장
         userMapper.insertUser(userVO);
 
-//        SignupResponse response = new SignupResponse();
-//        response.setUserId(userVO.getUserId());
-//        response.setLoginId(userVO.getLoginId());
-//        response.setNickname(userVO.getNickname());
-//
-//        return response;
         return new SignupResponse(
                 userVO.getUserId(),
                 userVO.getLoginId(),
@@ -93,7 +87,11 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
+        // JWT Access Token 생성
+        String accessToken = jwtTokenProvider.createToken(user.getUserId());
+
         return new LoginResponse(
+                accessToken,
                 user.getUserId(),
                 user.getLoginId(),
                 user.getNickname()
