@@ -38,7 +38,6 @@ DROP TABLE IF EXISTS `group_history`;
 DROP TABLE IF EXISTS `rounds`;
 DROP TABLE IF EXISTS `group_users`;
 DROP TABLE IF EXISTS `account_transactions`;
-DROP TABLE IF EXISTS `moim_account_transactions`;
 DROP TABLE IF EXISTS `accounts`;
 DROP TABLE IF EXISTS `groups`;
 DROP TABLE IF EXISTS `moim_accounts`;
@@ -64,7 +63,6 @@ DROP TABLE IF EXISTS `users`;
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 테이블 삭제 (외래키를 참조하는 자식 테이블부터 삭제)
-DROP TABLE IF EXISTS `moim_account_transactions`;
 DROP TABLE IF EXISTS `post_approvals`;
 DROP TABLE IF EXISTS `post_comments`;
 DROP TABLE IF EXISTS `post_reactions`;
@@ -74,7 +72,6 @@ DROP TABLE IF EXISTS `round_history`;
 DROP TABLE IF EXISTS `group_history`;
 DROP TABLE IF EXISTS `group_users`;
 DROP TABLE IF EXISTS `rounds`;
-DROP TABLE IF EXISTS `account_transactions`;
 DROP TABLE IF EXISTS `user_items`;
 DROP TABLE IF EXISTS `point_history`;
 DROP TABLE IF EXISTS `recommendations`;
@@ -90,7 +87,7 @@ DROP TABLE IF EXISTS `kb_accounts`;
 DROP TABLE IF EXISTS `users`;
 
 
-CREATE TABLE `moim_account_transactions` (
+CREATE TABLE `account_transactions` (
                                              `account_transaction_id`	BIGINT	NOT NULL,
                                              `kb_account_id`	VARCHAR(50)	NOT NULL,
                                              `group_user_id`               BIGINT NOT NULL,
@@ -264,16 +261,6 @@ CREATE TABLE `post_reactions` (
                                   `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `account_transactions` (
-                                        `account_transaction_id`	BIGINT	NOT NULL,
-                                        `account_id`	VARCHAR(50)	NOT NULL,
-                                        `transaction_type`	ENUM('DEPOSIT','WITHDRAW')	NOT NULL,
-                                        `amount`	DECIMAL(19,2)	NOT NULL,
-                                        `balance_after`	DECIMAL(19,2)	NOT NULL,
-                                        `description`	VARCHAR(255)	NULL,
-                                        `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE `accounts` (
                             `account_id`	VARCHAR(50)	NOT NULL,
                             `user_id`	VARCHAR(50)	NOT NULL,
@@ -408,7 +395,7 @@ ALTER TABLE `user_items` ADD CONSTRAINT `PK_USER_ITEMS` PRIMARY KEY (
                                                                      `user_item_id`
     );
 
-ALTER TABLE `moim_account_transactions` ADD CONSTRAINT `PK_MOIM_ACCOUNT_TRANSACTIONS` PRIMARY KEY (
+ALTER TABLE `account_transactions` ADD CONSTRAINT `PK_ACCOUNT_TRANSACTIONS` PRIMARY KEY (
                                                                                                    `account_transaction_id`
     );
 
@@ -458,10 +445,6 @@ ALTER TABLE `post_history` ADD CONSTRAINT `PK_POST_HISTORY` PRIMARY KEY (
 
 ALTER TABLE `post_reactions` ADD CONSTRAINT `PK_POST_REACTIONS` PRIMARY KEY (
                                                                              `reaction_id`
-    );
-
-ALTER TABLE `account_transactions` ADD CONSTRAINT `PK_ACCOUNT_TRANSACTIONS` PRIMARY KEY (
-                                                                                         `account_transaction_id`
     );
 
 ALTER TABLE `accounts` ADD CONSTRAINT `PK_ACCOUNTS` PRIMARY KEY (
@@ -569,8 +552,8 @@ ALTER TABLE `post_history` ADD CONSTRAINT `UK_POST_HISTORY_POST_VERSION` UNIQUE 
                                                                                    `post_history_version`
     );
 
-ALTER TABLE `moim_account_transactions` ADD CONSTRAINT `UK_MOIM_ACCOUNT_TRANSACTIONS_IDEMPOTENCY_KEY` UNIQUE (
-                                                                                                              `idempotency_key`
+ALTER TABLE `account_transactions` ADD CONSTRAINT `UK_ACCOUNT_TRANSACTIONS_IDEMPOTENCY_KEY` UNIQUE (
+                                                                                                        `idempotency_key`
             );
 
 ALTER TABLE `point_history` ADD CONSTRAINT `UK_POINT_HISTORY_IDEMPOTENCY_KEY` UNIQUE (
@@ -588,7 +571,7 @@ ALTER TABLE `point_history` ADD CONSTRAINT `UK_POINT_HISTORY_IDEMPOTENCY_KEY` UN
 ALTER TABLE `user_items`
     MODIFY `user_item_id` BIGINT NOT NULL AUTO_INCREMENT;
 
-ALTER TABLE `moim_account_transactions`
+ALTER TABLE `account_transactions`
     MODIFY `account_transaction_id` BIGINT NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `recommendations`
@@ -621,9 +604,6 @@ ALTER TABLE `post_history`
 ALTER TABLE `post_reactions`
     MODIFY `reaction_id` BIGINT NOT NULL AUTO_INCREMENT;
 
-ALTER TABLE `account_transactions`
-    MODIFY `account_transaction_id` BIGINT NOT NULL AUTO_INCREMENT;
-
 ALTER TABLE `point_history`
     MODIFY `point_log_id` BIGINT NOT NULL AUTO_INCREMENT;
 
@@ -649,8 +629,8 @@ ALTER TABLE `post_comments`
 -- 숫자 범위 CHECK 제약조건 추가
 -- ============================================================================
 
-ALTER TABLE `moim_account_transactions`
-    ADD CONSTRAINT `CK_MOIM_ACCOUNT_TRANSACTIONS_AMOUNT`
+ALTER TABLE `account_transactions`
+    ADD CONSTRAINT `CK_ACCOUNT_TRANSACTIONS_AMOUNT`
         CHECK (`amount` >= 0);
 
 ALTER TABLE `group_users`
@@ -695,10 +675,6 @@ ALTER TABLE `rounds`
     ADD CONSTRAINT `CK_ROUNDS_ROUND_NO`
         CHECK (`round_no` > 0);
 
-ALTER TABLE `account_transactions`
-    ADD CONSTRAINT `CK_ACCOUNT_TRANSACTIONS_AMOUNT`
-        CHECK (`amount` >= 0);
-
 ALTER TABLE `point_history`
     ADD CONSTRAINT `CK_POINT_HISTORY_AMOUNT`
         CHECK (`amount` >= 0);
@@ -730,11 +706,11 @@ ALTER TABLE `user_items`
     ADD CONSTRAINT `FK_user_items_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
     ADD CONSTRAINT `FK_user_items_item_id` FOREIGN KEY (`item_id`) REFERENCES `collectible_items` (`item_id`);
 
--- 2. moim_account_transactions
-ALTER TABLE `moim_account_transactions`
-    ADD CONSTRAINT `FK_moim_account_transactions_kb_account_id` FOREIGN KEY (`kb_account_id`) REFERENCES `kb_accounts` (`kb_account_id`),
-    ADD CONSTRAINT `FK_moim_account_transactions_group_user_id` FOREIGN KEY (`group_user_id`) REFERENCES `group_users` (`group_user_id`),
-    ADD CONSTRAINT `FK_moim_account_transactions_round_id` FOREIGN KEY (`round_id`) REFERENCES `rounds` (`round_id`);
+-- 2. account_transactions
+ALTER TABLE `account_transactions`
+    ADD CONSTRAINT `FK_account_transactions_kb_account_id` FOREIGN KEY (`kb_account_id`) REFERENCES `kb_accounts` (`kb_account_id`),
+    ADD CONSTRAINT `FK_account_transactions_group_user_id` FOREIGN KEY (`group_user_id`) REFERENCES `group_users` (`group_user_id`),
+    ADD CONSTRAINT `FK_account_transactions_round_id` FOREIGN KEY (`round_id`) REFERENCES `rounds` (`round_id`);
 
 -- 3. recommendations
 ALTER TABLE `recommendations`
@@ -788,10 +764,6 @@ ALTER TABLE `post_history`
 ALTER TABLE `post_reactions`
     ADD CONSTRAINT `FK_post_reactions_post_id` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`),
     ADD CONSTRAINT `FK_post_reactions_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
-
--- 14. account_transactions
-ALTER TABLE `account_transactions`
-    ADD CONSTRAINT `FK_account_transactions_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`);
 
 -- 15. accounts
 ALTER TABLE `accounts`
