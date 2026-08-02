@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 포인트 지급 후 생성된 EARN 내역을 클라이언트에 전달합니다.
+ * 포인트 지급 후 생성된 EARN 내역의 식별자와 지급 정보를 반환합니다.
  */
 @Getter
 @Builder
@@ -21,7 +21,7 @@ public class PointEarnResponse {
     private String content;
 
     /**
-     * DB 저장 결과 VO를 외부 응답 DTO로 변환합니다.
+     * DB 저장 결과에서 지급 API에 필요한 필드만 응답 DTO로 변환합니다.
      */
     public static PointEarnResponse from(PointHistoryVO history) {
         return PointEarnResponse.builder()

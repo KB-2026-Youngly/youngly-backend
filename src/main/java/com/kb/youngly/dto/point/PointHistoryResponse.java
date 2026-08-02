@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 포인트 적립·사용 내역 한 건을 나타내는 응답입니다.
+ * 포인트 적립·사용 내역 한 건에서 클라이언트에 공개할 정보를 반환합니다.
  */
 @Getter
 @Builder
@@ -25,7 +25,7 @@ public class PointHistoryResponse {
     private LocalDateTime createdAt;
 
     /**
-     * 내부 VO에서 응답에 필요한 필드만 복사합니다.
+     * 내부 VO에서 사용자 ID를 제외한 응답 필드만 복사합니다.
      */
     public static PointHistoryResponse from(PointHistoryVO history) {
         return PointHistoryResponse.builder()

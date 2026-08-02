@@ -5,7 +5,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 포인트 지급 요청입니다. 금액 정책 검증은 서비스 계층에서 처리합니다.
+ * 지급할 포인트와 내역에 남길 내용을 전달합니다.
+ * 양수 및 10포인트 단위 검증은 서비스 계층에서 처리합니다.
  */
 @Getter
 @Setter

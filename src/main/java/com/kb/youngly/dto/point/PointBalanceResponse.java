@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 사용자의 현재 포인트 잔액 응답입니다.
+ * 인증된 사용자의 현재 포인트 잔액만 반환합니다.
  */
 @Getter
 @AllArgsConstructor
