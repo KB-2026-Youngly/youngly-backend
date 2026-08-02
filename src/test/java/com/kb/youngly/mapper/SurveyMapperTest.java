@@ -1,6 +1,5 @@
 package com.kb.youngly.mapper;
 
-import com.kb.youngly.dto.auth.InterestOptionDTO;
 import com.kb.youngly.dto.survey.SurveyQuestionDTO;
 import com.kb.youngly.vo.survey.SurveyResultVO;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +14,6 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,9 +53,6 @@ class SurveyMapperTest {
                     "test02@example.com",
                     "encoded-password-02"
             );
-
-            insertTestInterest(conn, 1L, "관심사1", false);
-            insertTestInterest(conn, 2L, "관심사2", false);
         }
     }
 
@@ -92,30 +87,6 @@ class SurveyMapperTest {
             ps.setString(6, password);
             ps.setString(7, "ACTIVE");
             ps.setLong(8, 0L);
-            ps.executeUpdate();
-        }
-    }
-
-    /**
-     * survey_result_interest FK 테스트용 관심사 데이터.
-     * interest_id 1, 2가 없으면 세 번째 테스트가 실패한다.
-     */
-    private void insertTestInterest(
-            Connection conn,
-            Long interestId,
-            String interestName,
-            boolean isInvestment
-    ) throws Exception {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO interests (interest_id, interest_name, is_investment) " +
-                        "VALUES (?, ?, ?) " +
-                        "ON DUPLICATE KEY UPDATE " +
-                        "interest_name = VALUES(interest_name), " +
-                        "is_investment = VALUES(is_investment)"
-        )) {
-            ps.setLong(1, interestId);
-            ps.setString(2, interestName);
-            ps.setBoolean(3, isInvestment);
             ps.executeUpdate();
         }
     }
@@ -161,36 +132,5 @@ class SurveyMapperTest {
         assertEquals(userId, latestResult.getUserId());
         assertEquals(surveyResult.getTotalScore(), latestResult.getTotalScore());
         assertEquals(surveyResult.getBaseline(), latestResult.getBaseline());
-    }
-
-    @Test
-    @DisplayName("설문 결과와 관심사 매핑을 저장하고 다시 조회할 수 있다")
-    void insertSurveyResultInterest_and_selectInterestsBySurveyResultId_success() {
-        String userId = "test_user_02";
-
-        SurveyResultVO surveyResult = new SurveyResultVO();
-        surveyResult.setUserId(userId);
-        surveyResult.setAnswersJson("[{\"questionId\":1,\"choiceId\":1}]");
-        surveyResult.setTotalScore(5);
-        surveyResult.setBaseline("신중한 저축형");
-        surveyResult.setSubmittedAt(LocalDateTime.now());
-        surveyResult.setCalculatedAt(LocalDateTime.now());
-
-        surveyMapper.insertSurveyResult(surveyResult);
-
-        Long surveyResultId = surveyResult.getSurveyResultId();
-        assertNotNull(surveyResultId);
-
-        List<Long> interestIds = Arrays.asList(1L, 2L);
-        int insertCount = surveyMapper.insertSurveyResultInterest(surveyResultId, interestIds);
-
-        assertEquals(interestIds.size(), insertCount);
-
-        List<InterestOptionDTO> interests =
-                surveyMapper.selectInterestsBySurveyResultId(surveyResultId);
-
-        assertNotNull(interests);
-        assertFalse(interests.isEmpty());
-        assertEquals(interestIds.size(), interests.size());
     }
 }

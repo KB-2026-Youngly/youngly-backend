@@ -4,6 +4,7 @@ import com.kb.youngly.dto.survey.SurveyAnswerDTO;
 import com.kb.youngly.dto.survey.SurveySubmitRequestDTO;
 import com.kb.youngly.dto.survey.SurveySubmitResponseDTO;
 import com.kb.youngly.mapper.SurveyMapper;
+import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.vo.survey.SurveyResultVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,9 @@ class SurveyServiceTest {
 
     @Mock
     private SurveyMapper surveyMapper;
+
+    @Mock
+    private UserMapper userMapper;
 
     @InjectMocks
     private SurveyService surveyService;

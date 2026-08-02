@@ -11,6 +11,7 @@ import com.kb.youngly.dto.survey.SurveySubmitRequestDTO;
 import com.kb.youngly.dto.survey.SurveySubmitResponseDTO;
 import com.kb.youngly.enums.Baseline;
 import com.kb.youngly.mapper.SurveyMapper;
+import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.vo.survey.SurveyResultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class SurveyService {
     private static final int REQUIRED_ANSWER_COUNT = 6;
 
     private final SurveyMapper surveyMapper;
+    private final UserMapper userMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional(readOnly = true)
@@ -69,11 +71,6 @@ public class SurveyService {
 
         surveyMapper.insertSurveyResult(result);
 
-        List<Long> interestIds = request.getInterestIds();
-        if (!CollectionUtils.isEmpty(interestIds)) {
-            surveyMapper.insertSurveyResultInterest(result.getSurveyResultId(), interestIds);
-        }
-
         return new SurveySubmitResponseDTO(result.getSurveyResultId(), baseline, totalScore);
     }
 
@@ -84,8 +81,7 @@ public class SurveyService {
             throw new NoSuchElementException("최신 설문 결과가 없습니다.");
         }
 
-        List<InterestOptionDTO> interests =
-                surveyMapper.selectInterestsBySurveyResultId(result.getSurveyResultId());
+        List<InterestOptionDTO> interests = userMapper.selectInterestsByUserId(userId);
 
         SurveyResultDTO dto = new SurveyResultDTO();
         dto.setSurveyResultId(result.getSurveyResultId());

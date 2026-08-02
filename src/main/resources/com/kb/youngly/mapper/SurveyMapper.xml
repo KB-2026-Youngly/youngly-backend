@@ -73,31 +73,6 @@
         LIMIT 1
     </select>
 
-    <insert id="insertSurveyResultInterest">
-        INSERT INTO survey_result_interest (
-        survey_result_id,
-        interest_id
-        )
-        VALUES
-        <foreach collection="interestIds" item="interestId" separator=",">
-            (#{surveyResultId}, #{interestId})
-        </foreach>
-    </insert>
-
-    <select id="selectInterestsBySurveyResultId"
-            parameterType="long"
-            resultType="com.kb.youngly.dto.auth.InterestOptionDTO">
-        SELECT i.interest_id,
-               i.interest_name,
-               i.is_investment AS investment,
-               i.created_at
-        FROM survey_result_interest sri
-                 INNER JOIN interests i
-                            ON i.interest_id = sri.interest_id
-        WHERE sri.survey_result_id = #{surveyResultId}
-        ORDER BY i.interest_id ASC
-    </select>
-
     <select id="selectChoiceScore" resultType="java.lang.Integer">
         SELECT c.score
         FROM survey_choices c
