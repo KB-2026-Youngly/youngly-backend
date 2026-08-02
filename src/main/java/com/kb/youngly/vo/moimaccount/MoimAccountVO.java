@@ -1,5 +1,6 @@
-package com.kb.youngly.vo.account;
+package com.kb.youngly.vo.moimaccount;
 
+import com.kb.youngly.enums.MoimAccountStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,10 +13,18 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MoimAccountVO {
+
     private String moimAccountId;
+
     private String userId;
+
     private String kbAccountId;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+
     private String accountName;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    private MoimAccountStatus accountStatus;
 }
