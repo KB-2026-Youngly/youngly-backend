@@ -15,8 +15,12 @@ public interface AccountService {
 
     // 대표 계좌 조회
     AccountDTO getAccount(String userId, AccountType accountType);
+
     // 계좌 변경
     void update(String accountId, AccountUpdateDTO dto);
+
+    // 개인연금 사용 상태 변경
+    void updatePensionStatus(String accountId, PensionStatusUpdateDTO dto);
 
     // 계좌 삭제
     void delete(String accountId);

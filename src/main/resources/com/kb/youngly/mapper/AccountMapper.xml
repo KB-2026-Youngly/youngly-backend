@@ -46,27 +46,10 @@
         UPDATE accounts
         SET
             kb_account_id = #{kbAccountId},
-            account_status = #{accountStatus},
             account_name = #{accountName}
         WHERE account_id = #{accountId}
 
     </update>
-    <select id="findByAccountId"
-            resultType="com.kb.youngly.dto.account.AccountDTO">
-
-        SELECT
-            a.account_id,
-            k.account_type,
-            k.account_number,
-            k.bank_name,
-            k.balance,
-            a.account_status
-        FROM accounts a
-                 JOIN kb_accounts k
-                      ON a.kb_account_id = k.kb_account_id
-        WHERE a.account_id = #{accountId}
-
-    </select>
     <delete id="delete">
 
         DELETE
@@ -74,4 +57,31 @@
         WHERE account_id = #{accountId}
 
     </delete>
+
+    <select id="findById"
+            resultType="com.kb.youngly.vo.account.AccountDetailVO">
+
+        SELECT
+            a.account_id,
+            a.user_id,
+            a.kb_account_id,
+            k.account_type,
+            a.account_status,
+            a.account_name,
+            a.created_at,
+            a.updated_at
+        FROM accounts a
+                 INNER JOIN kb_accounts k
+                            ON a.kb_account_id = k.kb_account_id
+        WHERE a.account_id = #{accountId}
+
+    </select>
+    <update id="updateAccountStatus">
+
+        UPDATE accounts
+        SET account_status = #{accountStatus}
+        WHERE account_id = #{accountId}
+
+    </update>
+
 </mapper>

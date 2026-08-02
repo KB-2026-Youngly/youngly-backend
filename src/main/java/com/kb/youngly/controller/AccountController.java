@@ -70,4 +70,15 @@ public class AccountController {
                 Map.of("message", "Success")
         );
     }
+    @PatchMapping("/{accountId}/status")
+    public ResponseEntity<Map<String, String>> updatePensionStatus(
+            @PathVariable String accountId,
+            @RequestBody PensionStatusUpdateDTO dto) {
+
+        accountService.updatePensionStatus(accountId, dto);
+
+        return ResponseEntity.ok(
+                Map.of("message", "Success")
+        );
+    }
 }

@@ -7,6 +7,7 @@ import com.kb.youngly.mapper.AccountMapper;
 import com.kb.youngly.mapper.KbAccountMapper;
 import com.kb.youngly.service.AccountService;
 import com.kb.youngly.util.IdGenerator;
+import com.kb.youngly.vo.account.AccountDetailVO;
 import com.kb.youngly.vo.account.AccountVO;
 import com.kb.youngly.vo.account.KbAccountVO;
 import org.springframework.stereotype.Service;
@@ -51,14 +52,11 @@ public class AccountServiceImpl implements AccountService {
 
         validateDuplicateAccount(userId, kbAccount.getAccountType());
 
-        validateAccountStatus(
-                kbAccount.getAccountType(),
-                dto.getAccountStatus()
-        );
-
         AccountVO account = createAccount(dto, userId, kbAccount);
 
         accountMapper.insert(account);
+
+        syncDepositAccountStatus(userId);
 
         return account.getAccountId();
     }
@@ -82,7 +80,8 @@ public class AccountServiceImpl implements AccountService {
 
         KbAccountVO kbAccount =
                 getKbAccount(dto.getKbAccountId());
-        AccountDTO currentAccount =
+
+        AccountDetailVO currentAccount =
                 getCurrentAccount(accountId);
 
         validateAccountType(
@@ -90,15 +89,9 @@ public class AccountServiceImpl implements AccountService {
                 kbAccount.getAccountType()
         );
 
-        validateAccountStatus(
-                kbAccount.getAccountType(),
-                dto.getAccountStatus()
-        );
-
         AccountVO account = AccountVO.builder()
                 .accountId(accountId)
                 .kbAccountId(dto.getKbAccountId())
-                .accountStatus(dto.getAccountStatus())
                 .accountName(
                         kbAccount.getBankName()
                                 + " "
@@ -107,13 +100,15 @@ public class AccountServiceImpl implements AccountService {
                 .build();
 
         accountMapper.update(account);
+
+        syncDepositAccountStatus(currentAccount.getUserId());
     }
 
     @Override
     public void delete(String accountId) {
 
         // 1. 계좌 조회
-        AccountDTO account = accountMapper.findByAccountId(accountId);
+        AccountDetailVO account = getCurrentAccount(accountId);
 
         if (account == null) {
             throw new IllegalArgumentException("등록된 계좌가 없습니다.");
@@ -126,6 +121,7 @@ public class AccountServiceImpl implements AccountService {
 
         // 3. 삭제
         accountMapper.delete(accountId);
+        syncDepositAccountStatus(account.getUserId());
     }
     private KbAccountVO getKbAccount(String kbAccountId) {
 
@@ -141,7 +137,9 @@ public class AccountServiceImpl implements AccountService {
                                     String userId,
                                     KbAccountVO kbAccount) {
 
-        AccountVO account = dto.toVO();
+        AccountVO account = AccountVO.builder()
+                .kbAccountId(dto.getKbAccountId())
+                .build();
 
         account.setAccountId(IdGenerator.generateAccountId());
 
@@ -151,35 +149,15 @@ public class AccountServiceImpl implements AccountService {
                 kbAccount.getBankName() + " " + kbAccount.getAccountNumber()
         );
 
-        return account;
-    }
-
-    private void validateAccountStatus(AccountType accountType,
-                                       AccountStatus accountStatus) {
-
-        switch (accountType) {
-
-            case DEPOSIT:
-                if (accountStatus != AccountStatus.OUTCOME &&
-                        accountStatus != AccountStatus.INOUTCOME) {
-
-                    throw new IllegalArgumentException("입출금 계좌의 상태가 올바르지 않습니다.");
-                }
-                break;
-
-            case PENSION:
-                if (accountStatus != AccountStatus.NONE &&
-                        accountStatus != AccountStatus.INCOME) {
-
-                    throw new IllegalArgumentException("연금 계좌의 상태가 올바르지 않습니다.");
-                }
-                break;
-
-            default:
-                throw new IllegalArgumentException("등록할 수 없는 계좌입니다.");
+        if (kbAccount.getAccountType() == AccountType.DEPOSIT) {
+            account.setAccountStatus(AccountStatus.INOUTCOME);
+        } else if (kbAccount.getAccountType() == AccountType.PENSION) {
+            account.setAccountStatus(AccountStatus.NONE);
         }
-    }
 
+        return account;
+
+    }
     private void validateDuplicateAccount(String userId,
                                           AccountType accountType) {
 
@@ -192,12 +170,12 @@ public class AccountServiceImpl implements AccountService {
             );
         }
     }
-    private AccountDTO getCurrentAccount(String accountId){
+    private AccountDetailVO getCurrentAccount(String accountId) {
 
-        AccountDTO account =
-                accountMapper.findByAccountId(accountId);
+        AccountDetailVO account =
+                accountMapper.findById(accountId);
 
-        if(account == null){
+        if (account == null) {
             throw new IllegalArgumentException("등록된 계좌가 없습니다.");
         }
 
@@ -212,5 +190,75 @@ public class AccountServiceImpl implements AccountService {
             );
         }
 
+    }
+    private void syncDepositAccountStatus(String userId) {
+
+        AccountDTO deposit =
+                accountMapper.findByUserIdAndType(
+                        userId,
+                        AccountType.DEPOSIT
+                );
+
+        if (deposit == null) {
+            return;
+        }
+
+        AccountDTO pension =
+                accountMapper.findByUserIdAndType(
+                        userId,
+                        AccountType.PENSION
+                );
+
+        AccountStatus depositStatus = AccountStatus.INOUTCOME;
+
+        if (pension != null &&
+                pension.getAccountStatus() == AccountStatus.INCOME) {
+
+            depositStatus = AccountStatus.OUTCOME;
+        }
+
+        AccountVO account = AccountVO.builder()
+                .accountId(deposit.getAccountId())
+                .accountStatus(depositStatus)
+                .build();
+
+        accountMapper.updateAccountStatus(account);
+    }
+    @Override
+    public void updatePensionStatus(String accountId, PensionStatusUpdateDTO dto) {
+
+        AccountDetailVO account =
+                getCurrentAccount(accountId);
+
+        validatePensionAccount(account.getAccountType());
+
+        validatePensionStatus(dto.getAccountStatus());
+
+        AccountVO updateAccount = AccountVO.builder()
+                .accountId(accountId)
+                .accountStatus(dto.getAccountStatus())
+                .build();
+
+        accountMapper.updateAccountStatus(updateAccount);
+
+        syncDepositAccountStatus(account.getUserId());
+    }
+    private void validatePensionAccount(AccountType accountType) {
+
+        if (accountType != AccountType.PENSION) {
+            throw new IllegalArgumentException(
+                    "개인연금 계좌만 상태를 변경할 수 있습니다."
+            );
+        }
+    }
+    private void validatePensionStatus(AccountStatus accountStatus) {
+
+        if (accountStatus != AccountStatus.INCOME &&
+                accountStatus != AccountStatus.NONE) {
+
+            throw new IllegalArgumentException(
+                    "연금 계좌는 INCOME 또는 NONE만 선택할 수 있습니다."
+            );
+        }
     }
 }
