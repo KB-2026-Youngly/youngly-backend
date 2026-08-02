@@ -13,6 +13,9 @@ import java.util.List;
 @Getter
 @Setter
 public class SurveySubmitRequestDTO {
-    /** 사용자가 제출한 답변 목록 */
+    /** 사용자가 제출한 답변 목록 (정확히 6문항) */
     private List<SurveyAnswerDTO> answers;
+
+    /** 설문과 함께 선택한 관심사 ID 목록 (interests.interest_id) */
+    private List<Long> interestIds;
 }

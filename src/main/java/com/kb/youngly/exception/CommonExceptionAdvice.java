@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * 전역 예외 처리기.
@@ -35,6 +36,13 @@ public class CommonExceptionAdvice {
                                                                 HttpServletRequest request) {
         log.warn("[WARN] 잘못된 요청. message={}", e.getMessage());
         return build(HttpStatus.BAD_REQUEST, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFoundResource(NoSuchElementException e,
+                                                                      HttpServletRequest request) {
+        log.warn("[WARN] 리소스 없음. message={}", e.getMessage());
+        return build(HttpStatus.NOT_FOUND, e.getMessage(), request);
     }
 
     @ExceptionHandler(Exception.class)

@@ -144,7 +144,7 @@ class SurveyMapperTest {
         surveyResult.setUserId(userId);
         surveyResult.setAnswersJson("[{\"questionId\":1,\"choiceId\":2}]");
         surveyResult.setTotalScore(10);
-        surveyResult.setBaseline("AGGRESSIVE");
+        surveyResult.setBaseline("적극적인 성장형");
         surveyResult.setSubmittedAt(LocalDateTime.now());
         surveyResult.setCalculatedAt(LocalDateTime.now());
 
@@ -172,7 +172,7 @@ class SurveyMapperTest {
         surveyResult.setUserId(userId);
         surveyResult.setAnswersJson("[{\"questionId\":1,\"choiceId\":1}]");
         surveyResult.setTotalScore(5);
-        surveyResult.setBaseline("STABLE");
+        surveyResult.setBaseline("신중한 저축형");
         surveyResult.setSubmittedAt(LocalDateTime.now());
         surveyResult.setCalculatedAt(LocalDateTime.now());
 

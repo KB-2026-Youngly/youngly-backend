@@ -19,4 +19,12 @@ public interface SurveyMapper {
                                    @Param("interestIds") List<Long> interestIds);
 
     List<InterestOptionDTO> selectInterestsBySurveyResultId(@Param("surveyResultId") Long surveyResultId);
+
+    Integer selectChoiceScore(@Param("questionNo") int questionNo,
+                              @Param("choiceId") long choiceId);
+
+    int countChoiceByQuestionNoAndChoiceId(@Param("questionNo") int questionNo,
+                                           @Param("choiceId") long choiceId);
+
+    List<InterestOptionDTO> selectAllInterests();
 }
