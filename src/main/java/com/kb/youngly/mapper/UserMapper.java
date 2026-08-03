@@ -2,7 +2,7 @@ package com.kb.youngly.mapper;
 
 import com.kb.youngly.vo.user.UserVO;
 import com.kb.youngly.dto.auth.InterestOptionDTO;
-import com.kb.youngly.vo.UserVO;
+//import com.kb.youngly.vo.UserVO;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
