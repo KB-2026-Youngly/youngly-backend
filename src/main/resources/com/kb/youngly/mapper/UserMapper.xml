@@ -31,22 +31,28 @@
         INSERT INTO users (
             user_id,
             name,
+            birthday,
             login_id,
             nickname,
             email,
             profile_image_url,
             created_at,
-            password
+            password,
+            user_status,
+            point
         )
         VALUES (
                    #{userId},
                    #{name},
+                   #{birthday},
                    #{loginId},
                    #{nickname},
                    #{email},
                    #{profileImageUrl},
                    NOW(),
-                   #{password}
+                   #{password},
+                   'ACTIVE',
+                   0
                )
 
     </insert>
@@ -58,6 +64,7 @@
         SELECT
             user_id,
             name,
+            birthday,
             login_id,
             nickname,
             email,
@@ -80,6 +87,7 @@
         SELECT
             user_id,
             name,
+            birthday,
             login_id,
             nickname,
             email,
@@ -103,6 +111,7 @@
             profile_image_url = #{profileImageUrl},
             updated_at = NOW()
         WHERE user_id = #{userId}
+
     </update>
 
     <update id="updatePassword"
@@ -113,6 +122,7 @@
             password = #{password},
             updated_at = NOW()
         WHERE user_id = #{userId}
+
     </update>
 
     <update id="deactivateUser"
@@ -150,5 +160,6 @@
         WHERE iu.user_id = #{userId}
         ORDER BY i.interest_id ASC
     </select>
+
 
 </mapper>
