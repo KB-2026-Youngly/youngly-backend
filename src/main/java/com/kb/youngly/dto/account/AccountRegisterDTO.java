@@ -13,14 +13,4 @@ import lombok.NoArgsConstructor;
 public class AccountRegisterDTO {
 
     private String kbAccountId;
-
-    private AccountStatus accountStatus;
-
-    public AccountVO toVO() {
-
-        return AccountVO.builder()
-                .kbAccountId(kbAccountId)
-                .accountStatus(accountStatus)
-                .build();
-    }
 }

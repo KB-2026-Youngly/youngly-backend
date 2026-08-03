@@ -2,6 +2,7 @@ package com.kb.youngly.mapper;
 
 import com.kb.youngly.dto.account.AccountDTO;
 import com.kb.youngly.enums.AccountType;
+import com.kb.youngly.vo.account.AccountDetailVO;
 import com.kb.youngly.vo.account.AccountVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,9 +20,11 @@ public interface AccountMapper {
     // 대표 계좌 변경
     int update(AccountVO account);
 
-    // accountId로 계좌 조회(개인 입출금 X, 개인 연금 O)
-    AccountDTO findByAccountId(String accountId);
-
     // 계좌 삭제
     int delete(String accountId);
+
+    int updateAccountStatus(AccountVO account);
+
+    AccountDetailVO findById(String accountId);
+
 }
