@@ -1,5 +1,7 @@
 package com.kb.youngly.service.impl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.kb.youngly.dto.auth.LoginRequest;
@@ -12,6 +14,8 @@ import com.kb.youngly.service.AuthService;
 import com.kb.youngly.vo.user.UserVO;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -30,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public SignupResponse signup(SignupRequest signupRequest) {
 
         // 로그인 아이디 중복 검사
@@ -64,6 +69,14 @@ public class AuthServiceImpl implements AuthService {
         // 회원 저장
         userMapper.insertUser(userVO);
 
+        List<Long> interestIds = mergeInterestIds(
+                signupRequest.getInterestIds(),
+                signupRequest.getInvestmentInterestIds()
+        );
+        if (!CollectionUtils.isEmpty(interestIds)) {
+            userMapper.insertUserInterests(userVO.getUserId(), interestIds);
+        }
+
         return new SignupResponse(
                 userVO.getUserId(),
                 userVO.getLoginId(),
@@ -96,5 +109,16 @@ public class AuthServiceImpl implements AuthService {
                 user.getLoginId(),
                 user.getNickname()
         );
+    }
+
+    private List<Long> mergeInterestIds(List<Long> interestIds, List<Long> investmentInterestIds) {
+        List<Long> merged = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(interestIds)) {
+            merged.addAll(interestIds);
+        }
+        if (!CollectionUtils.isEmpty(investmentInterestIds)) {
+            merged.addAll(investmentInterestIds);
+        }
+        return merged;
     }
 }

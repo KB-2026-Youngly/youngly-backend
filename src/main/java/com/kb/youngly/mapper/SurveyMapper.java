@@ -15,8 +15,11 @@ public interface SurveyMapper {
 
     SurveyResultVO selectLatestResultByUserId(@Param("userId") String userId);
 
-    int insertSurveyResultInterest(@Param("surveyResultId") Long surveyResultId,
-                                   @Param("interestIds") List<Long> interestIds);
+    Integer selectChoiceScore(@Param("questionNo") int questionNo,
+                              @Param("choiceId") long choiceId);
 
-    List<InterestOptionDTO> selectInterestsBySurveyResultId(@Param("surveyResultId") Long surveyResultId);
+    int countChoiceByQuestionNoAndChoiceId(@Param("questionNo") int questionNo,
+                                           @Param("choiceId") long choiceId);
+
+    List<InterestOptionDTO> selectAllInterests();
 }

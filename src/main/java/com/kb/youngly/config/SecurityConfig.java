@@ -55,7 +55,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/swagger-ui.html",
                         "/webjars/**",
                         "/v2/api-docs",
-                        "/swagger-resources/**"
+                        "/swagger-resources/**",
+                        "/api/surveys/questions"   // 설문 문항 조회는 공개
                 ).permitAll()
 
                 .anyRequest().authenticated()
