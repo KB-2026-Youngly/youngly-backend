@@ -8,6 +8,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * 보유 캐릭터 목록 API의 외부 응답 DTO이다.
+ * 캐릭터 공개 정보와 획득 일시만 노출한다.
+ */
 @Getter
 @Builder
 @NoArgsConstructor

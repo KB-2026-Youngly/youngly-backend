@@ -4,6 +4,8 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kb.youngly.mapper.CharacterMapper">
 
+    <!-- 캐릭터 뽑기와 보유 목록 조회에 필요한 SQL 매핑을 정의한다. -->
+
     <!-- 보유 캐릭터 조회 결과를 응답용 VO 필드에 매핑한다. -->
     <resultMap id="ownedCharacterMap" type="com.kb.youngly.vo.character.OwnedCharacterVO">
         <id property="characterId" column="item_id"/>

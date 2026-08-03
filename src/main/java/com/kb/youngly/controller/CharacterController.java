@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * 인증된 사용자의 캐릭터 랜덤 획득과 보유 캐릭터 조회 HTTP API를 제공한다.
+ * 요청의 인증 정보에 담긴 사용자 ID를 서비스 계층에 전달한다.
+ */
 @RestController
 @RequestMapping("/api/characters")
 public class CharacterController {
@@ -22,6 +26,10 @@ public class CharacterController {
         this.characterService = characterService;
     }
 
+    /**
+     * 요청 본문 없이 인증된 사용자의 캐릭터 뽑기를 처리하고
+     * 획득한 캐릭터 정보와 변경 후 포인트 잔액을 반환한다.
+     */
     @PostMapping("/draw")
     public ResponseEntity<CharacterDrawResponse> drawCharacter(Authentication authentication) {
         return ResponseEntity.ok(
@@ -29,6 +37,9 @@ public class CharacterController {
         );
     }
 
+    /**
+     * 인증된 사용자가 보유한 캐릭터 목록을 최근 획득순으로 반환한다.
+     */
     @GetMapping("/owned")
     public ResponseEntity<List<OwnedCharacterResponse>> getOwnedCharacters(
             Authentication authentication) {
