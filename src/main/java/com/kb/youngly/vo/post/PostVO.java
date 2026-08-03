@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.post;
 
 import com.kb.youngly.enums.PostStatus;
 import lombok.AllArgsConstructor;

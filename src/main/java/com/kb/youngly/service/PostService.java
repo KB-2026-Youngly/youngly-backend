@@ -3,7 +3,7 @@ package com.kb.youngly.service;
 import com.kb.youngly.dto.*;
 import com.kb.youngly.mapper.PostMapper;
 import com.kb.youngly.util.FileUploadUtil;
-import com.kb.youngly.vo.PostVO;
+import com.kb.youngly.vo.post.PostVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

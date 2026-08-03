@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.point;
 
 import com.kb.youngly.enums.AccPart;
 import com.kb.youngly.enums.BaseCharacter;

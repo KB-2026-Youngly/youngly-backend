@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.point;
 
 import com.kb.youngly.enums.PointType;
 import lombok.AllArgsConstructor;

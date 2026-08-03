@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.account;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,9 +1,8 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.account;
 
 import com.kb.youngly.enums.TransactionType;
 import com.kb.youngly.enums.TransactionCategory;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
