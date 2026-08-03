@@ -14,4 +14,8 @@ public interface UserMapper {
     UserVO findByLoginId(@Param("loginId") String loginId);
 
     UserVO findByUserId(@Param("userId") String userId);
+
+    void deactivateUser(String userId);
+    void updatePassword(UserVO user);
+    void updateUser(UserVO userVO);
 }

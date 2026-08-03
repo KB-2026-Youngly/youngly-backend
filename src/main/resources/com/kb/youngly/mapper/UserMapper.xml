@@ -69,6 +69,7 @@
             point
         FROM users
         WHERE login_id = #{loginId}
+          AND user_status = 'ACTIVE'
 
     </select>
 
@@ -93,4 +94,35 @@
 
     </select>
 
+    <update id="updateUser"
+            parameterType="com.kb.youngly.vo.UserVO">
+
+        UPDATE users
+        SET
+            nickname = #{nickname},
+            profile_image_url = #{profileImageUrl},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+  
+    <update id="updatePassword"
+            parameterType="com.kb.youngly.vo.UserVO">
+      
+        UPDATE users
+        SET
+            password = #{password},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+  
+    <update id="deactivateUser"
+            parameterType="string">
+
+        UPDATE users
+        SET
+            user_status = 'DEACTIVATED',
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+      
+    </update>
 </mapper>
