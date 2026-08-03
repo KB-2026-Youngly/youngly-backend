@@ -55,11 +55,10 @@ public class AuthServiceImpl implements AuthService {
         userVO.setLoginId(signupRequest.getLoginId());
 
         // 비밀번호 암호화
-        userVO.setPassword(
-                passwordEncoder.encode(signupRequest.getPassword())
-        );
+        userVO.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
 
         userVO.setName(signupRequest.getName());
+        userVO.setBirthday(signupRequest.getBirthday());
         userVO.setNickname(signupRequest.getNickname());
         userVO.setEmail(signupRequest.getEmail());
 
@@ -100,7 +99,6 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        // JWT Access Token 생성
         String accessToken = jwtTokenProvider.createToken(user.getUserId());
 
         return new LoginResponse(

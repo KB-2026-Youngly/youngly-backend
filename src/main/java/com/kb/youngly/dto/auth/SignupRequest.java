@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -16,6 +17,7 @@ public class SignupRequest {
     private String name;
     private String nickname;
     private String email;
+    private LocalDate birthday;
 
     /**
      * 사용자가 선택한 일반 관심사 ID 목록
