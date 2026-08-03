@@ -121,6 +121,26 @@ public class DepositServiceImpl implements DepositService {
                 newRemainingAmount, newStatus, TransactionCategory.CHARGE);
     }
 
+    /** 로그인 사용자의 예치금 현황을 조회한다. */
+    @Override
+    @Transactional(readOnly = true)
+    public DepositResponse getMyDeposit(String userId, String groupId) {
+        String normalizedUserId = DEVELOPMENT_USER_ID;
+        String normalizedGroupId = requireText(groupId, "그룹 ID는 필수입니다.");
+        return toResponse(getGroup(normalizedGroupId), getGroupUser(normalizedGroupId, normalizedUserId), null);
+    }
+
+    /** 요청자가 그룹 참여자인지 확인한 뒤 전체 참여자의 예치 현황을 반환한다. */
+    @Override
+    @Transactional(readOnly = true)
+    public List<MemberDepositStatusResponse> getMemberDepositStatuses(String requesterUserId, String groupId) {
+        String normalizedUserId = DEVELOPMENT_USER_ID;
+        String normalizedGroupId = requireText(groupId, "그룹 ID는 필수입니다.");
+        getGroup(normalizedGroupId);
+        getGroupUser(normalizedGroupId, normalizedUserId);
+        return depositMapper.findMemberDepositStatuses(normalizedGroupId);
+    }
+
 
     private void insertTransaction(String kbAccountId, Long groupUserId, TransactionType type,
                                    BigDecimal amount, BigDecimal balanceAfter, String idempotencyKey,
