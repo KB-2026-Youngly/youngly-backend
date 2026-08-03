@@ -6,6 +6,7 @@ import com.kb.youngly.dto.user.UserResponse;
 import com.kb.youngly.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +33,12 @@ public class UserController {
         );
     }
 
+    @DeleteMapping("/me")
+    public ResponseEntity<MessageResponse> deleteUser(
+            Authentication authentication) {
+
+        return ResponseEntity.ok(
+                userService.deleteUser(authentication.getName())
     @PutMapping("/password")
     public ResponseEntity<MessageResponse> updatePassword(
             Authentication authentication,

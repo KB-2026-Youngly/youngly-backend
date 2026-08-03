@@ -69,6 +69,7 @@
             point
         FROM users
         WHERE login_id = #{loginId}
+          AND user_status = 'ACTIVE'
 
     </select>
 
@@ -112,5 +113,16 @@
             password = #{password},
             updated_at = NOW()
         WHERE user_id = #{userId}
+    </update>
+  
+    <update id="deactivateUser"
+            parameterType="string">
+
+        UPDATE users
+        SET
+            user_status = 'DEACTIVATED',
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+      
     </update>
 </mapper>

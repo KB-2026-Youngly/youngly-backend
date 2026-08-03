@@ -9,6 +9,7 @@ public interface UserService {
 
     UserResponse getMyInfo(String userId);
 
+    MessageResponse deleteUser(String userId);
     MessageResponse updatePassword(String userId,
                                    UpdatePasswordRequest request);
     MessageResponse updateUser(String userId, UpdateUserRequest request);
