@@ -74,3 +74,382 @@ INSERT INTO `interests` (`interest_id`, `interest_name`, `is_investment`) VALUES
       (18, '자기계발', FALSE),
       (19, '음악/공연', FALSE),
       (20, '재테크/경제', FALSE);
+      
+      
+-- ==================================================
+-- MOCK 종합 데이터
+-- ============================================================================
+USE youngly_db;
+
+-- ============================================================================
+-- 1. 사용자
+-- ============================================================================
+INSERT INTO users (
+    user_id,
+    name,
+    login_id,
+    nickname,
+    email,
+    profile_image_url,
+    created_at,
+    updated_at,
+    password,
+    user_status,
+    point,
+    birthday
+) VALUES
+    ('user01', '김민준', 'minjun01', '민준', 'minjun01@youngly.test', NULL,
+     '2026-06-01 09:00:00', '2026-07-31 09:00:00', 'user01', 'ACTIVE', 60, '1998-03-12 00:00:00'),
+    ('user02', '이서연', 'seoyeon02', '서연', 'seoyeon02@youngly.test', NULL,
+     '2026-06-02 09:00:00', '2026-07-31 09:00:00', 'user02', 'ACTIVE', 50, '1999-07-21 00:00:00'),
+    ('user03', '박지훈', 'jihoon03', '지훈', 'jihoon03@youngly.test', NULL,
+     '2026-06-03 09:00:00', '2026-07-31 09:00:00', 'user03', 'ACTIVE', 80, '1997-11-05 00:00:00'),
+    ('user04', '최유진', 'yujin04', '유진', 'yujin04@youngly.test', NULL,
+     '2026-06-04 09:00:00', '2026-07-31 09:00:00', 'user04', 'ACTIVE', 40, '2000-01-18 00:00:00'),
+    ('user05', '정하늘', 'haneul05', '하늘', 'haneul05@youngly.test', NULL,
+     '2026-06-05 09:00:00', '2026-07-31 09:00:00', 'user05', 'ACTIVE', 70, '1998-09-30 00:00:00'),
+    ('user06', '강도윤', 'doyun06', '도윤', 'doyun06@youngly.test', NULL,
+     '2026-06-06 09:00:00', '2026-07-31 09:00:00', 'user06', 'ACTIVE', 30, '1999-05-09 00:00:00'),
+    ('user07', '송지아', 'jia07', '지아', 'jia07@youngly.test', NULL,
+     '2026-06-07 09:00:00', '2026-07-31 09:00:00', 'user07', 'ACTIVE', 90, '2001-02-14 00:00:00'),
+    ('user08', '오현우', 'hyunwoo08', '현우', 'hyunwoo08@youngly.test', NULL,
+     '2026-06-08 09:00:00', '2026-07-31 09:00:00', 'user08', 'ACTIVE', 45, '1998-12-03 00:00:00'),
+    ('user09', '임수빈', 'subin09', '수빈', 'subin09@youngly.test', NULL,
+     '2026-06-09 09:00:00', '2026-07-31 09:00:00', 'user09', 'ACTIVE', 55, '2000-06-25 00:00:00');
+
+-- ============================================================================
+-- 2. KB 원장 계좌
+--
+-- kb-signup-* 계좌는 아직 accounts에 연결하지 않는다.
+-- 회원가입 과정에서 실명/생년월일로 보유 계좌를 조회하고 연결하는 시나리오용이다.
+-- ============================================================================
+INSERT INTO kb_accounts (
+    kb_account_id,
+    account_type,
+    account_number,
+    bank_name,
+    balance,
+    interest_rate,
+    name,
+    birthday,
+    created_at,
+    updated_at
+) VALUES
+    -- user01
+    ('kb-deposit-01', 'DEPOSIT', '025202-00-005001', '국민', 1500000.00, 0.10, '김민준', '1998-03-12 00:00:00', '2025-01-10 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-pension-01', 'PENSION', '025202-11-220001', '국민', 5000000.00, 2.50, '김민준', '1998-03-12 00:00:00', '2025-02-10 09:00:00', '2026-07-31 09:00:00'),
+
+    -- user02
+    ('kb-deposit-02', 'DEPOSIT', '025202-00-005002', '국민', 1200000.00, 0.10, '이서연', '1999-07-21 00:00:00', '2025-01-11 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-pension-02', 'PENSION', '025202-11-220002', '국민', 4200000.00, 2.50, '이서연', '1999-07-21 00:00:00', '2025-02-11 09:00:00', '2026-07-31 09:00:00'),
+
+    -- user03
+    ('kb-deposit-03', 'DEPOSIT', '025202-00-005003', '국민', 1800000.00, 0.10, '박지훈', '1997-11-05 00:00:00', '2025-01-12 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-pension-03', 'PENSION', '025202-11-220003', '국민', 6500000.00, 2.50, '박지훈', '1997-11-05 00:00:00', '2025-02-12 09:00:00', '2026-07-31 09:00:00'),
+
+    -- user04
+    ('kb-deposit-04', 'DEPOSIT', '025202-00-005004', '국민', 900000.00, 0.10, '최유진', '2000-01-18 00:00:00', '2025-01-13 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-pension-04', 'PENSION', '025202-11-220004', '국민', 3100000.00, 2.50, '최유진', '2000-01-18 00:00:00', '2025-02-13 09:00:00', '2026-07-31 09:00:00'),
+
+    -- user05
+    ('kb-deposit-05', 'DEPOSIT', '025202-00-005005', '국민', 2100000.00, 0.10, '정하늘', '1998-09-30 00:00:00', '2025-01-14 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-pension-05', 'PENSION', '025202-11-220005', '국민', 7200000.00, 2.50, '정하늘', '1998-09-30 00:00:00', '2025-02-14 09:00:00', '2026-07-31 09:00:00'),
+
+    -- user06
+    ('kb-deposit-06', 'DEPOSIT', '025202-00-005006', '국민', 1350000.00, 0.10, '강도윤', '1999-05-09 00:00:00', '2025-01-15 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-pension-06', 'PENSION', '025202-11-220006', '국민', 4600000.00, 2.50, '강도윤', '1999-05-09 00:00:00', '2025-02-15 09:00:00', '2026-07-31 09:00:00'),
+
+    -- user07
+    ('kb-deposit-07', 'DEPOSIT', '025202-00-005007', '국민', 1950000.00, 0.10, '송지아', '2001-02-14 00:00:00', '2025-01-16 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-pension-07', 'PENSION', '025202-11-220007', '국민', 5300000.00, 2.50, '송지아', '2001-02-14 00:00:00', '2025-02-16 09:00:00', '2026-07-31 09:00:00'),
+
+    -- user08
+    ('kb-deposit-08', 'DEPOSIT', '025202-00-005008', '국민', 1650000.00, 0.10, '오현우', '1998-12-03 00:00:00', '2025-01-17 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-pension-08', 'PENSION', '025202-11-220008', '국민', 6100000.00, 2.50, '오현우', '1998-12-03 00:00:00', '2025-02-17 09:00:00', '2026-07-31 09:00:00'),
+
+    -- user09
+    ('kb-deposit-09', 'DEPOSIT', '025202-00-005009', '국민', 2300000.00, 0.10, '임수빈', '2000-06-25 00:00:00', '2025-01-18 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-pension-09', 'PENSION', '025202-11-220009', '국민', 6800000.00, 2.50, '임수빈', '2000-06-25 00:00:00', '2025-02-18 09:00:00', '2026-07-31 09:00:00'),
+
+    -- 모임통장 3개
+    ('kb-moim-01', 'MOIM', '025202-22-330001', '국민', 600000.00, 2.50, '김민준', '1998-03-12 00:00:00', '2026-06-20 10:00:00', '2026-07-29 09:00:00'),
+    ('kb-moim-02', 'MOIM', '025202-22-330002', '국민', 450000.00, 2.50, '최유진', '2000-01-18 00:00:00', '2026-06-21 10:00:00', '2026-07-29 09:10:00'),
+    ('kb-moim-03', 'MOIM', '025202-22-330003', '국민', 300000.00, 2.50, '송지아', '2001-02-14 00:00:00', '2026-06-22 10:00:00', '2026-07-29 09:20:00'),
+
+    -- 회원가입 및 최초 계좌 연결 API 테스트용: 아직 users/accounts에 미연결
+    ('kb-signup-deposit-01', 'DEPOSIT', '025202-00-009001', '국민', 2500000.00, 0.10, '윤도현', '2001-04-15 00:00:00', '2025-03-01 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-signup-pension-01', 'PENSION', '025202-11-229001', '국민', 3800000.00, 2.50, '윤도현', '2001-04-15 00:00:00', '2025-03-01 09:10:00', '2026-07-31 09:00:00'),
+    ('kb-signup-deposit-02', 'DEPOSIT', '025202-00-009002', '국민', 1750000.00, 0.10, '한소희', '2002-08-07 00:00:00', '2025-03-02 09:00:00', '2026-07-31 09:00:00'),
+    ('kb-signup-pension-02', 'PENSION', '025202-11-229002', '국민', 2900000.00, 2.50, '한소희', '2002-08-07 00:00:00', '2025-03-02 09:10:00', '2026-07-31 09:00:00');
+
+-- ============================================================================
+-- 3. 서비스에 연결된 개인 계좌
+--
+-- 홀수 사용자: 입출금=OUTCOME / 개인연금=INCOME
+-- 짝수 사용자: 입출금=INOUTCOME / 개인연금=NONE
+-- ============================================================================
+INSERT INTO accounts (
+    account_id,
+    user_id,
+    kb_account_id,
+    created_at,
+    account_status,
+    account_name,
+    updated_at
+) VALUES
+    ('account-user01-deposit', 'user01', 'kb-deposit-01', '2026-06-01 09:10:00', 'OUTCOME', '국민025202-00-005001', '2026-07-31 09:00:00'),
+    ('account-user01-pension', 'user01', 'kb-pension-01', '2026-06-01 09:11:00', 'INCOME', 'KB개인연금', '2026-07-31 09:00:00'),
+    ('account-user02-deposit', 'user02', 'kb-deposit-02', '2026-06-02 09:10:00', 'INOUTCOME', '국민025202-00-005002', '2026-07-31 09:00:00'),
+    ('account-user02-pension', 'user02', 'kb-pension-02', '2026-06-02 09:11:00', 'NONE', 'KB개인연금', '2026-07-31 09:00:00'),
+    ('account-user03-deposit', 'user03', 'kb-deposit-03', '2026-06-03 09:10:00', 'OUTCOME', '국민025202-00-005003', '2026-07-31 09:00:00'),
+    ('account-user03-pension', 'user03', 'kb-pension-03', '2026-06-03 09:11:00', 'INCOME', 'KB개인연금', '2026-07-31 09:00:00'),
+    ('account-user04-deposit', 'user04', 'kb-deposit-04', '2026-06-04 09:10:00', 'INOUTCOME', '국민025202-00-005004', '2026-07-31 09:00:00'),
+    ('account-user04-pension', 'user04', 'kb-pension-04', '2026-06-04 09:11:00', 'NONE', 'KB개인연금', '2026-07-31 09:00:00'),
+    ('account-user05-deposit', 'user05', 'kb-deposit-05', '2026-06-05 09:10:00', 'OUTCOME', '국민025202-00-005005', '2026-07-31 09:00:00'),
+    ('account-user05-pension', 'user05', 'kb-pension-05', '2026-06-05 09:11:00', 'INCOME', 'KB개인연금', '2026-07-31 09:00:00'),
+    ('account-user06-deposit', 'user06', 'kb-deposit-06', '2026-06-06 09:10:00', 'INOUTCOME', '국민025202-00-005006', '2026-07-31 09:00:00'),
+    ('account-user06-pension', 'user06', 'kb-pension-06', '2026-06-06 09:11:00', 'NONE', 'KB개인연금', '2026-07-31 09:00:00'),
+    ('account-user07-deposit', 'user07', 'kb-deposit-07', '2026-06-07 09:10:00', 'OUTCOME', '국민025202-00-005007', '2026-07-31 09:00:00'),
+    ('account-user07-pension', 'user07', 'kb-pension-07', '2026-06-07 09:11:00', 'INCOME', 'KB개인연금', '2026-07-31 09:00:00'),
+    ('account-user08-deposit', 'user08', 'kb-deposit-08', '2026-06-08 09:10:00', 'INOUTCOME', '국민025202-00-005008', '2026-07-31 09:00:00'),
+    ('account-user08-pension', 'user08', 'kb-pension-08', '2026-06-08 09:11:00', 'NONE', 'KB개인연금', '2026-07-31 09:00:00'),
+    ('account-user09-deposit', 'user09', 'kb-deposit-09', '2026-06-09 09:10:00', 'OUTCOME', '국민025202-00-005009', '2026-07-31 09:00:00'),
+    ('account-user09-pension', 'user09', 'kb-pension-09', '2026-06-09 09:11:00', 'INCOME', 'KB개인연금', '2026-07-31 09:00:00');
+
+-- ============================================================================
+-- 4. 모임통장 연결 정보
+-- ============================================================================
+INSERT INTO moim_accounts (
+    moim_account_id,
+    user_id,
+    kb_account_id,
+    created_at,
+    updated_at,
+    account_name
+) VALUES
+    ('moim-account-01', 'user01', 'kb-moim-01',
+     '2026-06-20 10:05:00', '2026-07-29 09:00:00', '국민025202-22-330001'),
+    ('moim-account-02', 'user04', 'kb-moim-02',
+     '2026-06-21 10:05:00', '2026-07-29 09:10:00', '국민025202-22-330002'),
+    ('moim-account-03', 'user07', 'kb-moim-03',
+     '2026-06-22 10:05:00', '2026-07-29 09:20:00', '국민025202-22-330003');
+
+-- ============================================================================
+-- 5. 그룹 3개
+-- ============================================================================
+INSERT INTO `groups` (
+    group_id,
+    moim_account_id,
+    user_id,
+    invite_code,
+    group_name,
+    group_count,
+    created_at,
+    custom_rule,
+    challenge_type,
+    content,
+    future_deposit_ratio_rule,
+    duration_days,
+    min_count,
+    round_cycle_days,
+    base_deposit_amount,
+    group_status,
+    updated_at
+) VALUES
+    ('group-exercise-01', 'moim-account-01', 'user01',
+     '11111111-1111-4111-8111-111111111111', '새벽 러닝 챌린지', 3,
+     '2026-06-20 11:00:00', '주 3회 이상 30분 러닝', 'EXERCISE',
+     '한 달 동안 함께 달리며 운동 습관을 만드는 모임',
+     '1:40/2:60/3:80', 7, 3, 28, 200000.00, 'ONGOING', '2026-07-31 09:00:00'),
+    ('group-study-01', 'moim-account-02', 'user04',
+     '22222222-2222-4222-8222-222222222222', '매일 코딩 챌린지', 3,
+     '2026-06-21 11:00:00', '하루 1커밋 또는 알고리즘 1문제', 'STUDY',
+     '매일 꾸준히 개발 공부를 인증하는 모임',
+     '1:50/2:70/3:90', 7, 5, 28, 150000.00, 'ONGOING', '2026-07-31 09:00:00'),
+    ('group-reading-01', 'moim-account-03', 'user07',
+     '33333333-3333-4333-8333-333333333333', '한 달 독서 챌린지', 3,
+     '2026-06-22 11:00:00', '주 4회 이상 20분 독서', 'READING',
+     '매일 책을 읽고 짧게 인증하는 독서 습관 모임',
+     '1:40/2:60/3:80', 7, 4, 28, 100000.00, 'ONGOING', '2026-07-31 09:00:00');
+
+-- ============================================================================
+-- 6. 그룹 이력 최초 스냅샷
+-- ============================================================================
+INSERT INTO group_history (
+    moim_account_id,
+    group_id,
+    group_history_version,
+    invite_code,
+    group_name,
+    group_count,
+    custom_rule,
+    challenge_type,
+    content,
+    future_deposit_ratio_rule,
+    duration_days,
+    min_count,
+    round_cycle_days,
+    base_deposit_amount,
+    group_status,
+    created_at
+) VALUES
+    ('moim-account-01', 'group-exercise-01', 1,
+     '11111111-1111-4111-8111-111111111111', '새벽 러닝 챌린지', 3,
+     '주 3회 이상 30분 러닝', 'EXERCISE',
+     '한 달 동안 함께 달리며 운동 습관을 만드는 모임',
+     '1:40/2:60/3:80', 7, 3, 28, 200000.00, 'ONGOING', '2026-06-20 11:00:00'),
+    ('moim-account-02', 'group-study-01', 1,
+     '22222222-2222-4222-8222-222222222222', '매일 코딩 챌린지', 3,
+     '하루 1커밋 또는 알고리즘 1문제', 'STUDY',
+     '매일 꾸준히 개발 공부를 인증하는 모임',
+     '1:50/2:70/3:90', 7, 5, 28, 150000.00, 'ONGOING', '2026-06-21 11:00:00'),
+    ('moim-account-03', 'group-reading-01', 1,
+     '33333333-3333-4333-8333-333333333333', '한 달 독서 챌린지', 3,
+     '주 4회 이상 20분 독서', 'READING',
+     '매일 책을 읽고 짧게 인증하는 독서 습관 모임',
+     '1:40/2:60/3:80', 7, 4, 28, 100000.00, 'ONGOING', '2026-06-22 11:00:00');
+
+-- ============================================================================
+-- 7. 그룹 참여자
+-- ============================================================================
+INSERT INTO group_users (
+    group_id,
+    user_id,
+    group_user_status,
+    approved_at,
+    current_deposit_amount,
+    streak_count,
+    created_at,
+    updated_at
+) VALUES
+    ('group-exercise-01', 'user01', 'ACTIVE', '2026-06-20 11:00:00', 200000.00, 4, '2026-06-20 11:00:00', '2026-07-31 09:00:00'),
+    ('group-exercise-01', 'user02', 'ACTIVE', '2026-06-20 12:00:00', 200000.00, 3, '2026-06-20 11:30:00', '2026-07-31 09:00:00'),
+    ('group-exercise-01', 'user03', 'ACTIVE', '2026-06-20 12:10:00', 200000.00, 2, '2026-06-20 11:40:00', '2026-07-31 09:00:00'),
+    ('group-study-01', 'user04', 'ACTIVE', '2026-06-21 11:00:00', 150000.00, 4, '2026-06-21 11:00:00', '2026-07-31 09:00:00'),
+    ('group-study-01', 'user05', 'ACTIVE', '2026-06-21 12:00:00', 150000.00, 3, '2026-06-21 11:30:00', '2026-07-31 09:00:00'),
+    ('group-study-01', 'user06', 'ACTIVE', '2026-06-21 12:10:00', 150000.00, 5, '2026-06-21 11:40:00', '2026-07-31 09:00:00'),
+    ('group-reading-01', 'user07', 'ACTIVE', '2026-06-22 11:00:00', 100000.00, 5, '2026-06-22 11:00:00', '2026-07-31 09:00:00'),
+    ('group-reading-01', 'user08', 'ACTIVE', '2026-06-22 12:00:00', 100000.00, 4, '2026-06-22 11:30:00', '2026-07-31 09:00:00'),
+    ('group-reading-01', 'user09', 'ACTIVE', '2026-06-22 12:10:00', 100000.00, 3, '2026-06-22 11:40:00', '2026-07-31 09:00:00');
+
+-- ============================================================================
+-- 8. 라운드
+-- ============================================================================
+INSERT INTO rounds (
+    group_id,
+    round_no,
+    start_date,
+    end_date,
+    round_status,
+    created_at
+) VALUES
+    ('group-exercise-01', 1, '2026-06-28', '2026-07-25', 'SETTLED', '2026-06-27 23:00:00'),
+    ('group-exercise-01', 2, '2026-07-26', '2026-08-22', 'ONGOING', '2026-07-25 23:00:00'),
+    ('group-study-01', 1, '2026-07-05', '2026-08-01', 'ONGOING', '2026-07-04 23:00:00'),
+    ('group-reading-01', 1, '2026-07-12', '2026-08-08', 'ONGOING', '2026-07-11 23:00:00');
+
+-- ============================================================================
+-- 9. 통합 모임통장 거래내역
+--
+-- transaction_category ENUM:
+--   CHARGE     : 최초 예치 및 재충전
+--   SETTLEMENT : 미래 적립금 정산
+--   REFUND     : 예치금 환불
+--
+-- group_user_id와 round_id는 AUTO_INCREMENT 값을 직접 가정하지 않고
+-- UNIQUE 키(group_id, user_id), (group_id, round_no)로 조회한다.
+-- ============================================================================
+INSERT INTO account_transactions (
+    kb_account_id,
+    group_user_id,
+    round_id,
+    transaction_type,
+    amount,
+    balance_after,
+    description,
+    created_at,
+    transaction_category,
+    idempotency_key,
+    another_account_number,
+    another_name,
+    another_bank_name
+) VALUES
+    -- 새벽 러닝 챌린지 최초 예치: 3명 x 200,000원
+    ('kb-moim-01',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-exercise-01' AND user_id = 'user01'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 1),
+     'DEPOSIT', 200000.00, 200000.00, '김민준 최초 예치금 납입',
+     '2026-06-27 10:00:00', 'CHARGE', 'GROUP01-R01-USER01-INITIAL',
+     '025202-00-005001', '김민준', '국민'),
+    ('kb-moim-01',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-exercise-01' AND user_id = 'user02'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 1),
+     'DEPOSIT', 200000.00, 400000.00, '이서연 최초 예치금 납입',
+     '2026-06-27 10:10:00', 'CHARGE', 'GROUP01-R01-USER02-INITIAL',
+     '025202-00-005002', '이서연', '국민'),
+    ('kb-moim-01',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-exercise-01' AND user_id = 'user03'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 1),
+     'DEPOSIT', 200000.00, 600000.00, '박지훈 최초 예치금 납입',
+     '2026-06-27 10:20:00', 'CHARGE', 'GROUP01-R01-USER03-INITIAL',
+     '025202-00-005003', '박지훈', '국민'),
+
+    -- 1라운드 정산 지급 후 2라운드 재충전
+    ('kb-moim-01',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-exercise-01' AND user_id = 'user01'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 1),
+     'WITHDRAW', 120000.00, 480000.00, '1라운드 미래 적립금 정산',
+     '2026-07-28 09:00:00', 'SETTLEMENT', 'GROUP01-R01-USER01-SETTLEMENT',
+     '025202-11-220001', '김민준', '국민'),
+    ('kb-moim-01',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-exercise-01' AND user_id = 'user02'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 1),
+     'WITHDRAW', 80000.00, 400000.00, '1라운드 미래 적립금 정산',
+     '2026-07-28 09:01:00', 'SETTLEMENT', 'GROUP01-R01-USER02-SETTLEMENT',
+     '025202-00-005002', '이서연', '국민'),
+    ('kb-moim-01',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-exercise-01' AND user_id = 'user03'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'DEPOSIT', 200000.00, 600000.00, '2라운드 예치금 재충전',
+     '2026-07-29 09:00:00', 'CHARGE', 'GROUP01-R02-USER03-RECHARGE',
+     '025202-00-005003', '박지훈', '국민'),
+
+    -- 매일 코딩 챌린지 최초 예치: 3명 x 150,000원
+    ('kb-moim-02',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-study-01' AND user_id = 'user04'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-study-01' AND round_no = 1),
+     'DEPOSIT', 150000.00, 150000.00, '최유진 최초 예치금 납입',
+     '2026-07-04 10:00:00', 'CHARGE', 'GROUP02-R01-USER04-INITIAL',
+     '025202-00-005004', '최유진', '국민'),
+    ('kb-moim-02',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-study-01' AND user_id = 'user05'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-study-01' AND round_no = 1),
+     'DEPOSIT', 150000.00, 300000.00, '정하늘 최초 예치금 납입',
+     '2026-07-04 10:10:00', 'CHARGE', 'GROUP02-R01-USER05-INITIAL',
+     '025202-00-005005', '정하늘', '국민'),
+    ('kb-moim-02',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-study-01' AND user_id = 'user06'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-study-01' AND round_no = 1),
+     'DEPOSIT', 150000.00, 450000.00, '강도윤 최초 예치금 납입',
+     '2026-07-04 10:20:00', 'CHARGE', 'GROUP02-R01-USER06-INITIAL',
+     '025202-00-005006', '강도윤', '국민'),
+
+    -- 한 달 독서 챌린지 최초 예치: 3명 x 100,000원
+    ('kb-moim-03',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-reading-01' AND user_id = 'user07'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-reading-01' AND round_no = 1),
+     'DEPOSIT', 100000.00, 100000.00, '송지아 최초 예치금 납입',
+     '2026-07-11 10:00:00', 'CHARGE', 'GROUP03-R01-USER07-INITIAL',
+     '025202-00-005007', '송지아', '국민'),
+    ('kb-moim-03',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-reading-01' AND user_id = 'user08'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-reading-01' AND round_no = 1),
+     'DEPOSIT', 100000.00, 200000.00, '오현우 최초 예치금 납입',
+     '2026-07-11 10:10:00', 'CHARGE', 'GROUP03-R01-USER08-INITIAL',
+     '025202-00-005008', '오현우', '국민'),
+    ('kb-moim-03',
+     (SELECT group_user_id FROM group_users WHERE group_id = 'group-reading-01' AND user_id = 'user09'),
+     (SELECT round_id FROM rounds WHERE group_id = 'group-reading-01' AND round_no = 1),
+     'DEPOSIT', 100000.00, 300000.00, '임수빈 최초 예치금 납입',
+     '2026-07-11 10:20:00', 'CHARGE', 'GROUP03-R01-USER09-INITIAL',
+     '025202-00-005009', '임수빈', '국민');

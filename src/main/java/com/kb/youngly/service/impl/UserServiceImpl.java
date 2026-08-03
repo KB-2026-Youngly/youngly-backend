@@ -2,6 +2,7 @@ package com.kb.youngly.service.impl;
 
 import com.kb.youngly.dto.common.MessageResponse;
 import com.kb.youngly.dto.user.UpdatePasswordRequest;
+import com.kb.youngly.dto.user.UpdateUserRequest;
 import com.kb.youngly.dto.user.UserResponse;
 import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.service.UserService;
@@ -54,6 +55,14 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
 
         userMapper.updatePassword(user);
+    public MessageResponse updateUser(String userId, UpdateUserRequest request) {
+
+        UserVO user = new UserVO();
+        user.setUserId(userId);
+        user.setNickname(request.getNickname());
+        user.setProfileImageUrl(request.getProfileImageUrl());
+
+        userMapper.updateUser(user);
 
         return MessageResponse.builder()
                 .message("Success")

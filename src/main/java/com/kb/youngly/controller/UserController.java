@@ -1,5 +1,7 @@
 package com.kb.youngly.controller;
 
+import com.kb.youngly.dto.common.MessageResponse;
+import com.kb.youngly.dto.user.UpdateUserRequest;
 import com.kb.youngly.dto.user.UserResponse;
 import com.kb.youngly.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +39,13 @@ public class UserController {
 
         return ResponseEntity.ok(
                 userService.updatePassword(authentication.getName(), request)
+    @PutMapping("/me")
+    public ResponseEntity<MessageResponse> updateUser(
+            Authentication authentication,
+            @RequestBody UpdateUserRequest request) {
+
+        return ResponseEntity.ok(
+                userService.updateUser(authentication.getName(), request)
         );
     }
 }
