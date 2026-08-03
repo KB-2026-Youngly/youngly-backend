@@ -1,5 +1,6 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.point;
 
+import com.kb.youngly.enums.PointType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,11 +12,13 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostCommentVO {
-    private Long postCommentId;
+public class PointHistoryVO {
+    private Long pointLogId;
     private String userId;
-    private Long postId;
+    private Long itemId;
+    private PointType pointType;
+    private Integer amount;
     private String content;
+    private String idempotencyKey;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

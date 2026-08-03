@@ -6,7 +6,7 @@ import com.kb.youngly.dto.user.UpdateUserRequest;
 import com.kb.youngly.dto.user.UserResponse;
 import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.service.UserService;
-import com.kb.youngly.vo.UserVO;
+import com.kb.youngly.vo.user.UserVO;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 

@@ -1,7 +1,7 @@
 package com.kb.youngly.dto.point;
 
 import com.kb.youngly.enums.PointType;
-import com.kb.youngly.vo.PointHistoryVO;
+import com.kb.youngly.vo.point.PointHistoryVO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

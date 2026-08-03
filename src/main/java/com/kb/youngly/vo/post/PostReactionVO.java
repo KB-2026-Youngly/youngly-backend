@@ -1,5 +1,6 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.post;
 
+import com.kb.youngly.enums.ReactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,10 +12,11 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserItemVO {
-    private Long userItemId;
-    private Long itemId;
+public class PostReactionVO {
+    private Long reactionId;
+    private Long postId;
     private String userId;
-    private Boolean isEquipped;
+    private ReactionType reactionType;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

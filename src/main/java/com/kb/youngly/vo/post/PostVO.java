@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.post;
 
 import com.kb.youngly.enums.PostStatus;
 import lombok.AllArgsConstructor;
@@ -27,4 +27,5 @@ public class PostVO {
     private Integer dislikeCount;
     private Integer commentCount;
     private Integer rejectCount;
+    private Integer approveCount;
 }

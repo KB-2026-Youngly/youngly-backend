@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.user;
 
 import com.kb.youngly.enums.Baseline;
 import lombok.AllArgsConstructor;

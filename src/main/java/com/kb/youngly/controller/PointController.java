@@ -5,7 +5,7 @@ import com.kb.youngly.dto.point.PointEarnRequest;
 import com.kb.youngly.dto.point.PointEarnResponse;
 import com.kb.youngly.dto.point.PointHistoryResponse;
 import com.kb.youngly.service.PointService;
-import com.kb.youngly.vo.PointHistoryVO;
+import com.kb.youngly.vo.point.PointHistoryVO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;

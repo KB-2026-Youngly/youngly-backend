@@ -1,7 +1,7 @@
 package com.kb.youngly.support;
 
 import com.kb.youngly.mapper.PointMapper;
-import com.kb.youngly.vo.PointHistoryVO;
+import com.kb.youngly.vo.point.PointHistoryVO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
