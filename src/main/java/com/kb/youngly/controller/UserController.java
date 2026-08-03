@@ -1,6 +1,7 @@
 package com.kb.youngly.controller;
 
 import com.kb.youngly.dto.common.MessageResponse;
+import com.kb.youngly.dto.user.UpdateUserRequest;
 import com.kb.youngly.dto.user.UserResponse;
 import com.kb.youngly.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,10 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.kb.youngly.dto.common.MessageResponse;
+import com.kb.youngly.dto.user.UpdatePasswordRequest;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/users")
@@ -34,6 +39,20 @@ public class UserController {
 
         return ResponseEntity.ok(
                 userService.deleteUser(authentication.getName())
+    @PutMapping("/password")
+    public ResponseEntity<MessageResponse> updatePassword(
+            Authentication authentication,
+            @RequestBody UpdatePasswordRequest request) {
+
+        return ResponseEntity.ok(
+                userService.updatePassword(authentication.getName(), request)
+    @PutMapping("/me")
+    public ResponseEntity<MessageResponse> updateUser(
+            Authentication authentication,
+            @RequestBody UpdateUserRequest request) {
+
+        return ResponseEntity.ok(
+                userService.updateUser(authentication.getName(), request)
         );
     }
 }
