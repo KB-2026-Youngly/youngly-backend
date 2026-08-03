@@ -3,8 +3,8 @@ package com.kb.youngly.service;
 import com.kb.youngly.dto.character.CharacterDrawResponse;
 import com.kb.youngly.dto.character.OwnedCharacterResponse;
 import com.kb.youngly.mapper.CharacterMapper;
-import com.kb.youngly.vo.CollectibleItemVO;
-import com.kb.youngly.vo.UserItemVO;
+import com.kb.youngly.vo.point.CollectibleItemVO;
+import com.kb.youngly.vo.point.UserItemVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +44,7 @@ public class CharacterService {
     public CharacterDrawResponse drawCharacter(String userId) {
         String validUserId = requireUserId(userId);
 
-        // user_items에 복합 유니크 키가 없으므로 사용자 행 잠금으로 같은 사용자의 요청을 직렬화한다.
+        // 사용자 행 잠금으로 같은 사용자의 요청을 직렬화하고 복합 유니크 키로 중복 저장을 막는다.
         if (characterMapper.lockUserForUpdate(validUserId) == null) {
             throw new IllegalArgumentException("존재하지 않는 사용자입니다.");
         }

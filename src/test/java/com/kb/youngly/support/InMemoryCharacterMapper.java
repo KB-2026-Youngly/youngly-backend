@@ -2,9 +2,9 @@ package com.kb.youngly.support;
 
 import com.kb.youngly.enums.ItemCategory;
 import com.kb.youngly.mapper.CharacterMapper;
-import com.kb.youngly.vo.CollectibleItemVO;
-import com.kb.youngly.vo.UserItemVO;
 import com.kb.youngly.vo.character.OwnedCharacterVO;
+import com.kb.youngly.vo.point.CollectibleItemVO;
+import com.kb.youngly.vo.point.UserItemVO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

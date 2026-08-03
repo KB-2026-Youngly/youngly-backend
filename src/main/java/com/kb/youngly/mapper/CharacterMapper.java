@@ -1,8 +1,8 @@
 package com.kb.youngly.mapper;
 
-import com.kb.youngly.vo.CollectibleItemVO;
-import com.kb.youngly.vo.UserItemVO;
 import com.kb.youngly.vo.character.OwnedCharacterVO;
+import com.kb.youngly.vo.point.CollectibleItemVO;
+import com.kb.youngly.vo.point.UserItemVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

@@ -1,6 +1,6 @@
 package com.kb.youngly.dto.character;
 
-import com.kb.youngly.vo.CollectibleItemVO;
+import com.kb.youngly.vo.point.CollectibleItemVO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

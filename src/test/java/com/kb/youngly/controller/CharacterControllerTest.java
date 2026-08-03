@@ -10,7 +10,7 @@ import com.kb.youngly.service.CharacterService;
 import com.kb.youngly.service.PointService;
 import com.kb.youngly.support.InMemoryCharacterMapper;
 import com.kb.youngly.support.InMemoryPointMapper;
-import com.kb.youngly.vo.CollectibleItemVO;
+import com.kb.youngly.vo.point.CollectibleItemVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

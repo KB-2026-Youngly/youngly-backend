@@ -3,9 +3,9 @@ package com.kb.youngly.service;
 import com.kb.youngly.dto.character.CharacterDrawResponse;
 import com.kb.youngly.mapper.CharacterMapper;
 import com.kb.youngly.mapper.PointMapper;
-import com.kb.youngly.vo.CollectibleItemVO;
-import com.kb.youngly.vo.UserItemVO;
 import com.kb.youngly.vo.character.OwnedCharacterVO;
+import com.kb.youngly.vo.point.CollectibleItemVO;
+import com.kb.youngly.vo.point.UserItemVO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -88,8 +88,8 @@ class CharacterTransactionIntegrationTest {
 
         jdbcTemplate.update(
                 "INSERT INTO users "
-                        + "(user_id, name, login_id, nickname, email, password, user_status, point) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?)",
+                        + "(user_id, name, login_id, nickname, email, password, birthday, user_status, point) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, '2000-01-01', 'ACTIVE', ?)",
                 userId,
                 "가챠테스트",
                 "g" + suffix,
