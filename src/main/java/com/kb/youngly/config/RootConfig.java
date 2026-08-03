@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Import;
  * 비밀번호, API Key 등 민감 정보는 application-secret.properties 에 두며
  * 이 파일은 .gitignore 로 제외되어 있다.
  */
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class})
 @Configuration
 @EnableTransactionManagement
 @ComponentScan(basePackages = {
