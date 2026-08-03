@@ -1,12 +1,12 @@
 package com.kb.youngly.controller;
 
+import com.kb.youngly.dto.common.MessageResponse;
+import com.kb.youngly.dto.user.UpdateUserRequest;
 import com.kb.youngly.dto.user.UserResponse;
 import com.kb.youngly.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -23,6 +23,16 @@ public class UserController {
 
         return ResponseEntity.ok(
                 userService.getMyInfo(authentication.getName())
+        );
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<MessageResponse> updateUser(
+            Authentication authentication,
+            @RequestBody UpdateUserRequest request) {
+
+        return ResponseEntity.ok(
+                userService.updateUser(authentication.getName(), request)
         );
     }
 }
