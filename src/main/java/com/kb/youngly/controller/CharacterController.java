@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 인증된 사용자의 캐릭터 랜덤 획득과 보유 캐릭터 조회 HTTP API를 제공한다.
- * 요청의 인증 정보에 담긴 사용자 ID를 서비스 계층에 전달한다.
+ * 로그인한 사용자의 캐릭터 뽑기와 보유 목록 조회 요청을 처리한다.
+ * 인증 정보에서 사용자 ID를 가져와 CharacterService에 전달한다.
  */
 @RestController
 @RequestMapping("/api/characters")
