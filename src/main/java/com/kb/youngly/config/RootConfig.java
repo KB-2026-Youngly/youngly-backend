@@ -17,7 +17,6 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
-import org.springframework.context.annotation.Import;
 
 /**
  * 루트 애플리케이션 컨텍스트 설정.
