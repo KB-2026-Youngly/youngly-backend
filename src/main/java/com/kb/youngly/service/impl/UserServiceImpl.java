@@ -55,7 +55,15 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
 
         userMapper.updatePassword(user);
-    public MessageResponse updateUser(String userId, UpdateUserRequest request) {
+
+        return MessageResponse.builder()
+                .message("Success")
+                .build();
+    }
+
+    @Override
+    public MessageResponse updateUser(String userId,
+                                      UpdateUserRequest request) {
 
         UserVO user = new UserVO();
         user.setUserId(userId);
@@ -68,19 +76,20 @@ public class UserServiceImpl implements UserService {
                 .message("Success")
                 .build();
     }
-      
+
     @Override
     public MessageResponse deleteUser(String userId) {
-      
+
         UserVO user = userMapper.findByUserId(userId);
 
         if (user == null) {
             throw new IllegalArgumentException("존재하지 않는 회원입니다.");
         }
-      
+
         userMapper.deactivateUser(userId);
 
         return MessageResponse.builder()
                 .message("Success")
                 .build();
+    }
 }
