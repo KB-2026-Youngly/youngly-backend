@@ -27,4 +27,5 @@ public class PostVO {
     private Integer dislikeCount;
     private Integer commentCount;
     private Integer rejectCount;
+    private Integer approveCount;
 }

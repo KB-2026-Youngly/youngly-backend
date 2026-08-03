@@ -19,5 +19,6 @@ public class PointHistoryVO {
     private PointType pointType;
     private Integer amount;
     private String content;
+    private String idempotencyKey;
     private LocalDateTime createdAt;
 }
