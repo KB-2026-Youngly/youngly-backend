@@ -35,6 +35,7 @@ public class UserServiceImpl implements UserService {
                 .email(user.getEmail())
                 .profileImageUrl(user.getProfileImageUrl())
                 .point(user.getPoint())
+                .birthday(user.getBirthday())
                 .build();
     }
 
