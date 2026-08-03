@@ -101,8 +101,10 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
     runtimeOnly    'io.jsonwebtoken:jjwt-impl:0.11.5'
 
-    // implementation 'io.springfox:springfox-swagger2:2.9.2'
-    // implementation 'io.springfox:springfox-swagger-ui:2.9.2'
+    implementation 'io.springfox:springfox-swagger2:2.9.2'
+    implementation 'io.springfox:springfox-swagger-ui:2.9.2'
+
+    implementation 'com.google.guava:guava:20.0'
 
     // implementation "org.springframework:spring-websocket:${springVersion}"
     // implementation "org.springframework:spring-messaging:${springVersion}"
