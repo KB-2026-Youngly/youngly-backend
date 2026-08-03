@@ -1,4 +1,4 @@
-package com.kb.youngly.vo;
+package com.kb.youngly.vo.post;
 
 import com.kb.youngly.enums.PostStatus;
 import lombok.AllArgsConstructor;
@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class PostHistoryVO {
     private Long postHistoryId;
     private Long postId;
+    private Long postHistoryVersion;
     private String photoUrl;
     private String content;
     private PostStatus postStatus;

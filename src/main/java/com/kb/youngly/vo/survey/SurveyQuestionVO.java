@@ -11,6 +11,6 @@ public class SurveyQuestionVO {
     private Long questionId;
     private Integer questionNo;
     private String questionText;
-    private Boolean multiple;
+    private Boolean isMultiple;
     private LocalDateTime createdAt;
 }

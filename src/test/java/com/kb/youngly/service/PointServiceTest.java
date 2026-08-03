@@ -2,7 +2,7 @@ package com.kb.youngly.service;
 
 import com.kb.youngly.enums.PointType;
 import com.kb.youngly.support.InMemoryPointMapper;
-import com.kb.youngly.vo.PointHistoryVO;
+import com.kb.youngly.vo.point.PointHistoryVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
