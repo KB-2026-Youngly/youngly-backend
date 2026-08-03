@@ -1,6 +1,6 @@
 package com.kb.youngly.service;
 
-import com.kb.youngly.dto.*;
+import com.kb.youngly.dto.posts.*;
 import com.kb.youngly.mapper.PostMapper;
 import com.kb.youngly.util.FileUploadUtil;
 import com.kb.youngly.vo.post.PostVO;
@@ -70,6 +70,45 @@ public class PostService {
 
         // 4. 하나의 종합 DTO로 포장해서 리턴!
         return new FeedDetailResponseDTO(comments, likers, dislikers);
+    }
+
+    // PostService.java 내부에 추가
+    @Transactional // 둘 중 하나라도 쿼리 실패 시 롤백시키기 위한 마법의 애노테이션!
+    public void processPostApproval(Long postId, PostApprovalRequestDTO requestDTO) {
+
+        // 1. 게시글 존재 여부 및 작성자 정보 가져오기
+        PostDTO post = postMapper.getPostById(postId);
+        if (post == null) {
+            throw new IllegalArgumentException("존재하지 않는 인증 게시물입니다.");
+        }
+
+        // 2. 방어 로직: 본인 게시물 스스로 평가 불가
+        if (post.getUserId().equals(requestDTO.getUserId())) {
+            throw new IllegalArgumentException("본인의 인증 게시물은 스스로 평가할 수 없습니다.");
+        }
+
+        // 3. 방어 로직: 반려(REJECT) 시 사유 필수
+        if ("REJECT".equals(requestDTO.getApprovalStatus())) {
+            if (requestDTO.getRejectReason() == null || requestDTO.getRejectReason().trim().isEmpty()) {
+                throw new IllegalArgumentException("반려 시 사유를 반드시 입력해야 합니다.");
+            }
+        }
+
+        // 4. 방어 로직: 이미 평가한 내역이 있는지 중복 검증 (UNIQUE 제약조건 위배 방지)
+        int duplicateCheck = postMapper.checkDuplicateApproval(postId, requestDTO.getUserId());
+        if (duplicateCheck > 0) {
+            throw new IllegalArgumentException("이미 해당 게시물에 대한 평가를 완료했습니다.");
+        }
+
+        // 5. 평가 내역 저장 (post_approvals 테이블 INSERT)
+        postMapper.insertPostApproval(postId, requestDTO);
+
+        // 6. 게시글 카운트 업데이트 (posts 테이블 UPDATE)
+        if ("APPROVE".equals(requestDTO.getApprovalStatus())) {
+            postMapper.incrementApproveCount(postId);
+        } else if ("REJECT".equals(requestDTO.getApprovalStatus())) {
+            postMapper.incrementRejectCount(postId);
+        }
     }
 
 }

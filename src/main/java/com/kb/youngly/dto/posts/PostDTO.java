@@ -1,4 +1,4 @@
-package com.kb.youngly.dto;
+package com.kb.youngly.dto.posts;
 
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
