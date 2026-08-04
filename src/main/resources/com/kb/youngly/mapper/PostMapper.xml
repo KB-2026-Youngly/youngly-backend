@@ -1,4 +1,3 @@
-
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
@@ -66,12 +65,17 @@
     AND gu.group_user_status = 'ACTIVE'
 </select>
 
-<!-- 게시물 승인 및 반려 API - 본인 검증용 -->
-<select id="getPostById" resultType="com.kb.youngly.dto.posts.PostDTO">
-    SELECT post_id, user_id, post_status
-    FROM posts
-    WHERE post_id = #{postId}
-</select>
+    <!-- 게시물 승인 및 반려 API - 본인 검증 및 과반수 계산용 -->
+    <select id="getPostById" resultType="com.kb.youngly.dto.posts.PostDTO">
+        SELECT post_id,
+        user_id,
+        post_status,
+        round_id,
+        approve_count,
+        reject_count
+        FROM posts
+        WHERE post_id = #{postId}
+    </select>
 
 <!-- 5. 중복 평가 여부 확인 -->
 <select id="checkDuplicateApproval" resultType="int">
@@ -97,6 +101,25 @@
 <update id="incrementRejectCount">
     UPDATE posts
     SET reject_count = reject_count + 1
+    WHERE post_id = #{postId}
+</update>
+
+<!-- 8. 특정 라운드에 속한 그룹의 전체 활성 멤버 수 조회 (과반수 계산용) -->
+<!-- posts 테이블에는 round_id만 있으므로, rounds 테이블과 group_users를 조인해서 계산 -->
+<select id="getTotalGroupMembersByRoundId" resultType="int">
+    SELECT COUNT(*)
+    FROM rounds r
+             JOIN group_users gu ON r.group_id = gu.group_id
+    WHERE r.round_id = #{roundId}
+      AND gu.group_user_status = 'ACTIVE'
+</select>
+
+<!-- 9. 과반수 투표 달성 시 게시글의 최종 상태 및 상태변경시간 업데이트 -->
+<!-- DB ENUM 조건에 따라 status에는 'APPROVED' 또는 'REJECTED'가 들어옴 -->
+<update id="updatePostStatus">
+    UPDATE posts
+    SET post_status = #{status},
+        status_changed_at = NOW()
     WHERE post_id = #{postId}
 </update>
 
