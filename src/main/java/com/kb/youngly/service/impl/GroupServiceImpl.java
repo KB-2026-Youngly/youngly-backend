@@ -1,7 +1,9 @@
 package com.kb.youngly.service.impl;
 
-import com.kb.youngly.dto.common.MessageResponse;
-import com.kb.youngly.dto.group.*;
+import com.kb.youngly.dto.group.CreateGroupRequest;
+import com.kb.youngly.dto.group.CreateGroupResponse;
+import com.kb.youngly.dto.group.GroupDetailResponse;
+import com.kb.youngly.dto.group.GroupListResponse;
 import com.kb.youngly.enums.GroupStatus;
 import com.kb.youngly.mapper.GroupMapper;
 import com.kb.youngly.service.GroupService;
@@ -21,6 +23,7 @@ public class GroupServiceImpl implements GroupService {
         this.groupMapper = groupMapper;
     }
 
+    // 그룹 생성
     @Override
     public CreateGroupResponse createGroup(String userId,
                                            CreateGroupRequest request) {
@@ -51,6 +54,7 @@ public class GroupServiceImpl implements GroupService {
                 .build();
     }
 
+    // 그룹 목록 조회
     @Override
     public List<GroupListResponse> getGroupList(String userId) {
 
