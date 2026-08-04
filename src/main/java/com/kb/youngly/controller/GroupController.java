@@ -76,4 +76,18 @@ public class GroupController {
                 )
         );
     }
+
+    // 그룹 종료(삭제)
+    @DeleteMapping("/{groupId}")
+    public ResponseEntity<MessageResponse> deleteGroup(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.deleteGroup(
+                        authentication.getName(),
+                        groupId
+                )
+        );
+    }
 }
