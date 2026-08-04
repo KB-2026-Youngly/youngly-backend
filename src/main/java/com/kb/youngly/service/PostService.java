@@ -12,15 +12,15 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor // final이 붙은 변수들을 알아서 조립해 주는 마법의 어노테이션!
+@RequiredArgsConstructor // final이 붙은 변수들을 알아서 조립해 주는 어노테이션
 public class PostService {
 
     private final PostMapper postMapper;
     private final FileUploadUtil fileUploadUtil;
 
-    @Transactional // 파일 저장은 됐는데 DB 저장이 실패하면 둘 다 원상복구 시켜주는 안전장치
+    @Transactional // 파일 저장은 됐는데 DB 저장이 실패하면 둘 다 원상복구.
     public void createPost(PostDTO postDTO) {
-        // 1. DTO에서 클라이언트가 보낸 사진 파일만 쏙 빼오기
+        // 1. DTO에서 클라이언트가 보낸 사진 파일만 빼오기
         MultipartFile imageFile = postDTO.getImageFile();
         String savedFileName = null;
 
@@ -28,23 +28,23 @@ public class PostService {
         if (imageFile != null && !imageFile.isEmpty()) {
             savedFileName = fileUploadUtil.saveFile(imageFile);
         } else {
-            // 인증 게시물인데 사진이 없으면 얄짤없이 에러 뱉기!
+            // 인증 게시물인데 사진이 없으면 에러
             throw new RuntimeException("인증용 이미지가 반드시 필요합니다.");
         }
 
-        // 3. DB에 저장할 VO 객체 그릇에 차곡차곡 담기
+        // 3. DB에 저장할 VO 객체에 담기
         PostVO postVO = new PostVO();
         postVO.setRoundId(postDTO.getRoundId());
         postVO.setUserId(postDTO.getUserId());
         postVO.setContent(postDTO.getContent());
         postVO.setPhotoUrl(savedFileName); // 아까 유틸에서 반환받은 파일명 셋팅
 
-        // 4. 꽉 찬 VO 그릇을 Mapper에게 넘겨서 DB에 최종 UPDATE!
+        // 4. VO를 Mapper에게 넘겨서 DB에 최종 UPDATE
         postMapper.updatePost(postVO);
     }
 
     // 피드 목록 조회 로직
-    // : DB에서 데이터를 가져오기 직전에 권한 검증 로직을 실행해. 멤버가 아니라면 에러를 던져서 철벽을 쳐버려.
+    // : DB에서 데이터를 가져오기 직전에 권한 검증 로직을 실행해. 멤버가 아니라면 에러.
     public List<FeedListResponseDTO> getFeedList(Long roundId, String date, String currentUserId) {
         boolean isMember = postMapper.checkGroupMembership(roundId, currentUserId);
         System.out.println("[DEBUG] 멤버십 검증 결과 (isMember) : " + isMember + " / userId : " + currentUserId); // 👈 요거 찍어보기
@@ -68,12 +68,14 @@ public class PostService {
         // 3. 싫어요 누른 유저 목록 긁어오기
         List<ReactionUserDTO> dislikers = postMapper.getReactionUsersByPostId(postId, "DISLIKE");
 
-        // 4. 하나의 종합 DTO로 포장해서 리턴!
+        // 4. 하나의 종합 DTO로 포장해서 리턴
         return new FeedDetailResponseDTO(comments, likers, dislikers);
     }
 
-    // PostService.java 내부에 추가
-    @Transactional // 둘 중 하나라도 쿼리 실패 시 롤백시키기 위한 마법의 애노테이션!
+    // 게시물 승인 or 반려 프로세스
+    // : 방어 로직 1 - 본인 평가 방지
+    // : 방어 로직 2 - 중복 평가 방지
+    @Transactional // 둘 중 하나라도 쿼리 실패 시 롤백시키기 위한 애노테이션
     public void processPostApproval(Long postId, PostApprovalRequestDTO requestDTO) {
 
         // 1. 게시글 존재 여부 및 작성자 정보 가져오기
