@@ -1,6 +1,6 @@
 package com.kb.youngly.mapper;
 
-import com.kb.youngly.vo.PointHistoryVO;
+import com.kb.youngly.vo.point.PointHistoryVO;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;

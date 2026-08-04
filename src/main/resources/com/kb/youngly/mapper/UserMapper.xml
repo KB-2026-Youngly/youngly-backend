@@ -26,38 +26,45 @@
     </select>
 
     <insert id="insertUser"
-            parameterType="com.kb.youngly.vo.UserVO">
+            parameterType="com.kb.youngly.vo.user.UserVO">
 
         INSERT INTO users (
             user_id,
             name,
+            birthday,
             login_id,
             nickname,
             email,
             profile_image_url,
             created_at,
-            password
+            password,
+            user_status,
+            point
         )
         VALUES (
                    #{userId},
                    #{name},
+                   #{birthday},
                    #{loginId},
                    #{nickname},
                    #{email},
                    #{profileImageUrl},
                    NOW(),
-                   #{password}
+                   #{password},
+                   'ACTIVE',
+                   0
                )
 
     </insert>
 
     <select id="findByLoginId"
             parameterType="java.lang.String"
-            resultType="com.kb.youngly.vo.UserVO">
+            resultType="com.kb.youngly.vo.user.UserVO">
 
         SELECT
             user_id,
             name,
+            birthday,
             login_id,
             nickname,
             email,
@@ -69,16 +76,18 @@
             point
         FROM users
         WHERE login_id = #{loginId}
+          AND user_status = 'ACTIVE'
 
     </select>
 
     <select id="findByUserId"
             parameterType="java.lang.String"
-            resultType="com.kb.youngly.vo.UserVO">
+            resultType="com.kb.youngly.vo.user.UserVO">
 
         SELECT
             user_id,
             name,
+            birthday,
             login_id,
             nickname,
             email,
@@ -92,5 +101,65 @@
         WHERE user_id = #{userId}
 
     </select>
+
+    <update id="updateUser"
+            parameterType="com.kb.youngly.vo.user.UserVO">
+
+        UPDATE users
+        SET
+            nickname = #{nickname},
+            profile_image_url = #{profileImageUrl},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+
+    </update>
+
+    <update id="updatePassword"
+            parameterType="com.kb.youngly.vo.user.UserVO">
+
+        UPDATE users
+        SET
+            password = #{password},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+
+    </update>
+
+    <update id="deactivateUser"
+            parameterType="string">
+
+        UPDATE users
+        SET
+            user_status = 'DEACTIVATED',
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+
+    </update>
+    <insert id="insertUserInterests">
+        INSERT INTO interest_users (
+            interest_id,
+            user_id,
+            created_at
+        )
+        VALUES
+        <foreach collection="interestIds" item="interestId" separator=",">
+            (#{interestId}, #{userId}, NOW())
+        </foreach>
+    </insert>
+
+    <select id="selectInterestsByUserId"
+            parameterType="java.lang.String"
+            resultType="com.kb.youngly.dto.auth.InterestOptionDTO">
+        SELECT i.interest_id,
+               i.interest_name,
+               i.is_investment AS investment,
+               i.created_at
+        FROM interest_users iu
+                 INNER JOIN interests i
+                            ON i.interest_id = iu.interest_id
+        WHERE iu.user_id = #{userId}
+        ORDER BY i.interest_id ASC
+    </select>
+
 
 </mapper>

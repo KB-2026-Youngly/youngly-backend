@@ -1,14 +1,18 @@
 package com.kb.youngly.service.impl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.kb.youngly.dto.auth.*;
 import com.kb.youngly.jwt.JwtTokenProvider;
 import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.service.AuthService;
-import com.kb.youngly.vo.UserVO;
+import com.kb.youngly.vo.user.UserVO;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -27,6 +31,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public SignupResponse signup(SignupRequest signupRequest) {
 
         // 로그인 아이디 중복 검사
@@ -47,11 +52,10 @@ public class AuthServiceImpl implements AuthService {
         userVO.setLoginId(signupRequest.getLoginId());
 
         // 비밀번호 암호화
-        userVO.setPassword(
-                passwordEncoder.encode(signupRequest.getPassword())
-        );
+        userVO.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
 
         userVO.setName(signupRequest.getName());
+        userVO.setBirthday(signupRequest.getBirthday());
         userVO.setNickname(signupRequest.getNickname());
         userVO.setEmail(signupRequest.getEmail());
 
@@ -60,6 +64,14 @@ public class AuthServiceImpl implements AuthService {
 
         // 회원 저장
         userMapper.insertUser(userVO);
+
+        List<Long> interestIds = mergeInterestIds(
+                signupRequest.getInterestIds(),
+                signupRequest.getInvestmentInterestIds()
+        );
+        if (!CollectionUtils.isEmpty(interestIds)) {
+            userMapper.insertUserInterests(userVO.getUserId(), interestIds);
+        }
 
         return new SignupResponse(
                 userVO.getUserId(),
@@ -84,7 +96,6 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        // JWT Access Token 생성
         String accessToken = jwtTokenProvider.createToken(user.getUserId());
 
         return new LoginResponse(
@@ -101,5 +112,16 @@ public class AuthServiceImpl implements AuthService {
         return LogoutResponse.builder()
                 .message("Success")
                 .build();
+    }
+}
+    private List<Long> mergeInterestIds(List<Long> interestIds, List<Long> investmentInterestIds) {
+        List<Long> merged = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(interestIds)) {
+            merged.addAll(interestIds);
+        }
+        if (!CollectionUtils.isEmpty(investmentInterestIds)) {
+            merged.addAll(investmentInterestIds);
+        }
+        return merged;
     }
 }

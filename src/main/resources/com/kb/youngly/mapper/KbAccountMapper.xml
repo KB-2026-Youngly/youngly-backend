@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kb.youngly.mapper.KbAccountMapper">
+
+    <select id="findByNameAndBirthday"
+            parameterType="com.kb.youngly.dto.account.AccountSearchDTO"
+            resultType="com.kb.youngly.vo.account.KbAccountVO">
+        SELECT
+            kb_account_id,
+            account_type,
+            account_number,
+            bank_name,
+            balance,
+            interest_rate,
+            name,
+            birthday,
+            created_at,
+            updated_at
+        FROM kb_accounts
+        WHERE name = #{name}
+          AND birthday = #{birthday}
+
+    </select>
+    <select id="findById"
+            parameterType="string"
+            resultType="KbAccountVO">
+
+        SELECT
+            kb_account_id,
+            account_type,
+            account_number,
+            bank_name,
+            balance,
+            interest_rate,
+            name,
+            birthday,
+            created_at,
+            updated_at
+        FROM kb_accounts
+        WHERE kb_account_id = #{kbAccountId}
+
+    </select>
+</mapper>

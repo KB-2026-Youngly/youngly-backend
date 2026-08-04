@@ -8,16 +8,12 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.*;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
-import org.springframework.context.annotation.Import;
 
 /**
  * 루트 애플리케이션 컨텍스트 설정.
@@ -29,11 +25,11 @@ import org.springframework.context.annotation.Import;
  * 비밀번호, API Key 등 민감 정보는 application-secret.properties 에 두며
  * 이 파일은 .gitignore 로 제외되어 있다.
  */
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class})
 @Configuration
 @EnableTransactionManagement
 @ComponentScan(basePackages = {
-        "com.kb.youngly"
+        "com.kb.youngly",
 })
 @MapperScan(basePackages = {"com.kb.youngly.mapper"})
 @PropertySource(value = {"classpath:/application.properties"})

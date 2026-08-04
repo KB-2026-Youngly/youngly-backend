@@ -90,6 +90,8 @@ dependencies {
 
     testImplementation "org.springframework:spring-test:${springVersion}"
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+    testImplementation "org.mockito:mockito-core:4.11.0"
+    testImplementation "org.mockito:mockito-junit-jupiter:4.11.0"
     testRuntimeOnly    "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
     testRuntimeOnly    'org.junit.platform:junit-platform-launcher'
 
@@ -101,8 +103,10 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
     runtimeOnly    'io.jsonwebtoken:jjwt-impl:0.11.5'
 
-    // implementation 'io.springfox:springfox-swagger2:2.9.2'
-    // implementation 'io.springfox:springfox-swagger-ui:2.9.2'
+    implementation 'io.springfox:springfox-swagger2:2.9.2'
+    implementation 'io.springfox:springfox-swagger-ui:2.9.2'
+
+    implementation 'com.google.guava:guava:20.0'
 
     // implementation "org.springframework:spring-websocket:${springVersion}"
     // implementation "org.springframework:spring-messaging:${springVersion}"
