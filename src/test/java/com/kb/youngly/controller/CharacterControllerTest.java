@@ -26,8 +26,10 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
 class CharacterControllerTest {
@@ -146,6 +148,44 @@ class CharacterControllerTest {
                 "인증된 사용자 정보가 없습니다.",
                 readResponseBody(result).get("message").asText()
         );
+    }
+
+    @Test
+    @DisplayName("인증 사용자가 보유한 캐릭터를 장착한다")
+    void equipCharacter_usesAuthenticatedUser() throws Exception {
+        characterMapper.addItem(character(1L, "키키"));
+        characterMapper.addOwnedItem(USER_ID, 1L, LocalDateTime.now());
+
+        MvcResult result = mockMvc.perform(put("/api/characters/1/equip")
+                        .principal(authentication))
+                .andReturn();
+
+        assertEquals(200, result.getResponse().getStatus());
+        JsonNode body = readResponseBody(result);
+        assertEquals(1L, body.get("characterId").asLong());
+        assertEquals("키키", body.get("name").asText());
+        assertEquals("/characters/1.png", body.get("imageUrl").asText());
+        assertTrue(body.get("equipped").asBoolean());
+        assertFalse(body.has("userId"));
+        assertFalse(body.has("userItemId"));
+        assertTrue(characterMapper.getUserItems().get(0).getIsEquipped());
+    }
+
+    @Test
+    @DisplayName("캐릭터 장착 요청에 인증 정보가 없으면 실패한다")
+    void equipCharacter_withoutAuthenticationFails() throws Exception {
+        characterMapper.addItem(character(1L, "키키"));
+        characterMapper.addOwnedItem(USER_ID, 1L, LocalDateTime.now());
+
+        MvcResult result = mockMvc.perform(put("/api/characters/1/equip"))
+                .andReturn();
+
+        assertEquals(400, result.getResponse().getStatus());
+        assertEquals(
+                "인증된 사용자 정보가 없습니다.",
+                readResponseBody(result).get("message").asText()
+        );
+        assertFalse(characterMapper.getUserItems().get(0).getIsEquipped());
     }
 
     private JsonNode readResponseBody(MvcResult result) throws Exception {

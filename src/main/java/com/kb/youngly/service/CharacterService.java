@@ -1,8 +1,10 @@
 package com.kb.youngly.service;
 
 import com.kb.youngly.dto.character.CharacterDrawResponse;
+import com.kb.youngly.dto.character.CharacterEquipResponse;
 import com.kb.youngly.dto.character.OwnedCharacterResponse;
 import com.kb.youngly.mapper.CharacterMapper;
+import com.kb.youngly.vo.character.CharacterEquipVO;
 import com.kb.youngly.vo.point.CollectibleItemVO;
 import com.kb.youngly.vo.point.UserItemVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +16,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.IntUnaryOperator;
 
 /**
- * 캐릭터 랜덤 획득과 보유 캐릭터 조회의 비즈니스 흐름을 담당한다.
- * 뽑기에서는 사용자별 동시 요청을 제어하고 포인트 사용과 보유 저장을 하나의 트랜잭션으로 처리한다.
+ * 캐릭터 랜덤 획득, 보유 캐릭터 조회, 장착의 비즈니스 흐름을 담당한다.
+ * 사용자별 동시 요청을 제어하고 포인트 사용·보유 저장·장착 변경을 트랜잭션으로 처리한다.
  */
 @Service
 public class CharacterService {
@@ -106,10 +108,51 @@ public class CharacterService {
                 .toList();
     }
 
+    /**
+     * 사용자가 보유한 캐릭터인지 확인한 뒤 다른 캐릭터의 장착을 해제하고 대상을 장착한다.
+     * 이미 장착된 캐릭터는 그대로 유지하며, 해제와 장착 중 실패하면 전체 작업이 롤백된다.
+     */
+    @Transactional
+    public CharacterEquipResponse equipCharacter(String userId, Long characterId) {
+        String validUserId = requireUserId(userId);
+        Long validCharacterId = requireCharacterId(characterId);
+
+        // 같은 사용자의 뽑기·장착 요청이 동시에 보유 상태를 변경하지 않도록 직렬화한다.
+        if (characterMapper.lockUserForUpdate(validUserId) == null) {
+            throw new IllegalArgumentException("존재하지 않는 사용자입니다.");
+        }
+
+        // 사용자와 캐릭터 ID를 함께 조회해 다른 사용자의 보유 캐릭터 접근도 차단한다.
+        CharacterEquipVO character = characterMapper.findOwnedCharacterForEquip(
+                validUserId,
+                validCharacterId
+        );
+        if (character == null) {
+            throw new IllegalArgumentException("보유하지 않은 캐릭터입니다.");
+        }
+
+        // 데이터 이상으로 여러 캐릭터가 장착된 경우에도 대상 외의 장착 상태를 모두 정리한다.
+        characterMapper.unequipOtherCharacters(validUserId, validCharacterId);
+
+        if (!Boolean.TRUE.equals(character.getEquipped())
+                && characterMapper.equipCharacter(validUserId, validCharacterId) != 1) {
+            throw new IllegalStateException("캐릭터 장착에 실패했습니다.");
+        }
+
+        return CharacterEquipResponse.fromEquipped(character);
+    }
+
     private String requireUserId(String userId) {
         if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException("인증된 사용자 정보가 없습니다.");
         }
         return userId;
+    }
+
+    private Long requireCharacterId(Long characterId) {
+        if (characterId == null || characterId <= 0) {
+            throw new IllegalArgumentException("캐릭터 ID는 1 이상이어야 합니다.");
+        }
+        return characterId;
     }
 }
