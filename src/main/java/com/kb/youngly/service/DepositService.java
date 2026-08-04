@@ -24,10 +24,10 @@ public interface DepositService {
      */
     DepositResponse deposit(String userId, String groupId, DepositRequest request);
 
-//    /** 로그인 사용자의 그룹 예치금 현황을 조회한다. */
-//    DepositResponse getMyDeposit(String userId, String groupId);
-//
-//    /** 요청자가 속한 그룹의 참여자 전체 예치 현황을 조회한다. */
-//    List<MemberDepositStatusResponse> getMemberDepositStatuses(
-//            String requesterUserId, String groupId);
+    /** 로그인 사용자의 그룹 예치금 현황을 조회한다. */
+    DepositResponse getMyDeposit(String userId, String groupId);
+
+    /** 요청자가 속한 그룹의 참여자 전체 예치 현황을 조회한다. */
+    List<MemberDepositStatusResponse> getMemberDepositStatuses(
+            String requesterUserId, String groupId);
 }
