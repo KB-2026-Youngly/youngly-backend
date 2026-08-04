@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kb.youngly.mapper.MoimAccountMapper">
+    <select id="findByUserId"
+            resultType="com.kb.youngly.dto.moimaccount.MoimAccountDTO">
+
+        SELECT
+            m.moim_account_id,
+            k.account_number,
+            k.bank_name,
+            k.balance,
+            k.interest_rate,
+            m.account_name
+        FROM moim_accounts m
+                 INNER JOIN kb_accounts k
+                            ON m.kb_account_id = k.kb_account_id
+        WHERE m.user_id = #{userId}
+          AND m.account_status='ACTIVE'
+
+    </select>
+    <update id="updateStatus">
+
+        UPDATE moim_accounts
+        SET account_status = #{accountStatus}
+        WHERE moim_account_id = #{moimAccountId}
+
+    </update>
+    <select id="findById"
+            resultType="com.kb.youngly.vo.moimaccount.MoimAccountVO">
+
+        SELECT
+            m.moim_account_id,
+            m.user_id,
+            m.kb_account_id,
+            m.account_status,
+            m.account_name,
+            m.created_at,
+            m.updated_at
+        FROM moim_accounts m
+        WHERE m.moim_account_id = #{moimAccountId}
+
+    </select>
+    <insert id="insert">
+
+        INSERT INTO moim_accounts
+        (
+            moim_account_id,
+            user_id,
+            kb_account_id,
+            account_status,
+            account_name
+        )
+        VALUES
+            (
+                #{moimAccountId},
+                #{userId},
+                #{kbAccountId},
+                #{accountStatus},
+                #{accountName}
+            )
+    </insert>
+
+    <select id="findByKbAccountId"
+            resultType="com.kb.youngly.vo.moimaccount.MoimAccountVO">
+
+        SELECT
+            moim_account_id,
+            user_id,
+            kb_account_id,
+            account_status,
+            account_name,
+            created_at,
+            updated_at
+        FROM moim_accounts
+        WHERE kb_account_id = #{kbAccountId}
+            LIMIT 1
+    </select>
+    <select id="search"
+            parameterType="com.kb.youngly.dto.account.AccountSearchDTO"
+            resultType="com.kb.youngly.dto.account.KbAccountDTO">
+
+        SELECT
+            kb_account_id,
+            account_number,
+            bank_name,
+            balance,
+            interest_rate,
+            account_type
+        FROM kb_accounts k
+                 LEFT JOIN moim_accounts m
+                           ON k.kb_account_id = m.kb_account_id
+        WHERE
+            k.name = #{name}
+          AND k.birthday = #{birthday}
+          AND k.account_type = 'MOIM'
+          AND (
+            m.kb_account_id IS NULL
+                OR m.account_status = 'DEACTIVATED'
+            )
+
+    </select>
+</mapper>

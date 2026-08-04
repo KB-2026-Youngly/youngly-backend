@@ -14,5 +14,10 @@ public class IdGenerator {
                 + "-"
                 + UUID.randomUUID().toString().substring(0, 8);
     }
+    public static String generateMoimAccountId() {
+        return FORMATTER.format(LocalDateTime.now())
+                + "-"
+                + UUID.randomUUID().toString().substring(0, 8);
+    }
 
 }

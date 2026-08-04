@@ -1,6 +1,5 @@
-package com.kb.youngly.dto.account;
-import com.kb.youngly.enums.AccountStatus;
-import com.kb.youngly.vo.account.AccountVO;
+package com.kb.youngly.dto.moimaccount;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,6 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccountRegisterDTO {
+public class MoimAccountRegisterDTO {
+
     private String kbAccountId;
+
 }

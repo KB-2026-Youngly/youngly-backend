@@ -25,7 +25,7 @@
     </select>
     <select id="findById"
             parameterType="string"
-            resultType="KbAccountVO">
+            resultType="com.kb.youngly.vo.account.KbAccountVO">
 
         SELECT
             kb_account_id,
