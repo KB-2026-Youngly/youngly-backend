@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kb.youngly.mapper.GroupMapper">
+
+    <insert id="insertGroup"
+            parameterType="com.kb.youngly.vo.group.GroupVO">
+
+        INSERT INTO `groups` (
+            group_id,
+            moim_account_id,
+            user_id,
+            invite_code,
+            group_name,
+            group_count,
+            custom_rule,
+            challenge_type,
+            content,
+            future_deposit_ratio_rule,
+            duration_days,
+            min_count,
+            round_cycle_days,
+            base_deposit_amount,
+            group_status
+        )
+        VALUES (
+                   #{groupId},
+                   #{moimAccountId},
+                   #{userId},
+                   #{inviteCode},
+                   #{groupName},
+                   #{groupCount},
+                   #{customRule},
+                   #{challengeType},
+                   #{content},
+                   #{futureDepositRatioRule},
+                   #{durationDays},
+                   #{minCount},
+                   #{roundCycleDays},
+                   #{baseDepositAmount},
+                   #{groupStatus}
+               )
+
+    </insert>
+
+</mapper>
