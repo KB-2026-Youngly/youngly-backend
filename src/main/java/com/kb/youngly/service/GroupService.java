@@ -32,4 +32,11 @@ public interface GroupService {
             String userId,
             String groupId,
             UpdateGroupRequest request);
+
+    /**
+     * 그룹 종료(삭제)
+     */
+    MessageResponse deleteGroup(
+            String userId,
+            String groupId);
 }
