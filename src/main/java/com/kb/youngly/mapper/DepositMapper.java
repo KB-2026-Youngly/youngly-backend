@@ -4,7 +4,7 @@ import com.kb.youngly.dto.deposit.MemberDepositStatusResponse;
 import com.kb.youngly.enums.GroupUserStatus;
 import com.kb.youngly.vo.account.AccountTransactionVO;
 import com.kb.youngly.vo.account.AccountVO;
-import com.kb.youngly.vo.account.MoimAccountVO;
+import com.kb.youngly.vo.moimaccount.MoimAccountVO;
 import com.kb.youngly.vo.group.GroupUserVO;
 import com.kb.youngly.vo.group.GroupVO;
 import org.apache.ibatis.annotations.Param;
