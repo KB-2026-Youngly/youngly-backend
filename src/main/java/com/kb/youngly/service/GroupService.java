@@ -14,7 +14,7 @@ public interface GroupService {
                                     CreateGroupRequest request);
 
     /**
-     * 그룹 목록 조회
+     * 그룹 조회
      */
     List<GroupListResponse> getGroupList(String userId);
 

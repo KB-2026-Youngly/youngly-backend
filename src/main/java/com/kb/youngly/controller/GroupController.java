@@ -5,6 +5,7 @@ import com.kb.youngly.dto.group.*;
 import com.kb.youngly.service.GroupService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class GroupController {
     // 그룹 생성
     @PostMapping
     public ResponseEntity<CreateGroupResponse> createGroup(
+            Authentication authentication,
             @RequestBody CreateGroupRequest request) {
 
         CreateGroupResponse response =

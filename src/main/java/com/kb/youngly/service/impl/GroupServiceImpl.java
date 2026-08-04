@@ -21,7 +21,6 @@ public class GroupServiceImpl implements GroupService {
         this.groupMapper = groupMapper;
     }
 
-    // 그룹 생성
     @Override
     public CreateGroupResponse createGroup(String userId,
                                            CreateGroupRequest request) {
@@ -52,7 +51,6 @@ public class GroupServiceImpl implements GroupService {
                 .build();
     }
 
-    // 그룹 목록 조회
     @Override
     public List<GroupListResponse> getGroupList(String userId) {
 
