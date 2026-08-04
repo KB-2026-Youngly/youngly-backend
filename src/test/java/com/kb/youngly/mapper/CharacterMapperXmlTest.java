@@ -54,7 +54,8 @@ class CharacterMapperXmlTest {
         assertTrue(ownedForEquipSql.contains("CI.ITEM_CATEGORY = 'CHARACTER'"));
         assertTrue(unequipSql.contains("ITEM_ID <> ?"));
         assertTrue(unequipSql.contains("SET UI.IS_EQUIPPED = FALSE"));
-        assertTrue(unequipSql.contains("CI.ITEM_CATEGORY = 'CHARACTER'"));
+        assertTrue(unequipSql.contains("CI.ITEM_CATEGORY IN"));
+        assertTrue(unequipSql.contains("'ACC'"));
         assertTrue(equipSql.contains("SET IS_EQUIPPED = TRUE"));
     }
 

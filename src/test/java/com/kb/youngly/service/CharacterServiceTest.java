@@ -192,9 +192,11 @@ class CharacterServiceTest {
         characterMapper.addItem(character(1L, "기존 장착"));
         characterMapper.addItem(character(2L, "새 장착"));
         characterMapper.addItem(item(3L, "장착 프레임", ItemCategory.FRAME));
+        characterMapper.addItem(item(4L, "기존 장신구", ItemCategory.ACC));
         characterMapper.addOwnedItem(USER_ID, 1L, LocalDateTime.now().minusDays(1), true);
         characterMapper.addOwnedItem(USER_ID, 2L, LocalDateTime.now(), false);
         characterMapper.addOwnedItem(USER_ID, 3L, LocalDateTime.now(), true);
+        characterMapper.addOwnedItem(USER_ID, 4L, LocalDateTime.now(), true);
 
         CharacterEquipResponse response = serviceWithFixedIndex(0)
                 .equipCharacter(USER_ID, 2L);
@@ -204,6 +206,7 @@ class CharacterServiceTest {
         assertFalse(userItem(USER_ID, 1L).getIsEquipped());
         assertTrue(userItem(USER_ID, 2L).getIsEquipped());
         assertTrue(userItem(USER_ID, 3L).getIsEquipped());
+        assertFalse(userItem(USER_ID, 4L).getIsEquipped());
     }
 
     @Test

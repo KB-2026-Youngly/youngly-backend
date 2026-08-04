@@ -96,7 +96,7 @@
           AND ci.item_category = 'CHARACTER'
     </select>
 
-    <!-- 대상 캐릭터를 제외하고 사용자가 장착 중인 캐릭터를 모두 해제한다. -->
+    <!-- 대상 캐릭터를 제외하고 사용자가 장착 중인 캐릭터와 장신구를 해제한다. -->
     <update id="unequipOtherCharacters">
         UPDATE user_items ui
                  INNER JOIN collectible_items ci
@@ -105,7 +105,7 @@
         WHERE ui.user_id = #{userId}
           AND ui.item_id &lt;&gt; #{characterId}
           AND ui.is_equipped = TRUE
-          AND ci.item_category = 'CHARACTER'
+          AND ci.item_category IN ('CHARACTER', 'ACC')
     </update>
 
     <!-- 보유 여부 확인을 마친 대상 캐릭터를 장착 상태로 변경한다. -->

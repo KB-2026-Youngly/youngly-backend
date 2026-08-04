@@ -31,7 +31,7 @@ public interface CharacterMapper {
     CharacterEquipVO findOwnedCharacterForEquip(@Param("userId") String userId,
                                                 @Param("characterId") Long characterId);
 
-    /** 장착 대상 외에 사용자가 장착 중인 모든 캐릭터를 해제한다. */
+    /** 장착 대상 외에 사용자가 장착 중인 캐릭터와 장신구를 해제한다. */
     int unequipOtherCharacters(@Param("userId") String userId,
                                @Param("characterId") Long characterId);
 

@@ -154,7 +154,8 @@ public class InMemoryCharacterMapper implements CharacterMapper {
                     && !characterId.equals(userItem.getItemId())
                     && Boolean.TRUE.equals(userItem.getIsEquipped())
                     && item != null
-                    && item.getItemCategory() == ItemCategory.CHARACTER) {
+                    && (item.getItemCategory() == ItemCategory.CHARACTER
+                    || item.getItemCategory() == ItemCategory.ACC)) {
                 userItem.setIsEquipped(false);
                 updatedRows++;
             }
