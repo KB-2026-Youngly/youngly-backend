@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kb.youngly.mapper.CharacterMapper">
+
+    <!-- 캐릭터 뽑기와 보유 목록 조회에 필요한 SQL 매핑을 정의한다. -->
+
+    <!-- 보유 캐릭터 조회 결과를 응답용 VO 필드에 매핑한다. -->
+    <resultMap id="ownedCharacterMap" type="com.kb.youngly.vo.character.OwnedCharacterVO">
+        <id property="characterId" column="item_id"/>
+        <result property="name" column="item_name"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="acquiredAt" column="acquired_at"/>
+    </resultMap>
+
+    <!-- 같은 사용자의 동시 뽑기를 직렬화해 중복 획득을 방지한다. -->
+    <select id="lockUserForUpdate" resultType="string">
+        SELECT user_id
+        FROM users
+        WHERE user_id = #{userId}
+        FOR UPDATE
+    </select>
+
+    <!-- 아직 보유하지 않은 캐릭터만 랜덤 추첨 후보로 조회한다. -->
+    <select id="findUnownedCharacters"
+            resultType="com.kb.youngly.vo.point.CollectibleItemVO">
+        SELECT ci.item_id,
+               ci.item_category,
+               ci.item_name,
+               ci.image_url,
+               ci.drop_rate,
+               ci.base_character,
+               ci.acc_part,
+               ci.created_at
+        FROM collectible_items ci
+        WHERE ci.item_category = 'CHARACTER'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM user_items ui
+            WHERE ui.user_id = #{userId}
+              AND ui.item_id = ci.item_id
+        )
+        ORDER BY ci.item_id ASC
+    </select>
+
+    <!-- 획득한 캐릭터를 미장착 상태로 사용자 보유 목록에 저장한다. -->
+    <insert id="insertUserItem"
+            parameterType="com.kb.youngly.vo.point.UserItemVO"
+            useGeneratedKeys="true"
+            keyProperty="userItemId">
+        INSERT INTO user_items (
+            item_id,
+            user_id,
+            is_equipped
+        ) VALUES (
+            #{itemId},
+            #{userId},
+            #{isEquipped}
+        )
+    </insert>
+
+    <!-- 사용자가 보유한 캐릭터를 최근 획득순으로 조회한다. -->
+    <select id="findOwnedCharacters" resultMap="ownedCharacterMap">
+        SELECT ci.item_id,
+               ci.item_name,
+               ci.image_url,
+               ui.created_at AS acquired_at
+        FROM user_items ui
+                 INNER JOIN collectible_items ci
+                            ON ci.item_id = ui.item_id
+        WHERE ui.user_id = #{userId}
+          AND ci.item_category = 'CHARACTER'
+        ORDER BY ui.created_at DESC, ui.user_item_id DESC
+    </select>
+
+</mapper>
