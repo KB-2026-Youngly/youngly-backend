@@ -4,10 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import com.kb.youngly.dto.auth.LoginRequest;
-import com.kb.youngly.dto.auth.LoginResponse;
-import com.kb.youngly.dto.auth.SignupRequest;
-import com.kb.youngly.dto.auth.SignupResponse;
+import com.kb.youngly.dto.auth.*;
 import com.kb.youngly.jwt.JwtTokenProvider;
 import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.service.AuthService;
@@ -109,6 +106,14 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
+    @Override
+    public LogoutResponse logout() {
+
+        return LogoutResponse.builder()
+                .message("Success")
+                .build();
+    }
+}
     private List<Long> mergeInterestIds(List<Long> interestIds, List<Long> investmentInterestIds) {
         List<Long> merged = new ArrayList<>();
         if (!CollectionUtils.isEmpty(interestIds)) {

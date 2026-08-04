@@ -1,13 +1,10 @@
 package com.kb.youngly.controller;
 
-import com.kb.youngly.dto.auth.LoginRequest;
-import com.kb.youngly.dto.auth.LoginResponse;
-import com.kb.youngly.dto.auth.SignupResponse;
+import com.kb.youngly.dto.auth.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.kb.youngly.dto.auth.SignupRequest;
 import com.kb.youngly.service.AuthService;
 
 @RestController
@@ -38,5 +35,13 @@ public class AuthController {
         LoginResponse response = authService.login(loginRequest);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<LogoutResponse> logout() {
+
+        return ResponseEntity.ok(
+                authService.logout()
+        );
     }
 }
