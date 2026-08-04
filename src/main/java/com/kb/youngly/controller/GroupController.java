@@ -1,9 +1,7 @@
 package com.kb.youngly.controller;
 
-import com.kb.youngly.dto.group.CreateGroupRequest;
-import com.kb.youngly.dto.group.CreateGroupResponse;
-import com.kb.youngly.dto.group.GroupDetailResponse;
-import com.kb.youngly.dto.group.GroupListResponse;
+import com.kb.youngly.dto.common.MessageResponse;
+import com.kb.youngly.dto.group.*;
 import com.kb.youngly.service.GroupService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +20,7 @@ public class GroupController {
         this.groupService = groupService;
     }
 
+    // 그룹 생성
     @PostMapping
     public ResponseEntity<CreateGroupResponse> createGroup(
             Authentication authentication,
@@ -35,6 +34,7 @@ public class GroupController {
                 .body(response);
     }
 
+    // 그룹 목록 조회
     @GetMapping
     public ResponseEntity<List<GroupListResponse>> getGroupList(
             Authentication authentication) {
@@ -44,6 +44,7 @@ public class GroupController {
         );
     }
 
+    // 그룹 상세 조회
     @GetMapping("/{groupId}")
     public ResponseEntity<GroupDetailResponse> getGroupDetail(
             Authentication authentication,
@@ -53,6 +54,22 @@ public class GroupController {
                 groupService.getGroupDetail(
                         authentication.getName(),
                         groupId
+                )
+        );
+    }
+
+    // 그룹 수정
+    @PutMapping("/{groupId}")
+    public ResponseEntity<MessageResponse> updateGroup(
+            Authentication authentication,
+            @PathVariable String groupId,
+            @RequestBody UpdateGroupRequest request) {
+
+        return ResponseEntity.ok(
+                groupService.updateGroup(
+                        authentication.getName(),
+                        groupId,
+                        request
                 )
         );
     }

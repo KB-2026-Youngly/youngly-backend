@@ -99,4 +99,22 @@
 
     </select>
 
+    <update id="updateGroup"
+            parameterType="com.kb.youngly.vo.group.GroupVO">
+
+        UPDATE `groups`
+        SET
+            group_name = #{groupName},
+            custom_rule = #{customRule},
+            content = #{content},
+            future_deposit_ratio_rule = #{futureDepositRatioRule},
+            duration_days = #{durationDays},
+            min_count = #{minCount},
+            round_cycle_days = #{roundCycleDays},
+            base_deposit_amount = #{baseDepositAmount},
+            updated_at = NOW()
+        WHERE group_id = #{groupId}
+
+    </update>
+
 </mapper>
