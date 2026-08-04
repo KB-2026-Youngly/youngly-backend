@@ -45,4 +45,31 @@
 
     </insert>
 
+    <select id="findGroupsByUserId"
+            parameterType="string"
+            resultType="com.kb.youngly.dto.group.GroupListResponse">
+
+        SELECT
+            g.group_id,
+            g.group_name,
+            g.group_count,
+            g.group_status
+        FROM `groups` g
+                 LEFT JOIN group_users gu
+                           ON g.group_id = gu.group_id
+        WHERE
+            g.user_id = #{userId}
+           OR (
+            gu.user_id = #{userId}
+                AND gu.group_user_status = 'ACTIVE'
+            )
+        GROUP BY
+            g.group_id,
+            g.group_name,
+            g.group_count,
+            g.group_status
+        ORDER BY g.created_at DESC
+
+    </select>
+
 </mapper>
