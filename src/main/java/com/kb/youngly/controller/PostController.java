@@ -1,9 +1,9 @@
 package com.kb.youngly.controller;
 
-import com.kb.youngly.dto.CommentDTO;
-import com.kb.youngly.dto.FeedDetailResponseDTO;
-import com.kb.youngly.dto.FeedListResponseDTO;
-import com.kb.youngly.dto.PostDTO;
+import com.kb.youngly.dto.posts.FeedDetailResponseDTO;
+import com.kb.youngly.dto.posts.FeedListResponseDTO;
+import com.kb.youngly.dto.posts.PostApprovalRequestDTO;
+import com.kb.youngly.dto.posts.PostDTO;
 import com.kb.youngly.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -61,4 +61,16 @@ public class PostController {
 
         return ResponseEntity.ok(responseDTO);
     }
+
+    // PostController.java 내부에 추가
+    @PatchMapping("/{postId}/approval")
+    public ResponseEntity<String> processPostApproval(
+            @PathVariable Long postId,
+            @RequestBody PostApprovalRequestDTO requestDTO) {
+
+        postService.processPostApproval(postId, requestDTO);
+
+        return ResponseEntity.ok("게시글 평가가 성공적으로 반영되었습니다.");
     }
+
+}
