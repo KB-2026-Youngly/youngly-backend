@@ -17,7 +17,7 @@ import java.util.function.IntUnaryOperator;
 
 /**
  * 캐릭터 랜덤 획득, 보유 캐릭터 조회, 장착의 비즈니스 흐름을 담당한다.
- * 사용자별 동시 요청을 제어하고 포인트 사용·보유 저장·장착 변경을 트랜잭션으로 처리한다.
+ * 사용자가 캐릭터를 뽑거나 장착할 때 포인트, 보유 캐릭터, 장착 상태가 따로따로 변경되지 않도록 하나의 흐름으로 처리했습니다.
  */
 @Service
 public class CharacterService {
