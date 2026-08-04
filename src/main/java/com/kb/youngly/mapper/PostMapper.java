@@ -1,13 +1,16 @@
 package com.kb.youngly.mapper;
 
-import com.kb.youngly.dto.CommentDTO;
-import com.kb.youngly.dto.FeedListResponseDTO;
-import com.kb.youngly.dto.ReactionUserDTO;
+
 import com.kb.youngly.vo.post.PostVO;
+
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Mapper;
+
+import com.kb.youngly.dto.posts.*;
+import org.apache.ibatis.annotations.*;
+
 
 import java.util.List;
 
@@ -82,4 +85,47 @@ public interface PostMapper {
           AND gu.group_user_status = 'ACTIVE'
     """)
     boolean checkGroupMembership(@Param("roundId") Long roundId, @Param("userId") String userId);
+
+
+    // PostMapper.java 내부에 추가
+
+    // (만약 상세 조회할 때 만들어둔 getPostById가 있다면 안 만들어도 됨!)
+    // 4. 특정 게시글의 작성자 등 기본 정보 조회 (본인 검증용)
+    @Select("""
+        SELECT post_id, user_id, post_status 
+        FROM posts 
+        WHERE post_id = #{postId}
+    """)
+    PostDTO getPostById(@Param("postId") Long postId);
+
+    // 5. 중복 평가 여부 확인 (이미 승인/반려를 했는지 카운트)
+    @Select("""
+        SELECT COUNT(*) 
+        FROM post_approvals
+        WHERE post_id = #{postId} AND user_id = #{userId}
+    """)
+    int checkDuplicateApproval(@Param("postId") Long postId, @Param("userId") String userId);
+
+    // 6. 평가 내역 저장 (승인 또는 반려 기록 남기기)
+    @Insert("""
+        INSERT INTO post_approvals (user_id, post_id, approval_status, reject_reason, created_at, updated_at)
+        VALUES (#{dto.userId}, #{postId}, #{dto.approvalStatus}, #{dto.rejectReason}, NOW(), NOW())
+    """)
+    void insertPostApproval(@Param("postId") Long postId, @Param("dto") PostApprovalRequestDTO dto);
+
+    // 7-1. 승인 시 posts 테이블의 승인 카운트 +1 증가
+    @Update("""
+        UPDATE posts 
+        SET approve_count = approve_count + 1 
+        WHERE post_id = #{postId}
+    """)
+    void incrementApproveCount(@Param("postId") Long postId);
+
+    // 7-2. 반려 시 posts 테이블의 반려 카운트 +1 증가
+    @Update("""
+        UPDATE posts 
+        SET reject_count = reject_count + 1 
+        WHERE post_id = #{postId}
+    """)
+    void incrementRejectCount(@Param("postId") Long postId);
 }

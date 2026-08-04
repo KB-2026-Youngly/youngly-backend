@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kb.youngly.mapper.DepositMapper">
+
+    <!-- 그룹별 기준 예치금과 연결 모임통장을 조회한다. -->
+    <select id="findGroupById" parameterType="string" resultType="com.kb.youngly.vo.group.GroupVO">
+        SELECT group_id, moim_account_id, user_id, invite_code, group_name, group_count,
+               created_at, custom_rule, challenge_type, content, future_deposit_ratio_rule,
+               duration_days, min_count, round_cycle_days, base_deposit_amount, group_status, updated_at
+        FROM `groups` WHERE group_id = #{groupId}
+    </select>
+
+    <select id="findGroupUser" resultType="com.kb.youngly.vo.group.GroupUserVO">
+        SELECT group_user_id, group_id, user_id, group_user_status, approved_at,
+               current_deposit_amount, streak_count, created_at, updated_at
+        FROM group_users WHERE group_id = #{groupId} AND user_id = #{userId}
+    </select>
+
+    <!-- 같은 참여자의 동시 납부가 누적 금액을 잃지 않도록 행을 잠근다. -->
+    <select id="findGroupUserForUpdate" resultType="com.kb.youngly.vo.group.GroupUserVO">
+        SELECT group_user_id, group_id, user_id, group_user_status, approved_at,
+               current_deposit_amount, streak_count, created_at, updated_at
+        FROM group_users WHERE group_id = #{groupId} AND user_id = #{userId} FOR UPDATE
+    </select>
+
+    <select id="findAccountByIdAndUserId" resultType="com.kb.youngly.vo.account.AccountVO">
+        SELECT account_id, user_id, kb_account_id, account_status, account_name, created_at, updated_at
+        FROM accounts WHERE account_id = #{accountId} AND user_id = #{userId}
+    </select>
+
+    <select id="findMoimAccountById" parameterType="string" resultType="com.kb.youngly.vo.account.MoimAccountVO">
+        SELECT moim_account_id, user_id, kb_account_id, created_at, updated_at, account_name
+        FROM moim_accounts WHERE moim_account_id = #{moimAccountId}
+    </select>
+
+    <!-- 잔액과 이후 balance_after 계산값을 일관되게 읽는다. -->
+    <select id="findKbAccountBalanceForUpdate" parameterType="string" resultType="java.math.BigDecimal">
+        SELECT balance FROM kb_accounts WHERE kb_account_id = #{kbAccountId} FOR UPDATE
+    </select>
+
+    <select id="countDepositKbAccount" parameterType="string" resultType="int">
+        SELECT COUNT(*) FROM kb_accounts
+        WHERE kb_account_id = #{kbAccountId} AND account_type = 'DEPOSIT'
+    </select>
+
+    <update id="withdrawFromKbAccount">
+        UPDATE kb_accounts SET balance = balance - #{amount}
+        WHERE kb_account_id = #{kbAccountId} AND balance &gt;= #{amount}
+    </update>
+
+    <update id="increaseKbAccountBalance">
+        UPDATE kb_accounts SET balance = balance + #{amount} WHERE kb_account_id = #{kbAccountId}
+    </update>
+
+    <update id="increaseCurrentDeposit">
+        UPDATE group_users SET current_deposit_amount = current_deposit_amount + #{amount}
+        WHERE group_user_id = #{groupUserId}
+    </update>
+
+    <update id="updateGroupUserStatus">
+        UPDATE group_users SET group_user_status = #{status} WHERE group_user_id = #{groupUserId}
+    </update>
+
+    <!-- 개인 계좌 출금과 모임통장 입금을 같은 통합 거래 원장에 기록한다. -->
+    <insert id="insertAccountTransaction" parameterType="com.kb.youngly.vo.account.AccountTransactionVO"
+            useGeneratedKeys="true" keyProperty="accountTransactionId" keyColumn="account_transaction_id">
+        INSERT INTO account_transactions (
+            kb_account_id, group_user_id, round_id, transaction_type, transaction_category,
+            amount, balance_after, idempotency_key, description, another_account_number,
+            another_bank_name, another_name
+        ) VALUES (
+            #{kbAccountId}, #{groupUserId}, #{roundId}, #{transactionType}, #{transactionCategory},
+            #{amount}, #{balanceAfter}, #{idempotencyKey}, #{description}, #{anotherAccountNumber},
+            #{anotherBankName}, #{anotherName}
+        )
+    </insert>
+
+    <select id="findAccountTransactionByIdempotencyKey" parameterType="string"
+            resultType="com.kb.youngly.vo.account.AccountTransactionVO">
+        SELECT account_transaction_id, kb_account_id, group_user_id, round_id, transaction_type,
+               transaction_category, amount, balance_after, idempotency_key, description,
+               another_account_number, another_bank_name, another_name, created_at
+        FROM account_transactions WHERE idempotency_key = #{idempotencyKey}
+    </select>
+
+    <select id="findMemberDepositStatuses" parameterType="string"
+            resultType="com.kb.youngly.dto.deposit.MemberDepositStatusResponse">
+        SELECT gu.user_id, u.nickname, u.profile_image_url,
+               g.base_deposit_amount AS required_amount,
+               gu.current_deposit_amount, gu.group_user_status
+        FROM group_users gu
+        JOIN `groups` g ON g.group_id = gu.group_id
+        JOIN users u ON u.user_id = gu.user_id
+        WHERE gu.group_id = #{groupId}
+        ORDER BY gu.created_at ASC
+    </select>
+</mapper>
