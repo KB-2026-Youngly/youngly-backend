@@ -31,4 +31,9 @@ public interface GroupMapper {
      * 그룹 종료
      */
     void finishGroup(String groupId);
+
+    /**
+     * 그룹 참여
+     */
+    GroupVO findGroupByInviteCode(String inviteCode);
 }

@@ -90,4 +90,18 @@ public class GroupController {
                 )
         );
     }
+
+    // 그룹 참여
+    @PostMapping("/join")
+    public ResponseEntity<MessageResponse> joinGroup(
+            Authentication authentication,
+            @RequestBody JoinGroupRequest request) {
+
+        return ResponseEntity.ok(
+                groupService.joinGroup(
+                        authentication.getName(),
+                        request
+                )
+        );
+    }
 }
