@@ -19,6 +19,9 @@ public interface RoundMapper {
     /** 라운드를 저장하고 자동 생성된 roundId를 전달받는다. */
     int insertRound(RoundVO round);
 
+    /** 모집 중인 그룹의 상태를 진행 중으로 변경한다. */
+    int startRecruitingGroup(String groupId);
+
     /**
      * PENDING_DEPOSIT 또는 ACTIVE 상태인 사용자와
      * 각 사용자의 미래 적립금 수령 계좌를 조회한다.

@@ -53,6 +53,15 @@
         )
     </insert>
 
+    <!-- 첫 라운드 생성 시 모집 중인 그룹만 진행 중으로 전환한다. -->
+    <update id="startRecruitingGroup">
+        UPDATE `groups`
+        SET group_status = 'ONGOING',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE group_id = #{groupId}
+          AND group_status = 'RECRUITING'
+    </update>
+
     <!--
         라운드 생성 대상 상태의 사용자만 조회한다.
         수령 계좌는 개인연금(INCOME)을 우선하고, 선택된 연금 계좌가 없으면

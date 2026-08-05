@@ -56,7 +56,8 @@ public class RoundServiceImpl implements RoundService {
         }
 
         RoundVO latestRound = roundMapper.findLatestRound(normalizedGroupId);
-        int roundNo = latestRound == null ? 1 : latestRound.getRoundNo() + 1;
+        boolean isFirstRound = latestRound == null;
+        int roundNo = isFirstRound ? 1 : latestRound.getRoundNo() + 1;
         LocalDate startDate = resolveStartDate(request, latestRound);
 
         // 종료일과 상태는 서버에서 그룹 설정을 기준으로 확정한다.
@@ -70,6 +71,11 @@ public class RoundServiceImpl implements RoundService {
 
         if (roundMapper.insertRound(round) != 1 || round.getRoundId() == null) {
             throw new IllegalStateException("라운드 생성에 실패했습니다.");
+        }
+
+        // 첫 라운드가 생성되면 모집 중인 그룹을 진행 중 상태로 전환한다.
+        if (isFirstRound) {
+            roundMapper.startRecruitingGroup(normalizedGroupId);
         }
 
         // 참여 대기 및 참여 중인 사용자만 새 라운드의 정산 대상 이력에 포함한다.
