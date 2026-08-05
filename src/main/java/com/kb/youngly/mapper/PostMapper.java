@@ -40,4 +40,10 @@ public interface PostMapper {
 
     // 7-2. 반려 시 posts 테이블의 반려 카운트 +1 증가
     void incrementRejectCount(@Param("postId") Long postId);
+
+    // 8. 특정 라운드에 속한 그룹의 전체 활성 멤버 수 조회 (과반수 계산용)
+    int getTotalGroupMembersByRoundId(@Param("roundId") Long roundId);
+
+    // 9. 과반수 투표 달성 시 게시글의 최종 상태 및 상태변경시간 업데이트
+    void updatePostStatus(@Param("postId") Long postId, @Param("status") String status);
 }

@@ -89,6 +89,11 @@ public class PostService {
             throw new IllegalArgumentException("본인의 인증 게시물은 스스로 평가할 수 없습니다.");
         }
 
+        // 2-2. 방어 로직: 아직 인증샷이 안올라온 게시글 (NONE) 차단
+        if ("NONE".equals(post.getPostStatus())) {
+            throw new IllegalStateException("아직 인증이 올라오지 않은 빈 게시글은 평가할 수 없습니다.");
+        }
+
         // 3. 방어 로직: 반려(REJECT) 시 사유 필수
         if ("REJECT".equals(requestDTO.getApprovalStatus())) {
             if (requestDTO.getRejectReason() == null || requestDTO.getRejectReason().trim().isEmpty()) {
@@ -111,6 +116,34 @@ public class PostService {
         } else if ("REJECT".equals(requestDTO.getApprovalStatus())) {
             postMapper.incrementRejectCount(postId);
         }
+
+        // ... 기존 로직 (중복 투표 검사, post_approvals 테이블 인서트, 카운트 +1 증가 등) ...
+
+        // ==========================================
+        // 💡 [추가할 로직] 과반수 투표 판정 및 상태 업데이트
+        // ==========================================
+
+        // 1. 방금 투표(카운트 +1)가 반영된 최신 게시글 데이터를 다시 조회해 와!
+        PostDTO updatedPost = postMapper.getPostById(postId);
+
+        // 2. 이 게시글이 속한 라운드의 전체 그룹 멤버(ACTIVE) 수 조회
+        int totalMembers = postMapper.getTotalGroupMembersByRoundId(updatedPost.getRoundId());
+
+        // 3. 과반수 기준치 계산 (정수 나눗셈)
+        // 5명이면 5/2 = 2 (3명부터 과반수)
+        // 4명이면 4/2 = 2 (3명부터 과반수)
+        int majorityThreshold = totalMembers / 2;
+
+        // 4. 과반수 달성 여부 체크 후 게시물 최종 상태 업데이트
+        if (updatedPost.getApproveCount() > majorityThreshold) {
+            // 승인 카운트가 과반수를 넘으면? APPROVED(승인) 확정!
+            postMapper.updatePostStatus(postId, "APPROVED");
+
+        } else if (updatedPost.getRejectCount() > majorityThreshold) {
+            // 반려 카운트가 과반수를 넘으면? REJECTED(반려) 확정!
+            postMapper.updatePostStatus(postId, "REJECTED");
+        }
+        // 둘 다 과반수를 못 넘었으면? 아직 투표가 진행 중인 거니까 그냥 종료(PASS)!
     }
 
 }
