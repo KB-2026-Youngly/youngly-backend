@@ -123,4 +123,13 @@
     WHERE post_id = #{postId}
 </update>
 
+<!-- 10. 작성일 기준 다음날 하루(유예 기간)가 지나고, 그 다음날 자정이 되면 PENDING 상태의 게시글 일괄 자동 승인 -->
+<update id="updatePostsToAutoApproved">
+    UPDATE posts
+    SET post_status = 'APPROVED',
+    status_changed_at = NOW()
+    WHERE post_status = 'PENDING'
+    AND posted_at &lt; DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY) <!--  오늘 기준 하루 전(어제 자정)보다 과거인 글만 타겟팅!-->
+</update>
+
 </mapper>

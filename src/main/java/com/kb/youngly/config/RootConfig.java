@@ -11,6 +11,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
@@ -35,6 +36,7 @@ import javax.sql.DataSource;
 })
 @MapperScan(basePackages = {"com.kb.youngly.mapper"})
 @PropertySource(value = {"classpath:/application.properties"})
+@EnableScheduling
 public class RootConfig {
 
     @Value("${jdbc.driver}")
