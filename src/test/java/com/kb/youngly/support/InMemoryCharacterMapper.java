@@ -2,6 +2,7 @@ package com.kb.youngly.support;
 
 import com.kb.youngly.enums.ItemCategory;
 import com.kb.youngly.mapper.CharacterMapper;
+import com.kb.youngly.vo.character.CharacterEquipVO;
 import com.kb.youngly.vo.character.OwnedCharacterVO;
 import com.kb.youngly.vo.point.CollectibleItemVO;
 import com.kb.youngly.vo.point.UserItemVO;
@@ -33,11 +34,18 @@ public class InMemoryCharacterMapper implements CharacterMapper {
     }
 
     public void addOwnedItem(String userId, Long itemId, LocalDateTime acquiredAt) {
+        addOwnedItem(userId, itemId, acquiredAt, false);
+    }
+
+    public void addOwnedItem(String userId,
+                             Long itemId,
+                             LocalDateTime acquiredAt,
+                             boolean equipped) {
         userItems.add(UserItemVO.builder()
                 .userItemId(nextUserItemId++)
                 .itemId(itemId)
                 .userId(userId)
-                .isEquipped(false)
+                .isEquipped(equipped)
                 .createdAt(acquiredAt)
                 .build());
     }
@@ -111,5 +119,60 @@ public class InMemoryCharacterMapper implements CharacterMapper {
                             .build();
                 })
                 .toList();
+    }
+
+    @Override
+    public CharacterEquipVO findOwnedCharacterForEquip(String userId, Long characterId) {
+        callLog.add("findOwnedCharacterForEquip");
+        return userItems.stream()
+                .filter(userItem -> userId.equals(userItem.getUserId()))
+                .filter(userItem -> characterId.equals(userItem.getItemId()))
+                .map(userItem -> {
+                    CollectibleItemVO item = items.get(userItem.getItemId());
+                    if (item == null || item.getItemCategory() != ItemCategory.CHARACTER) {
+                        return null;
+                    }
+                    return CharacterEquipVO.builder()
+                            .characterId(item.getItemId())
+                            .name(item.getItemName())
+                            .imageUrl(item.getImageUrl())
+                            .equipped(userItem.getIsEquipped())
+                            .build();
+                })
+                .filter(character -> character != null)
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public int unequipOtherCharacters(String userId, Long characterId) {
+        callLog.add("unequipOtherCharacters");
+        int updatedRows = 0;
+        for (UserItemVO userItem : userItems) {
+            CollectibleItemVO item = items.get(userItem.getItemId());
+            if (userId.equals(userItem.getUserId())
+                    && !characterId.equals(userItem.getItemId())
+                    && Boolean.TRUE.equals(userItem.getIsEquipped())
+                    && item != null
+                    && (item.getItemCategory() == ItemCategory.CHARACTER
+                    || item.getItemCategory() == ItemCategory.ACC)) {
+                userItem.setIsEquipped(false);
+                updatedRows++;
+            }
+        }
+        return updatedRows;
+    }
+
+    @Override
+    public int equipCharacter(String userId, Long characterId) {
+        callLog.add("equipCharacter");
+        for (UserItemVO userItem : userItems) {
+            if (userId.equals(userItem.getUserId())
+                    && characterId.equals(userItem.getItemId())) {
+                userItem.setIsEquipped(true);
+                return 1;
+            }
+        }
+        return 0;
     }
 }

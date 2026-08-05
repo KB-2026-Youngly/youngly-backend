@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kb.youngly.mapper.CharacterMapper">
 
-    <!-- 캐릭터 뽑기와 보유 목록 조회에 필요한 SQL 매핑을 정의한다. -->
+    <!-- 캐릭터 뽑기, 보유 목록 조회, 장착에 필요한 SQL 매핑을 정의한다. -->
 
     <!-- 보유 캐릭터 조회 결과를 응답용 VO 필드에 매핑한다. -->
     <resultMap id="ownedCharacterMap" type="com.kb.youngly.vo.character.OwnedCharacterVO">
@@ -12,6 +12,14 @@
         <result property="name" column="item_name"/>
         <result property="imageUrl" column="image_url"/>
         <result property="acquiredAt" column="acquired_at"/>
+    </resultMap>
+
+    <!-- 장착 대상 캐릭터의 공개 정보와 현재 장착 상태를 내부 VO에 매핑한다. -->
+    <resultMap id="characterEquipMap" type="com.kb.youngly.vo.character.CharacterEquipVO">
+        <id property="characterId" column="item_id"/>
+        <result property="name" column="item_name"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="equipped" column="is_equipped"/>
     </resultMap>
 
     <!-- 같은 사용자의 동시 뽑기를 직렬화해 중복 획득을 방지한다. -->
@@ -73,5 +81,40 @@
           AND ci.item_category = 'CHARACTER'
         ORDER BY ui.created_at DESC, ui.user_item_id DESC
     </select>
+
+    <!-- 사용자가 보유한 캐릭터인지 확인하고 응답에 필요한 장착 정보를 조회한다. -->
+    <select id="findOwnedCharacterForEquip" resultMap="characterEquipMap">
+        SELECT ci.item_id,
+               ci.item_name,
+               ci.image_url,
+               ui.is_equipped
+        FROM user_items ui
+                 INNER JOIN collectible_items ci
+                            ON ci.item_id = ui.item_id
+        WHERE ui.user_id = #{userId}
+          AND ui.item_id = #{characterId}
+          AND ci.item_category = 'CHARACTER'
+    </select>
+
+    <!-- 대상 캐릭터를 제외하고 사용자가 장착 중인 캐릭터와 장신구를 해제한다. -->
+    <update id="unequipOtherCharacters">
+        UPDATE user_items ui
+                 INNER JOIN collectible_items ci
+                            ON ci.item_id = ui.item_id
+        SET ui.is_equipped = FALSE
+        WHERE ui.user_id = #{userId}
+          AND ui.item_id &lt;&gt; #{characterId}
+          AND ui.is_equipped = TRUE
+          AND ci.item_category IN ('CHARACTER', 'ACC')
+    </update>
+
+    <!-- 보유 여부 확인을 마친 대상 캐릭터를 장착 상태로 변경한다. -->
+    <update id="equipCharacter">
+        UPDATE user_items
+        SET is_equipped = TRUE
+        WHERE user_id = #{userId}
+          AND item_id = #{characterId}
+          AND is_equipped = FALSE
+    </update>
 
 </mapper>

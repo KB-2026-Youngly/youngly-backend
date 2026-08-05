@@ -1,6 +1,7 @@
 package com.kb.youngly.service;
 
 import com.kb.youngly.dto.character.CharacterDrawResponse;
+import com.kb.youngly.dto.character.CharacterEquipResponse;
 import com.kb.youngly.dto.character.OwnedCharacterResponse;
 import com.kb.youngly.enums.ItemCategory;
 import com.kb.youngly.enums.PointType;
@@ -28,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CharacterServiceTest {
 
     private static final String USER_ID = "character-user";
+    private static final String OTHER_USER_ID = "other-character-user";
 
     private InMemoryCharacterMapper characterMapper;
     private InMemoryPointMapper pointMapper;
@@ -160,6 +162,89 @@ class CharacterServiceTest {
     }
 
     @Test
+    @DisplayName("보유 캐릭터를 정상 장착한다")
+    void equipCharacter_equipsOwnedCharacter() {
+        characterMapper.addItem(character(1L, "키키"));
+        characterMapper.addOwnedItem(USER_ID, 1L, LocalDateTime.now());
+
+        CharacterEquipResponse response = serviceWithFixedIndex(0)
+                .equipCharacter(USER_ID, 1L);
+
+        assertEquals(1L, response.getCharacterId());
+        assertEquals("키키", response.getName());
+        assertEquals("/characters/1.png", response.getImageUrl());
+        assertTrue(response.isEquipped());
+        assertTrue(userItem(USER_ID, 1L).getIsEquipped());
+        assertEquals(
+                List.of(
+                        "lockUserForUpdate",
+                        "findOwnedCharacterForEquip",
+                        "unequipOtherCharacters",
+                        "equipCharacter"
+                ),
+                characterMapper.getCallLog()
+        );
+    }
+
+    @Test
+    @DisplayName("새 캐릭터를 장착하면 기존 캐릭터 장착을 해제한다")
+    void equipCharacter_unequipsPreviouslyEquippedCharacter() {
+        characterMapper.addItem(character(1L, "기존 장착"));
+        characterMapper.addItem(character(2L, "새 장착"));
+        characterMapper.addItem(item(3L, "장착 프레임", ItemCategory.FRAME));
+        characterMapper.addItem(item(4L, "기존 장신구", ItemCategory.ACC));
+        characterMapper.addOwnedItem(USER_ID, 1L, LocalDateTime.now().minusDays(1), true);
+        characterMapper.addOwnedItem(USER_ID, 2L, LocalDateTime.now(), false);
+        characterMapper.addOwnedItem(USER_ID, 3L, LocalDateTime.now(), true);
+        characterMapper.addOwnedItem(USER_ID, 4L, LocalDateTime.now(), true);
+
+        CharacterEquipResponse response = serviceWithFixedIndex(0)
+                .equipCharacter(USER_ID, 2L);
+
+        assertEquals(2L, response.getCharacterId());
+        assertTrue(response.isEquipped());
+        assertFalse(userItem(USER_ID, 1L).getIsEquipped());
+        assertTrue(userItem(USER_ID, 2L).getIsEquipped());
+        assertTrue(userItem(USER_ID, 3L).getIsEquipped());
+        assertFalse(userItem(USER_ID, 4L).getIsEquipped());
+    }
+
+    @Test
+    @DisplayName("이미 장착된 캐릭터를 다시 요청해도 동일한 결과를 반환한다")
+    void equipCharacter_alreadyEquippedIsIdempotent() {
+        characterMapper.addItem(character(1L, "키키"));
+        characterMapper.addOwnedItem(USER_ID, 1L, LocalDateTime.now(), true);
+
+        CharacterEquipResponse response = serviceWithFixedIndex(0)
+                .equipCharacter(USER_ID, 1L);
+
+        assertEquals(1L, response.getCharacterId());
+        assertTrue(response.isEquipped());
+        assertTrue(userItem(USER_ID, 1L).getIsEquipped());
+        assertFalse(characterMapper.getCallLog().contains("equipCharacter"));
+    }
+
+    @Test
+    @DisplayName("다른 사용자가 보유한 캐릭터는 장착할 수 없다")
+    void equipCharacter_characterOwnedByAnotherUserFails() {
+        characterMapper.addUser(OTHER_USER_ID);
+        characterMapper.addItem(character(1L, "다른 사용자 캐릭터"));
+        characterMapper.addOwnedItem(OTHER_USER_ID, 1L, LocalDateTime.now(), true);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> serviceWithFixedIndex(0).equipCharacter(USER_ID, 1L)
+        );
+
+        assertEquals("보유하지 않은 캐릭터입니다.", exception.getMessage());
+        assertTrue(userItem(OTHER_USER_ID, 1L).getIsEquipped());
+        assertEquals(
+                List.of("lockUserForUpdate", "findOwnedCharacterForEquip"),
+                characterMapper.getCallLog()
+        );
+    }
+
+    @Test
     @DisplayName("캐릭터 획득은 쓰기 트랜잭션으로 처리한다")
     void drawCharacter_isTransactional() throws NoSuchMethodException {
         Method method = CharacterService.class.getMethod("drawCharacter", String.class);
@@ -179,8 +264,30 @@ class CharacterServiceTest {
         assertTrue(transactional.readOnly());
     }
 
+    @Test
+    @DisplayName("캐릭터 장착과 기존 장착 해제는 쓰기 트랜잭션으로 처리한다")
+    void equipCharacter_isTransactional() throws NoSuchMethodException {
+        Method method = CharacterService.class.getMethod(
+                "equipCharacter",
+                String.class,
+                Long.class
+        );
+        Transactional transactional = method.getAnnotation(Transactional.class);
+
+        assertNotNull(transactional);
+        assertFalse(transactional.readOnly());
+    }
+
     private CharacterService serviceWithFixedIndex(int index) {
         return new CharacterService(characterMapper, pointService, bound -> index);
+    }
+
+    private UserItemVO userItem(String userId, Long itemId) {
+        return characterMapper.getUserItems().stream()
+                .filter(item -> userId.equals(item.getUserId()))
+                .filter(item -> itemId.equals(item.getItemId()))
+                .findFirst()
+                .orElseThrow();
     }
 
     private CollectibleItemVO character(Long itemId, String name) {
