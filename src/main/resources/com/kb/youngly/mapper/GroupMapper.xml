@@ -117,4 +117,14 @@
 
     </update>
 
+    <update id="finishGroup"
+            parameterType="string">
+
+        UPDATE `groups`
+        SET
+            group_status = 'FINISHED',
+            updated_at = NOW()
+        WHERE group_id = #{groupId}
+
+    </update>
 </mapper>

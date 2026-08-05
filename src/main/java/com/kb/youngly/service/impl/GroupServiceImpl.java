@@ -7,6 +7,7 @@ import com.kb.youngly.mapper.GroupMapper;
 import com.kb.youngly.service.GroupService;
 import com.kb.youngly.vo.group.GroupVO;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -116,6 +117,33 @@ public class GroupServiceImpl implements GroupService {
         group.setBaseDepositAmount(request.getBaseDepositAmount());
 
         groupMapper.updateGroup(group);
+
+        return MessageResponse.builder()
+                .message("Success")
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public MessageResponse deleteGroup(String userId,
+                                       String groupId) {
+
+        GroupVO group = groupMapper.findGroupById(groupId);
+
+        if (group == null) {
+            throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
+        }
+
+        if (!userId.equals(group.getUserId())) {
+            throw new IllegalArgumentException("그룹 종료 권한이 없습니다.");
+        }
+
+        // 이미 종료된 그룹인지 확인
+        if (group.getGroupStatus() == GroupStatus.FINISHED) {
+            throw new IllegalArgumentException("이미 종료된 그룹입니다.");
+        }
+
+        groupMapper.finishGroup(groupId);
 
         return MessageResponse.builder()
                 .message("Success")

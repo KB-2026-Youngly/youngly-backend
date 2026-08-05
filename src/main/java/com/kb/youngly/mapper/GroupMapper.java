@@ -8,6 +8,8 @@ import java.util.List;
 
 import java.util.List;
 
+import java.util.List;
+
 public interface GroupMapper {
 
     /**
@@ -29,4 +31,9 @@ public interface GroupMapper {
      * 그룹 수정
      */
     void updateGroup(GroupVO group);
+
+    /**
+     * 그룹 종료
+     */
+    void finishGroup(String groupId);
 }
