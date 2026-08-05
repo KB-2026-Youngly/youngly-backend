@@ -348,6 +348,23 @@ INSERT INTO rounds (
     ('group-study-01', 1, '2026-07-05', '2026-08-01', 'ONGOING', '2026-07-04 23:00:00'),
     ('group-reading-01', 1, '2026-07-12', '2026-08-08', 'ONGOING', '2026-07-11 23:00:00');
 
+-- ==========================================================================
+-- round_id=3(group-study-01 1라운드) 참여자별 round_history 테스트 데이터
+-- data.sql 전체를 다시 실행하지 않고 이 구간만 반복 실행하면 이력이 중복될 수 있다.
+-- ==========================================================================
+INSERT INTO round_history (
+    round_id,
+    user_id,
+    account_id,
+    moim_account_id,
+    success_count,
+    remaining_fail_pass_count,
+    created_at
+) VALUES
+    (3, 'user04', 'account-user04-deposit', 'moim-account-02', 0, 0, '2026-07-04 23:00:00'),
+    (3, 'user05', 'account-user05-pension', 'moim-account-02', 0, 0, '2026-07-04 23:00:00'),
+    (3, 'user06', 'account-user06-deposit', 'moim-account-02', 0, 0, '2026-07-04 23:00:00');
+
 -- ============================================================================
 -- 9. 통합 모임통장 거래내역
 --
@@ -453,3 +470,373 @@ INSERT INTO account_transactions (
      'DEPOSIT', 100000.00, 300000.00, '임수빈 최초 예치금 납입',
      '2026-07-11 10:20:00', 'CHARGE', 'GROUP03-R01-USER09-INITIAL',
      '025202-00-005009', '임수빈', '국민');
+
+-- ==========================================================================
+-- 주간 결산 테스트 데이터 시작
+-- POST /api/dev/weekly-settlements?date=2026-08-01
+-- group-exercise-01의 2라운드 1주차(2026-07-26~2026-08-01)를 결산한다.
+-- 승인 게시물 수: user01=3개(성공), user02=2개(실패), user03=4개(성공)
+-- 그룹의 min_count가 3이므로 user01과 user03의 success_count/streak_count가 증가한다.
+-- ==========================================================================
+
+-- 라운드 시작 당시 결산 대상이 되는 참여자별 이력을 생성한다.
+INSERT INTO round_history (
+    round_id,
+    user_id,
+    account_id,
+    moim_account_id,
+    success_count,
+    remaining_fail_pass_count,
+    created_at
+) VALUES
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user01', 'account-user01-pension', 'moim-account-01', 0, 0, '2026-07-25 23:00:00'),
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user02', 'account-user02-deposit', 'moim-account-01', 0, 0, '2026-07-25 23:00:00'),
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user03', 'account-user03-pension', 'moim-account-01', 0, 0, '2026-07-25 23:00:00');
+
+-- 1주차 게시물을 생성한다. APPROVED 상태인 게시물만 주간 결산에서 집계된다.
+INSERT INTO posts (
+    round_id,
+    user_id,
+    photo_url,
+    content,
+    post_status,
+    created_at,
+    posted_at,
+    status_changed_at,
+    approve_count,
+    reject_count
+) VALUES
+    -- user01: 승인 3개
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user01', '/test/weekly-settlement/user01-day1.jpg', 'user01 1일차 러닝',
+     'APPROVED', '2026-07-26 07:00:00', '2026-07-26 07:00:00', '2026-07-26 09:00:00', 2, 0),
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user01', '/test/weekly-settlement/user01-day3.jpg', 'user01 3일차 러닝',
+     'APPROVED', '2026-07-28 07:00:00', '2026-07-28 07:00:00', '2026-07-28 09:00:00', 2, 0),
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user01', '/test/weekly-settlement/user01-day5.jpg', 'user01 5일차 러닝',
+     'APPROVED', '2026-07-30 07:00:00', '2026-07-30 07:00:00', '2026-07-30 09:00:00', 2, 0),
+
+    -- user02: 승인 2개와 반려 1개(최소 횟수 미달)
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user02', '/test/weekly-settlement/user02-day2.jpg', 'user02 2일차 러닝',
+     'APPROVED', '2026-07-27 07:00:00', '2026-07-27 07:00:00', '2026-07-27 09:00:00', 2, 0),
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user02', '/test/weekly-settlement/user02-day4.jpg', 'user02 4일차 러닝',
+     'APPROVED', '2026-07-29 07:00:00', '2026-07-29 07:00:00', '2026-07-29 09:00:00', 2, 0),
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user02', '/test/weekly-settlement/user02-day6-rejected.jpg', 'user02 6일차 반려 게시물',
+     'REJECTED', '2026-07-31 07:00:00', '2026-07-31 07:00:00', '2026-07-31 09:00:00', 0, 2),
+
+    -- user03: 승인 4개
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user03', '/test/weekly-settlement/user03-day1.jpg', 'user03 1일차 러닝',
+     'APPROVED', '2026-07-26 08:00:00', '2026-07-26 08:00:00', '2026-07-26 10:00:00', 2, 0),
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user03', '/test/weekly-settlement/user03-day2.jpg', 'user03 2일차 러닝',
+     'APPROVED', '2026-07-27 08:00:00', '2026-07-27 08:00:00', '2026-07-27 10:00:00', 2, 0),
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user03', '/test/weekly-settlement/user03-day4.jpg', 'user03 4일차 러닝',
+     'APPROVED', '2026-07-29 08:00:00', '2026-07-29 08:00:00', '2026-07-29 10:00:00', 2, 0),
+    ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
+     'user03', '/test/weekly-settlement/user03-day7.jpg', 'user03 7일차 러닝',
+     'APPROVED', '2026-08-01 08:00:00', '2026-08-01 08:00:00', '2026-08-01 10:00:00', 2, 0);
+
+-- 각 테스트 게시물의 최초 최종 상태를 게시물 변경 이력으로 저장한다.
+INSERT INTO post_history (
+    post_id,
+    post_history_version,
+    photo_url,
+    content,
+    post_status,
+    created_at
+)
+SELECT p.post_id,
+       1,
+       p.photo_url,
+       p.content,
+       p.post_status,
+       p.status_changed_at
+FROM posts p
+WHERE p.photo_url LIKE '/test/weekly-settlement/%';
+
+-- 작성자를 제외한 나머지 두 사용자의 승인 또는 반려 평가 이력을 저장한다.
+INSERT INTO post_approvals (
+    user_id,
+    post_id,
+    approval_status,
+    reject_reason,
+    created_at,
+    updated_at
+)
+SELECT CASE p.user_id
+           WHEN 'user01' THEN 'user02'
+           WHEN 'user02' THEN 'user01'
+           ELSE 'user01'
+       END,
+       p.post_id,
+       CASE p.post_status WHEN 'APPROVED' THEN 'APPROVE' ELSE 'REJECT' END,
+       CASE p.post_status WHEN 'REJECTED' THEN '인증 사진에서 수행 여부를 확인할 수 없습니다.' ELSE NULL END,
+       p.status_changed_at,
+       p.status_changed_at
+FROM posts p
+WHERE p.photo_url LIKE '/test/weekly-settlement/%';
+
+INSERT INTO post_approvals (
+    user_id,
+    post_id,
+    approval_status,
+    reject_reason,
+    created_at,
+    updated_at
+)
+SELECT CASE p.user_id
+           WHEN 'user01' THEN 'user03'
+           WHEN 'user02' THEN 'user03'
+           ELSE 'user02'
+       END,
+       p.post_id,
+       CASE p.post_status WHEN 'APPROVED' THEN 'APPROVE' ELSE 'REJECT' END,
+       CASE p.post_status WHEN 'REJECTED' THEN '인증 사진에서 수행 여부를 확인할 수 없습니다.' ELSE NULL END,
+       p.status_changed_at,
+       p.status_changed_at
+FROM posts p
+WHERE p.photo_url LIKE '/test/weekly-settlement/%';
+
+-- ==========================================================================
+-- 주간 결산 테스트 데이터 끝
+-- ==========================================================================
+
+-- ==========================================================================
+-- round_id=3 주간 결산 게시물 테스트 데이터 시작
+-- POST /api/dev/weekly-settlements?date=2026-08-01
+-- 4주차(2026-07-26~2026-08-01) 승인 수: user04=5, user05=4, user06=5
+-- group-study-01의 min_count가 5이므로 user04와 user06만 성공한다.
+-- ==========================================================================
+
+INSERT INTO posts (
+    round_id,
+    user_id,
+    photo_url,
+    content,
+    post_status,
+    created_at,
+    posted_at,
+    status_changed_at,
+    approve_count,
+    reject_count
+) VALUES
+    -- user04: 승인 5개
+    (3, 'user04', '/test/weekly-settlement-round3/user04-day1.jpg', 'user04 1일차 코딩 인증',
+     'APPROVED', '2026-07-26 20:00:00', '2026-07-26 20:00:00', '2026-07-26 22:00:00', 2, 0),
+    (3, 'user04', '/test/weekly-settlement-round3/user04-day2.jpg', 'user04 2일차 코딩 인증',
+     'APPROVED', '2026-07-27 20:00:00', '2026-07-27 20:00:00', '2026-07-27 22:00:00', 2, 0),
+    (3, 'user04', '/test/weekly-settlement-round3/user04-day3.jpg', 'user04 3일차 코딩 인증',
+     'APPROVED', '2026-07-28 20:00:00', '2026-07-28 20:00:00', '2026-07-28 22:00:00', 2, 0),
+    (3, 'user04', '/test/weekly-settlement-round3/user04-day5.jpg', 'user04 5일차 코딩 인증',
+     'APPROVED', '2026-07-30 20:00:00', '2026-07-30 20:00:00', '2026-07-30 22:00:00', 2, 0),
+    (3, 'user04', '/test/weekly-settlement-round3/user04-day7.jpg', 'user04 7일차 코딩 인증',
+     'APPROVED', '2026-08-01 20:00:00', '2026-08-01 20:00:00', '2026-08-01 22:00:00', 2, 0),
+
+    -- user05: 승인 4개와 반려 1개
+    (3, 'user05', '/test/weekly-settlement-round3/user05-day1.jpg', 'user05 1일차 코딩 인증',
+     'APPROVED', '2026-07-26 20:10:00', '2026-07-26 20:10:00', '2026-07-26 22:10:00', 2, 0),
+    (3, 'user05', '/test/weekly-settlement-round3/user05-day2.jpg', 'user05 2일차 코딩 인증',
+     'APPROVED', '2026-07-27 20:10:00', '2026-07-27 20:10:00', '2026-07-27 22:10:00', 2, 0),
+    (3, 'user05', '/test/weekly-settlement-round3/user05-day3.jpg', 'user05 3일차 코딩 인증',
+     'APPROVED', '2026-07-28 20:10:00', '2026-07-28 20:10:00', '2026-07-28 22:10:00', 2, 0),
+    (3, 'user05', '/test/weekly-settlement-round3/user05-day4.jpg', 'user05 4일차 코딩 인증',
+     'APPROVED', '2026-07-29 20:10:00', '2026-07-29 20:10:00', '2026-07-29 22:10:00', 2, 0),
+    (3, 'user05', '/test/weekly-settlement-round3/user05-day5-rejected.jpg', 'user05 반려 대상 인증',
+     'REJECTED', '2026-07-30 20:10:00', '2026-07-30 20:10:00', '2026-07-30 22:10:00', 0, 2),
+
+    -- user06: 승인 5개
+    (3, 'user06', '/test/weekly-settlement-round3/user06-day1.jpg', 'user06 1일차 코딩 인증',
+     'APPROVED', '2026-07-26 20:20:00', '2026-07-26 20:20:00', '2026-07-26 22:20:00', 2, 0),
+    (3, 'user06', '/test/weekly-settlement-round3/user06-day2.jpg', 'user06 2일차 코딩 인증',
+     'APPROVED', '2026-07-27 20:20:00', '2026-07-27 20:20:00', '2026-07-27 22:20:00', 2, 0),
+    (3, 'user06', '/test/weekly-settlement-round3/user06-day4.jpg', 'user06 4일차 코딩 인증',
+     'APPROVED', '2026-07-29 20:20:00', '2026-07-29 20:20:00', '2026-07-29 22:20:00', 2, 0),
+    (3, 'user06', '/test/weekly-settlement-round3/user06-day6.jpg', 'user06 6일차 코딩 인증',
+     'APPROVED', '2026-07-31 20:20:00', '2026-07-31 20:20:00', '2026-07-31 22:20:00', 2, 0),
+    (3, 'user06', '/test/weekly-settlement-round3/user06-day7.jpg', 'user06 7일차 코딩 인증',
+     'APPROVED', '2026-08-01 20:20:00', '2026-08-01 20:20:00', '2026-08-01 22:20:00', 2, 0);
+
+-- round_id=3 테스트 게시물의 최종 상태를 변경 이력으로 저장한다.
+INSERT INTO post_history (
+    post_id,
+    post_history_version,
+    photo_url,
+    content,
+    post_status,
+    created_at
+)
+SELECT p.post_id,
+       1,
+       p.photo_url,
+       p.content,
+       p.post_status,
+       p.status_changed_at
+FROM posts p
+WHERE p.round_id = 3
+  AND p.photo_url LIKE '/test/weekly-settlement-round3/%';
+
+-- 첫 번째 평가자: 게시물 작성자를 제외한 그룹 참여자의 승인 또는 반려 내역.
+INSERT INTO post_approvals (
+    user_id,
+    post_id,
+    approval_status,
+    reject_reason,
+    created_at,
+    updated_at
+)
+SELECT CASE p.user_id
+           WHEN 'user04' THEN 'user05'
+           WHEN 'user05' THEN 'user04'
+           ELSE 'user04'
+       END,
+       p.post_id,
+       CASE p.post_status WHEN 'APPROVED' THEN 'APPROVE' ELSE 'REJECT' END,
+       CASE p.post_status WHEN 'REJECTED' THEN '인증 내용이 챌린지 기준을 충족하지 않습니다.' ELSE NULL END,
+       p.status_changed_at,
+       p.status_changed_at
+FROM posts p
+WHERE p.round_id = 3
+  AND p.photo_url LIKE '/test/weekly-settlement-round3/%';
+
+-- 두 번째 평가자: 과반수 판정을 위한 나머지 그룹 참여자의 평가 내역.
+INSERT INTO post_approvals (
+    user_id,
+    post_id,
+    approval_status,
+    reject_reason,
+    created_at,
+    updated_at
+)
+SELECT CASE p.user_id
+           WHEN 'user04' THEN 'user06'
+           WHEN 'user05' THEN 'user06'
+           ELSE 'user05'
+       END,
+       p.post_id,
+       CASE p.post_status WHEN 'APPROVED' THEN 'APPROVE' ELSE 'REJECT' END,
+       CASE p.post_status WHEN 'REJECTED' THEN '인증 내용이 챌린지 기준을 충족하지 않습니다.' ELSE NULL END,
+       p.status_changed_at,
+       p.status_changed_at
+FROM posts p
+WHERE p.round_id = 3
+  AND p.photo_url LIKE '/test/weekly-settlement-round3/%';
+
+-- ==========================================================================
+-- round_id=3 주간 결산 게시물 테스트 데이터 끝
+-- ==========================================================================
+
+-- ==========================================================================
+-- 주간 결산 테스트 게시물 reactions/comments 데이터 시작
+-- 승인 게시물에는 LIKE 2개, 반려 게시물에는 DISLIKE 2개를 생성한다.
+-- 모든 테스트 게시물에는 작성자가 아닌 그룹 참여자의 댓글 1개를 생성한다.
+-- ==========================================================================
+
+-- 첫 번째 참여자의 리액션.
+INSERT INTO post_reactions (
+    post_id,
+    user_id,
+    reaction_type,
+    created_at,
+    updated_at
+)
+SELECT p.post_id,
+       CASE p.user_id
+           WHEN 'user01' THEN 'user02'
+           WHEN 'user02' THEN 'user01'
+           WHEN 'user03' THEN 'user01'
+           WHEN 'user04' THEN 'user05'
+           WHEN 'user05' THEN 'user04'
+           ELSE 'user04'
+       END,
+       CASE p.post_status WHEN 'APPROVED' THEN 'LIKE' ELSE 'DISLIKE' END,
+       DATE_ADD(p.posted_at, INTERVAL 30 MINUTE),
+       DATE_ADD(p.posted_at, INTERVAL 30 MINUTE)
+FROM posts p
+WHERE p.photo_url LIKE '/test/weekly-settlement/%'
+   OR p.photo_url LIKE '/test/weekly-settlement-round3/%';
+
+-- 두 번째 참여자의 리액션.
+INSERT INTO post_reactions (
+    post_id,
+    user_id,
+    reaction_type,
+    created_at,
+    updated_at
+)
+SELECT p.post_id,
+       CASE p.user_id
+           WHEN 'user01' THEN 'user03'
+           WHEN 'user02' THEN 'user03'
+           WHEN 'user03' THEN 'user02'
+           WHEN 'user04' THEN 'user06'
+           WHEN 'user05' THEN 'user06'
+           ELSE 'user05'
+       END,
+       CASE p.post_status WHEN 'APPROVED' THEN 'LIKE' ELSE 'DISLIKE' END,
+       DATE_ADD(p.posted_at, INTERVAL 45 MINUTE),
+       DATE_ADD(p.posted_at, INTERVAL 45 MINUTE)
+FROM posts p
+WHERE p.photo_url LIKE '/test/weekly-settlement/%'
+   OR p.photo_url LIKE '/test/weekly-settlement-round3/%';
+
+-- 작성자가 아닌 참여자의 피드 댓글.
+INSERT INTO post_comments (
+    user_id,
+    post_id,
+    content,
+    created_at,
+    updated_at
+)
+SELECT CASE p.user_id
+           WHEN 'user01' THEN 'user02'
+           WHEN 'user02' THEN 'user01'
+           WHEN 'user03' THEN 'user01'
+           WHEN 'user04' THEN 'user05'
+           WHEN 'user05' THEN 'user04'
+           ELSE 'user04'
+       END,
+       p.post_id,
+       CASE p.post_status
+           WHEN 'APPROVED' THEN '오늘도 목표 달성 수고했어요!'
+           ELSE '다음 인증에서는 수행 내용을 조금 더 잘 보여주세요.'
+       END,
+       DATE_ADD(p.posted_at, INTERVAL 60 MINUTE),
+       DATE_ADD(p.posted_at, INTERVAL 60 MINUTE)
+FROM posts p
+WHERE p.photo_url LIKE '/test/weekly-settlement/%'
+   OR p.photo_url LIKE '/test/weekly-settlement-round3/%';
+
+-- posts의 비정규화된 리액션/댓글 카운트를 실제 생성된 데이터와 일치시킨다.
+UPDATE posts p
+SET like_count = (
+        SELECT COUNT(*)
+        FROM post_reactions pr
+        WHERE pr.post_id = p.post_id
+          AND pr.reaction_type = 'LIKE'
+    ),
+    dislike_count = (
+        SELECT COUNT(*)
+        FROM post_reactions pr
+        WHERE pr.post_id = p.post_id
+          AND pr.reaction_type = 'DISLIKE'
+    ),
+    comment_count = (
+        SELECT COUNT(*)
+        FROM post_comments pc
+        WHERE pc.post_id = p.post_id
+    )
+WHERE p.photo_url LIKE '/test/weekly-settlement/%'
+   OR p.photo_url LIKE '/test/weekly-settlement-round3/%';
+
+-- ==========================================================================
+-- 주간 결산 테스트 게시물 reactions/comments 데이터 끝
+-- ==========================================================================

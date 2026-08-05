@@ -19,6 +19,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 USE youngly_db;
 
 -- FK 의존 관계의 자식 테이블부터 제거한다. FOREIGN_KEY_CHECKS는 순서 실수 방지용이다.
+# weekly_settlements 테이블 추가 260805
 DROP TABLE IF EXISTS `survey_result_interest`;
 DROP TABLE IF EXISTS `survey_results`;
 DROP TABLE IF EXISTS `survey_choices`;
@@ -33,14 +34,16 @@ DROP TABLE IF EXISTS `notifications`;
 DROP TABLE IF EXISTS `point_history`;
 DROP TABLE IF EXISTS `user_items`;
 DROP TABLE IF EXISTS `recommendations`;
+DROP TABLE IF EXISTS `weekly_settlements`;
 DROP TABLE IF EXISTS `round_history`;
 DROP TABLE IF EXISTS `group_history`;
+DROP TABLE IF EXISTS `account_transactions`;
 DROP TABLE IF EXISTS `rounds`;
 DROP TABLE IF EXISTS `group_users`;
-DROP TABLE IF EXISTS `account_transactions`;
 DROP TABLE IF EXISTS `accounts`;
 DROP TABLE IF EXISTS `groups`;
 DROP TABLE IF EXISTS `moim_accounts`;
+DROP TABLE IF EXISTS `kb_accounts`;
 DROP TABLE IF EXISTS `interest_users`;
 DROP TABLE IF EXISTS `collectible_items`;
 DROP TABLE IF EXISTS `interests`;
@@ -61,30 +64,6 @@ DROP TABLE IF EXISTS `users`;
 --     UNIQUE KEY uk_users_login_id (login_id),
 --     UNIQUE KEY uk_users_nickname (nickname)
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 테이블 삭제 (외래키를 참조하는 자식 테이블부터 삭제)
-DROP TABLE IF EXISTS `post_approvals`;
-DROP TABLE IF EXISTS `post_comments`;
-DROP TABLE IF EXISTS `post_reactions`;
-DROP TABLE IF EXISTS `post_history`;
-DROP TABLE IF EXISTS `posts`;
-DROP TABLE IF EXISTS `round_history`;
-DROP TABLE IF EXISTS `group_history`;
-DROP TABLE IF EXISTS `group_users`;
-DROP TABLE IF EXISTS `rounds`;
-DROP TABLE IF EXISTS `user_items`;
-DROP TABLE IF EXISTS `point_history`;
-DROP TABLE IF EXISTS `recommendations`;
-DROP TABLE IF EXISTS `notifications`;
-DROP TABLE IF EXISTS `survey_results`;
-DROP TABLE IF EXISTS `interest_users`;
-DROP TABLE IF EXISTS `accounts`;
-DROP TABLE IF EXISTS `groups`;
-DROP TABLE IF EXISTS `collectible_items`;
-DROP TABLE IF EXISTS `interests`;
-DROP TABLE IF EXISTS `moim_accounts`;
-DROP TABLE IF EXISTS `kb_accounts`;
-DROP TABLE IF EXISTS `users`;
 
 
 CREATE TABLE `account_transactions` (
@@ -222,6 +201,20 @@ CREATE TABLE `rounds` (
                           `end_date`	DATE	NOT NULL,
                           `round_status`	ENUM( 'ONGOING', 'WAITING_SETTLEMENT', 'SETTLED' )	NOT NULL,
                           `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 사용자별 주간 결산 결과. 승인 게시물 수를 보관하고 유니크 키로 중복 결산을 방지한다.
+CREATE TABLE `weekly_settlements` (
+                                      `weekly_settlement_id` BIGINT NOT NULL AUTO_INCREMENT,
+                                      `round_id` BIGINT NOT NULL,
+                                      `week_no` INT NOT NULL,
+                                      `user_id` VARCHAR(50) NOT NULL,
+                                      `approved_post_count` INT NOT NULL DEFAULT 0,
+                                      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                      CONSTRAINT `PK_WEEKLY_SETTLEMENTS`
+                                          PRIMARY KEY (`weekly_settlement_id`),
+                                      CONSTRAINT `UK_WEEKLY_SETTLEMENTS_ROUND_WEEK_USER`
+                                          UNIQUE (`round_id`, `week_no`, `user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `post_approvals` (
@@ -747,6 +740,13 @@ ALTER TABLE `moim_accounts`
 -- 9. rounds
 ALTER TABLE `rounds`
     ADD CONSTRAINT `FK_rounds_group_id` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`);
+
+-- 10. weekly_settlements
+ALTER TABLE `weekly_settlements`
+    ADD CONSTRAINT `FK_weekly_settlements_round_id`
+        FOREIGN KEY (`round_id`) REFERENCES `rounds` (`round_id`),
+    ADD CONSTRAINT `FK_weekly_settlements_user_id`
+        FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
 
 -- 10. post_approvals
 ALTER TABLE `post_approvals`
