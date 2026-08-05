@@ -134,4 +134,20 @@ public class GroupController {
                 )
         );
     }
+
+    //그룸 참여 거절
+    @PutMapping("/{groupId}/join-requests/{groupUserId}/reject")
+    public ResponseEntity<MessageResponse> rejectJoinRequest(
+            Authentication authentication,
+            @PathVariable String groupId,
+            @PathVariable Long groupUserId) {
+
+        return ResponseEntity.ok(
+                groupService.rejectJoinRequest(
+                        authentication.getName(),
+                        groupId,
+                        groupUserId
+                )
+        );
+    }
 }

@@ -231,6 +231,33 @@ public class GroupServiceImpl implements GroupService {
                 .build();
     }
 
+    // 그룹 참여 거절
+    @Override
+    @Transactional
+    public MessageResponse rejectJoinRequest(
+            String userId,
+            String groupId,
+            Long groupUserId) {
+
+        validateLeader(userId, groupId);
+
+        GroupUserVO groupUser =
+                validateGroupUser(groupUserId, groupId);
+
+        if (groupUser.getGroupUserStatus() != GroupUserStatus.PENDING_APPROVAL) {
+            throw new IllegalArgumentException("거절 가능한 상태가 아닙니다.");
+        }
+
+        groupUserMapper.updateGroupUserStatus(
+                groupUserId,
+                GroupUserStatus.REJECTED
+        );
+
+        return MessageResponse.builder()
+                .message("Success")
+                .build();
+    }
+
     /**
      * 그룹 존재 여부 및 총무 권한 검증
      */
