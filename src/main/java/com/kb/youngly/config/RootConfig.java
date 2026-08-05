@@ -11,6 +11,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
@@ -30,6 +31,7 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableTransactionManagement
+@EnableScheduling
 @ComponentScan(basePackages = {
         "com.kb.youngly"
 })
