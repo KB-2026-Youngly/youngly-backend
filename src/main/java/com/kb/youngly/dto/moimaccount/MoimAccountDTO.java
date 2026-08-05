@@ -23,4 +23,8 @@ public class MoimAccountDTO {
 
     private String accountName;
 
+    private Boolean owner;
+
+    private String ownerName;
+
 }

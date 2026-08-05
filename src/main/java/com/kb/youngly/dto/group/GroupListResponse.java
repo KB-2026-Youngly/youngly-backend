@@ -16,6 +16,8 @@ public class GroupListResponse {
 
     private String groupName;
 
+    private String moimAccountId;
+
     private Integer groupCount;
 
     private GroupStatus groupStatus;
