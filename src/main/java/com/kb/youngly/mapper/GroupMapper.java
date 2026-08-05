@@ -6,6 +6,8 @@ import java.util.List;
 
 import java.util.List;
 
+import java.util.List;
+
 public interface GroupMapper {
 
     /**
@@ -22,4 +24,9 @@ public interface GroupMapper {
      * 그룹 상세 조회
      */
     GroupVO findGroupById(String groupId);
+
+    /**
+     * 그룹 수정
+     */
+    void updateGroup(GroupVO group);
 }

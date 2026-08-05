@@ -1,9 +1,7 @@
 package com.kb.youngly.service.impl;
 
-import com.kb.youngly.dto.group.CreateGroupRequest;
-import com.kb.youngly.dto.group.CreateGroupResponse;
-import com.kb.youngly.dto.group.GroupDetailResponse;
-import com.kb.youngly.dto.group.GroupListResponse;
+import com.kb.youngly.dto.common.MessageResponse;
+import com.kb.youngly.dto.group.*;
 import com.kb.youngly.enums.GroupStatus;
 import com.kb.youngly.mapper.GroupMapper;
 import com.kb.youngly.service.GroupService;
@@ -89,6 +87,38 @@ public class GroupServiceImpl implements GroupService {
                 .roundCycleDays(group.getRoundCycleDays())
                 .baseDepositAmount(group.getBaseDepositAmount())
                 .groupStatus(group.getGroupStatus())
+                .build();
+    }
+
+    // 그룹 수정
+    @Override
+    public MessageResponse updateGroup(String userId,
+                                       String groupId,
+                                       UpdateGroupRequest request) {
+
+        GroupVO group = groupMapper.findGroupById(groupId);
+
+        if (group == null) {
+            throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
+        }
+
+        if (!group.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("그룹 수정 권한이 없습니다.");
+        }
+
+        group.setGroupName(request.getGroupName());
+        group.setCustomRule(request.getCustomRule());
+        group.setContent(request.getContent());
+        group.setFutureDepositRatioRule(request.getFutureDepositRatioRule());
+        group.setDurationDays(request.getDurationDays());
+        group.setMinCount(request.getMinCount());
+        group.setRoundCycleDays(request.getRoundCycleDays());
+        group.setBaseDepositAmount(request.getBaseDepositAmount());
+
+        groupMapper.updateGroup(group);
+
+        return MessageResponse.builder()
+                .message("Success")
                 .build();
     }
 }

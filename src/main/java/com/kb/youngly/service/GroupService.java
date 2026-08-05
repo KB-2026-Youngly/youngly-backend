@@ -1,9 +1,7 @@
 package com.kb.youngly.service;
 
-import com.kb.youngly.dto.group.CreateGroupRequest;
-import com.kb.youngly.dto.group.CreateGroupResponse;
-import com.kb.youngly.dto.group.GroupDetailResponse;
-import com.kb.youngly.dto.group.GroupListResponse;
+import com.kb.youngly.dto.common.MessageResponse;
+import com.kb.youngly.dto.group.*;
 
 import java.util.List;
 
@@ -26,4 +24,12 @@ public interface GroupService {
     GroupDetailResponse getGroupDetail(
             String userId,
             String groupId);
+
+    /**
+     * 그룹 수정
+     */
+    MessageResponse updateGroup(
+            String userId,
+            String groupId,
+            UpdateGroupRequest request);
 }
