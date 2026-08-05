@@ -95,4 +95,27 @@
 
     </update>
 
+    <select id="findGroupUsers"
+            parameterType="string"
+            resultType="com.kb.youngly.dto.group.GroupUserResponse">
+
+        SELECT
+            gu.group_user_id,
+            gu.user_id,
+            u.nickname,
+            u.profile_image_url,
+            CASE
+                WHEN g.user_id = gu.user_id THEN TRUE
+                ELSE FALSE
+                END AS leader
+        FROM group_users gu
+                 JOIN users u
+                      ON gu.user_id = u.user_id
+                 JOIN `groups` g
+                      ON gu.group_id = g.group_id
+        WHERE gu.group_id = #{groupId}
+          AND gu.group_user_status = 'ACTIVE'
+        ORDER BY leader DESC, u.nickname
+
+    </select>
 </mapper>

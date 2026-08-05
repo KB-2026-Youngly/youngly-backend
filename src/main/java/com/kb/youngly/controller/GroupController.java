@@ -150,4 +150,18 @@ public class GroupController {
                 )
         );
     }
+
+    // 그룹 참여자 조회
+    @GetMapping("/{groupId}/groupusers")
+    public ResponseEntity<List<GroupUserResponse>> getGroupUsers(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.getGroupUsers(
+                        authentication.getName(),
+                        groupId
+                )
+        );
+    }
 }
