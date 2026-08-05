@@ -28,7 +28,7 @@
         FROM accounts WHERE account_id = #{accountId} AND user_id = #{userId}
     </select>
 
-    <select id="findMoimAccountById" parameterType="string" resultType="com.kb.youngly.vo.account.MoimAccountVO">
+    <select id="findMoimAccountById" parameterType="string" resultType="com.kb.youngly.vo.moimaccount.MoimAccountVO">
         SELECT moim_account_id, user_id, kb_account_id, created_at, updated_at, account_name
         FROM moim_accounts WHERE moim_account_id = #{moimAccountId}
     </select>

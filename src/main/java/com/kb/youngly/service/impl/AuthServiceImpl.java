@@ -113,7 +113,7 @@ public class AuthServiceImpl implements AuthService {
                 .message("Success")
                 .build();
     }
-}
+
     private List<Long> mergeInterestIds(List<Long> interestIds, List<Long> investmentInterestIds) {
         List<Long> merged = new ArrayList<>();
         if (!CollectionUtils.isEmpty(interestIds)) {
