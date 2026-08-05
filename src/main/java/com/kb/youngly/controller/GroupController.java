@@ -2,6 +2,7 @@ package com.kb.youngly.controller;
 
 import com.kb.youngly.dto.group.CreateGroupRequest;
 import com.kb.youngly.dto.group.CreateGroupResponse;
+import com.kb.youngly.dto.group.GroupDetailResponse;
 import com.kb.youngly.dto.group.GroupListResponse;
 import com.kb.youngly.service.GroupService;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,19 @@ public class GroupController {
 
         return ResponseEntity.ok(
                 groupService.getGroupList(authentication.getName())
+        );
+    }
+
+    @GetMapping("/{groupId}")
+    public ResponseEntity<GroupDetailResponse> getGroupDetail(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.getGroupDetail(
+                        authentication.getName(),
+                        groupId
+                )
         );
     }
 }

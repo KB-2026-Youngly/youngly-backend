@@ -2,6 +2,7 @@ package com.kb.youngly.service.impl;
 
 import com.kb.youngly.dto.group.CreateGroupRequest;
 import com.kb.youngly.dto.group.CreateGroupResponse;
+import com.kb.youngly.dto.group.GroupDetailResponse;
 import com.kb.youngly.dto.group.GroupListResponse;
 import com.kb.youngly.enums.GroupStatus;
 import com.kb.youngly.mapper.GroupMapper;
@@ -21,6 +22,7 @@ public class GroupServiceImpl implements GroupService {
         this.groupMapper = groupMapper;
     }
 
+    // 그룹 생성
     @Override
     public CreateGroupResponse createGroup(String userId,
                                            CreateGroupRequest request) {
@@ -51,9 +53,42 @@ public class GroupServiceImpl implements GroupService {
                 .build();
     }
 
+    // 그룹 목록 조회
     @Override
     public List<GroupListResponse> getGroupList(String userId) {
 
         return groupMapper.findGroupsByUserId(userId);
+    }
+
+    // 그룹 상세 조회
+    @Override
+    public GroupDetailResponse getGroupDetail(String userId,
+                                              String groupId) {
+
+        GroupVO group = groupMapper.findGroupById(groupId);
+
+        if (group == null) {
+            throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
+        }
+
+        return GroupDetailResponse.builder()
+                .groupId(group.getGroupId())
+                .inviteCode(
+                        userId.equals(group.getUserId())
+                                ? group.getInviteCode()
+                                : null
+                )
+                .groupName(group.getGroupName())
+                .groupCount(group.getGroupCount())
+                .customRule(group.getCustomRule())
+                .challengeType(group.getChallengeType())
+                .content(group.getContent())
+                .futureDepositRatioRule(group.getFutureDepositRatioRule())
+                .durationDays(group.getDurationDays())
+                .minCount(group.getMinCount())
+                .roundCycleDays(group.getRoundCycleDays())
+                .baseDepositAmount(group.getBaseDepositAmount())
+                .groupStatus(group.getGroupStatus())
+                .build();
     }
 }

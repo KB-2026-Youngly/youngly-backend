@@ -72,4 +72,31 @@
 
     </select>
 
+    <select id="findGroupById"
+            parameterType="string"
+            resultType="com.kb.youngly.vo.group.GroupVO">
+
+        SELECT
+            group_id,
+            moim_account_id,
+            user_id,
+            invite_code,
+            group_name,
+            group_count,
+            created_at,
+            custom_rule,
+            challenge_type,
+            content,
+            future_deposit_ratio_rule,
+            duration_days,
+            min_count,
+            round_cycle_days,
+            base_deposit_amount,
+            group_status,
+            updated_at
+        FROM `groups`
+        WHERE group_id = #{groupId}
+
+    </select>
+
 </mapper>
