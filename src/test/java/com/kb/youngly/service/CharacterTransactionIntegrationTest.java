@@ -3,6 +3,7 @@ package com.kb.youngly.service;
 import com.kb.youngly.dto.character.CharacterDrawResponse;
 import com.kb.youngly.mapper.CharacterMapper;
 import com.kb.youngly.mapper.PointMapper;
+import com.kb.youngly.vo.character.CharacterEquipVO;
 import com.kb.youngly.vo.character.OwnedCharacterVO;
 import com.kb.youngly.vo.point.CollectibleItemVO;
 import com.kb.youngly.vo.point.UserItemVO;
@@ -303,6 +304,21 @@ class CharacterTransactionIntegrationTest {
         @Override
         public List<OwnedCharacterVO> findOwnedCharacters(String userId) {
             return delegate.findOwnedCharacters(userId);
+        }
+
+        @Override
+        public CharacterEquipVO findOwnedCharacterForEquip(String userId, Long characterId) {
+            return delegate.findOwnedCharacterForEquip(userId, characterId);
+        }
+
+        @Override
+        public int unequipOtherCharacters(String userId, Long characterId) {
+            return delegate.unequipOtherCharacters(userId, characterId);
+        }
+
+        @Override
+        public int equipCharacter(String userId, Long characterId) {
+            return delegate.equipCharacter(userId, characterId);
         }
     }
 }

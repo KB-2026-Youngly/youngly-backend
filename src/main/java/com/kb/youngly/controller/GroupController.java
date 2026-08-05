@@ -1,11 +1,13 @@
 package com.kb.youngly.controller;
 
-import com.kb.youngly.dto.group.CreateGroupRequest;
-import com.kb.youngly.dto.group.CreateGroupResponse;
+import com.kb.youngly.dto.common.MessageResponse;
+import com.kb.youngly.dto.group.*;
 import com.kb.youngly.service.GroupService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/groups")
@@ -20,6 +22,7 @@ public class GroupController {
         this.groupService = groupService;
     }
 
+    // 그룹 생성
     @PostMapping
     public ResponseEntity<CreateGroupResponse> createGroup(
             @RequestBody CreateGroupRequest request) {
@@ -30,5 +33,45 @@ public class GroupController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    // 그룹 목록 조회
+    @GetMapping
+    public ResponseEntity<List<GroupListResponse>> getGroupList(
+            Authentication authentication) {
+
+        return ResponseEntity.ok(
+                groupService.getGroupList(authentication.getName())
+        );
+    }
+
+    // 그룹 상세 조회
+    @GetMapping("/{groupId}")
+    public ResponseEntity<GroupDetailResponse> getGroupDetail(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.getGroupDetail(
+                        authentication.getName(),
+                        groupId
+                )
+        );
+    }
+
+    // 그룹 수정
+    @PutMapping("/{groupId}")
+    public ResponseEntity<MessageResponse> updateGroup(
+            Authentication authentication,
+            @PathVariable String groupId,
+            @RequestBody UpdateGroupRequest request) {
+
+        return ResponseEntity.ok(
+                groupService.updateGroup(
+                        authentication.getName(),
+                        groupId,
+                        request
+                )
+        );
     }
 }

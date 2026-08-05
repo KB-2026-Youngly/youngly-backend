@@ -45,4 +45,86 @@
 
     </insert>
 
+    <select id="findGroupsByUserId"
+            parameterType="string"
+            resultType="com.kb.youngly.dto.group.GroupListResponse">
+
+        SELECT
+            g.group_id,
+            g.group_name,
+            g.group_count,
+            g.group_status
+        FROM `groups` g
+                 LEFT JOIN group_users gu
+                           ON g.group_id = gu.group_id
+        WHERE
+            g.user_id = #{userId}
+           OR (
+            gu.user_id = #{userId}
+                AND gu.group_user_status = 'ACTIVE'
+            )
+        GROUP BY
+            g.group_id,
+            g.group_name,
+            g.group_count,
+            g.group_status
+        ORDER BY g.created_at DESC
+
+    </select>
+
+    <select id="findGroupById"
+            parameterType="string"
+            resultType="com.kb.youngly.vo.group.GroupVO">
+
+        SELECT
+            group_id,
+            moim_account_id,
+            user_id,
+            invite_code,
+            group_name,
+            group_count,
+            created_at,
+            custom_rule,
+            challenge_type,
+            content,
+            future_deposit_ratio_rule,
+            duration_days,
+            min_count,
+            round_cycle_days,
+            base_deposit_amount,
+            group_status,
+            updated_at
+        FROM `groups`
+        WHERE group_id = #{groupId}
+
+    </select>
+
+    <update id="updateGroup"
+            parameterType="com.kb.youngly.vo.group.GroupVO">
+
+        UPDATE `groups`
+        SET
+            group_name = #{groupName},
+            custom_rule = #{customRule},
+            content = #{content},
+            future_deposit_ratio_rule = #{futureDepositRatioRule},
+            duration_days = #{durationDays},
+            min_count = #{minCount},
+            round_cycle_days = #{roundCycleDays},
+            base_deposit_amount = #{baseDepositAmount},
+            updated_at = NOW()
+        WHERE group_id = #{groupId}
+
+    </update>
+
+    <update id="finishGroup"
+            parameterType="string">
+
+        UPDATE `groups`
+        SET
+            group_status = 'FINISHED',
+            updated_at = NOW()
+        WHERE group_id = #{groupId}
+
+    </update>
 </mapper>

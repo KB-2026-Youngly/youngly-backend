@@ -41,10 +41,10 @@ public class PostController {
     public ResponseEntity<List<FeedListResponseDTO>> getFeedList(
             @PathVariable Long roundId,
             @RequestParam String date,
-            @RequestParam String userId) { // 👈 임시로 쿼리 스트링이나 세션에서 유저 ID를 받아오도록 추가!
-            // @AuthenticationPrincipal CustomUserDetails userDetails) { // 👈 파라미터 대신 시큐리티가 토큰을 까서 유저 정보를 쥐여줌! (로그인/ 보안 설정 이후 이 코드로 대체)
+            @RequestParam String userId) { // 👈 임시로 쿼리 스트링이나 세션에서 유저 ID를 받아오도록 추가
+            // @AuthenticationPrincipal CustomUserDetails userDetails) { // 👈 파라미터 대신 시큐리티가 토큰을 까서 유저 정보를 쥐여줌 (로그인/ 보안 설정 이후 이 코드로 대체)
 
-        // 서비스 호출할 때 userId까지 3개를 쏙 넘겨주기
+        // 서비스 호출할 때 userId까지 3개를 넘겨주기
         List<FeedListResponseDTO> feedList = postService.getFeedList(roundId, date, userId);  // userDetails.getUserId()
         return ResponseEntity.ok(feedList);
     }
@@ -62,7 +62,11 @@ public class PostController {
         return ResponseEntity.ok(responseDTO);
     }
 
-    // PostController.java 내부에 추가
+    /**
+     * 인증 승인 or 반려 API
+     * 특정 게시글을 승인 혹은 반려 판정을 함
+     * PATCH /api/posts/{postId}/approval
+     */
     @PatchMapping("/{postId}/approval")
     public ResponseEntity<String> processPostApproval(
             @PathVariable Long postId,
