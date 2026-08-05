@@ -104,15 +104,7 @@ public class GroupServiceImpl implements GroupService {
                                        String groupId,
                                        UpdateGroupRequest request) {
 
-        GroupVO group = groupMapper.findGroupById(groupId);
-
-        if (group == null) {
-            throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
-        }
-
-        if (!group.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("그룹 수정 권한이 없습니다.");
-        }
+        GroupVO group = validateLeader(userId, groupId);
 
         group.setGroupName(request.getGroupName());
         group.setCustomRule(request.getCustomRule());
@@ -136,15 +128,7 @@ public class GroupServiceImpl implements GroupService {
     public MessageResponse deleteGroup(String userId,
                                        String groupId) {
 
-        GroupVO group = groupMapper.findGroupById(groupId);
-
-        if (group == null) {
-            throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
-        }
-
-        if (!userId.equals(group.getUserId())) {
-            throw new IllegalArgumentException("그룹 종료 권한이 없습니다.");
-        }
+        GroupVO group = validateLeader(userId, groupId);
 
         // 이미 종료된 그룹인지 확인
         if (group.getGroupStatus() == GroupStatus.FINISHED) {
@@ -215,19 +199,73 @@ public class GroupServiceImpl implements GroupService {
             String userId,
             String groupId) {
 
-        // 그룹 존재 확인
+        validateLeader(userId, groupId);
+
+        return groupUserMapper.findPendingGroupUsers(groupId);
+    }
+
+    // 그룹 참여 승인
+    @Override
+    @Transactional
+    public MessageResponse approveJoinRequest(
+            String userId,
+            String groupId,
+            Long groupUserId) {
+
+        validateLeader(userId, groupId);
+
+        GroupUserVO groupUser =
+                validateGroupUser(groupUserId, groupId);
+
+        if (groupUser.getGroupUserStatus() != GroupUserStatus.PENDING_APPROVAL) {
+            throw new IllegalArgumentException("승인 가능한 상태가 아닙니다.");
+        }
+
+        groupUserMapper.updateGroupUserStatus(
+                groupUserId,
+                GroupUserStatus.ACTIVE
+        );
+
+        return MessageResponse.builder()
+                .message("Success")
+                .build();
+    }
+
+    /**
+     * 그룹 존재 여부 및 총무 권한 검증
+     */
+    private GroupVO validateLeader(String userId, String groupId) {
+
         GroupVO group = groupMapper.findGroupById(groupId);
 
         if (group == null) {
             throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
         }
 
-        // 총무 권한 확인
         if (!group.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("조회 권한이 없습니다.");
+            throw new IllegalArgumentException("권한이 없습니다.");
         }
 
-        // 승인 대기 목록 조회
-        return groupUserMapper.findPendingGroupUsers(groupId);
+        return group;
+    }
+
+    /**
+     * 참여 신청 존재 여부 및 그룹 일치 여부 검증
+     */
+    private GroupUserVO validateGroupUser(Long groupUserId,
+                                          String groupId) {
+
+        GroupUserVO groupUser =
+                groupUserMapper.findGroupUserById(groupUserId);
+
+        if (groupUser == null) {
+            throw new IllegalArgumentException("존재하지 않는 참여 신청입니다.");
+        }
+
+        if (!groupUser.getGroupId().equals(groupId)) {
+            throw new IllegalArgumentException("잘못된 요청입니다.");
+        }
+
+        return groupUser;
     }
 }
