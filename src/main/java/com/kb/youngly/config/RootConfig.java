@@ -31,6 +31,7 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableTransactionManagement
+@EnableScheduling
 @ComponentScan(basePackages = {
         "com.kb.youngly"
 })
