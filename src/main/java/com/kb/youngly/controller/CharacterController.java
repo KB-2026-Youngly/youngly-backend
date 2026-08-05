@@ -1,19 +1,22 @@
 package com.kb.youngly.controller;
 
 import com.kb.youngly.dto.character.CharacterDrawResponse;
+import com.kb.youngly.dto.character.CharacterEquipResponse;
 import com.kb.youngly.dto.character.OwnedCharacterResponse;
 import com.kb.youngly.service.CharacterService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 /**
- * 로그인한 사용자의 캐릭터 뽑기와 보유 목록 조회 요청을 처리한다.
+ * 로그인한 사용자의 캐릭터 뽑기, 보유 목록 조회, 장착 요청을 처리한다.
  * 인증 정보에서 사용자 ID를 가져와 CharacterService에 전달한다.
  */
 @RestController
@@ -45,6 +48,21 @@ public class CharacterController {
             Authentication authentication) {
         return ResponseEntity.ok(
                 characterService.getOwnedCharacters(getAuthenticatedUserId(authentication))
+        );
+    }
+
+    /**
+     * 인증된 사용자가 보유한 캐릭터를 장착하고 장착 결과를 반환한다.
+     */
+    @PutMapping("/{characterId}/equip")
+    public ResponseEntity<CharacterEquipResponse> equipCharacter(
+            @PathVariable Long characterId,
+            Authentication authentication) {
+        return ResponseEntity.ok(
+                characterService.equipCharacter(
+                        getAuthenticatedUserId(authentication),
+                        characterId
+                )
         );
     }
 

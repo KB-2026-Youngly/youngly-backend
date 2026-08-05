@@ -29,6 +29,9 @@ class CharacterMapperXmlTest {
         assertTrue(configuration.hasStatement(NAMESPACE + "findUnownedCharacters"));
         assertTrue(configuration.hasStatement(NAMESPACE + "insertUserItem"));
         assertTrue(configuration.hasStatement(NAMESPACE + "findOwnedCharacters"));
+        assertTrue(configuration.hasStatement(NAMESPACE + "findOwnedCharacterForEquip"));
+        assertTrue(configuration.hasStatement(NAMESPACE + "unequipOtherCharacters"));
+        assertTrue(configuration.hasStatement(NAMESPACE + "equipCharacter"));
     }
 
     @Test
@@ -39,11 +42,21 @@ class CharacterMapperXmlTest {
         String lockSql = sql(configuration, "lockUserForUpdate");
         String candidatesSql = sql(configuration, "findUnownedCharacters");
         String ownedSql = sql(configuration, "findOwnedCharacters");
+        String ownedForEquipSql = sql(configuration, "findOwnedCharacterForEquip");
+        String unequipSql = sql(configuration, "unequipOtherCharacters");
+        String equipSql = sql(configuration, "equipCharacter");
 
         assertTrue(lockSql.contains("FOR UPDATE"));
         assertTrue(candidatesSql.contains("ITEM_CATEGORY = 'CHARACTER'"));
         assertTrue(candidatesSql.contains("NOT EXISTS"));
         assertTrue(ownedSql.contains("ORDER BY UI.CREATED_AT DESC, UI.USER_ITEM_ID DESC"));
+        assertTrue(ownedForEquipSql.contains("UI.USER_ID = ?"));
+        assertTrue(ownedForEquipSql.contains("CI.ITEM_CATEGORY = 'CHARACTER'"));
+        assertTrue(unequipSql.contains("ITEM_ID <> ?"));
+        assertTrue(unequipSql.contains("SET UI.IS_EQUIPPED = FALSE"));
+        assertTrue(unequipSql.contains("CI.ITEM_CATEGORY IN"));
+        assertTrue(unequipSql.contains("'ACC'"));
+        assertTrue(equipSql.contains("SET IS_EQUIPPED = TRUE"));
     }
 
     private Configuration loadConfiguration() throws Exception {
@@ -63,7 +76,10 @@ class CharacterMapperXmlTest {
 
     private String sql(Configuration configuration, String statementId) {
         MappedStatement statement = configuration.getMappedStatement(NAMESPACE + statementId);
-        return statement.getBoundSql(Map.of("userId", "test-user"))
+        return statement.getBoundSql(Map.of(
+                        "userId", "test-user",
+                        "characterId", 1L
+                ))
                 .getSql()
                 .replaceAll("\\s+", " ")
                 .trim()
