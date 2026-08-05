@@ -1,0 +1,103 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kb.youngly.mapper.PostMapper">
+
+<!-- DB의 빈 인증 게시글(NONE) 상태를 PENDING으로 수정(UPDATE)하는 메서드 -->
+<update id="updatePost" parameterType="com.kb.youngly.vo.post.PostVO">
+    UPDATE posts
+    SET photo_url = #{photoUrl},
+    content = #{content},
+    post_status = 'PENDING',
+    posted_at = NOW()
+    WHERE round_id = #{roundId}
+    AND user_id = #{userId}
+    AND post_status = 'NONE'
+</update>
+
+<!-- 1. 특정 라운드(그룹)의 날짜별 피드 리스트 조회 (최신 댓글 1개 포함) -->
+<select id="getFeedListByDate" resultType="com.kb.youngly.dto.posts.FeedListResponseDTO">
+    SELECT p.post_id, p.photo_url, p.content, p.posted_at,
+    p.like_count, p.dislike_count, p.comment_count, p.post_status,
+    u.user_id, u.nickname, u.profile_image_url,
+
+    (SELECT content
+    FROM post_comments
+    WHERE post_id = p.post_id
+    ORDER BY created_at DESC
+    LIMIT 1) AS latest_comment_content
+
+    FROM posts p
+    JOIN users u ON p.user_id = u.user_id
+    WHERE p.round_id = #{roundId}
+    AND DATE(p.posted_at) = #{date}
+    AND p.post_status != 'NONE'
+    ORDER BY p.posted_at DESC
+</select>
+
+<!-- 2. 특정 게시글의 전체 댓글 목록 조회 (과거순) -->
+<select id="getCommentsByPostId" resultType="com.kb.youngly.dto.posts.CommentDTO">
+    SELECT c.post_comment_id, c.content, c.created_at,
+    u.user_id, u.nickname, u.profile_image_url
+    FROM post_comments c
+    JOIN users u ON c.user_id = u.user_id
+    WHERE c.post_id = #{postId}
+    ORDER BY c.created_at ASC
+</select>
+
+<!-- 3. 특정 게시글에 특정 리액션(LIKE/DISLIKE)을 한 유저 목록 조회 -->
+<select id="getReactionUsersByPostId" resultType="com.kb.youngly.dto.posts.ReactionUserDTO">
+    SELECT u.user_id, u.nickname, u.profile_image_url
+    FROM post_reactions pr
+    JOIN users u ON pr.user_id = u.user_id
+    WHERE pr.post_id = #{postId}
+    AND pr.reaction_type = #{reactionType}
+    ORDER BY pr.created_at DESC
+</select>
+
+<!-- 그룹 멤버십 검증 쿼리 -->
+<select id="checkGroupMembership" resultType="boolean">
+    SELECT COUNT(*)
+    FROM round_history rh
+    JOIN group_users gu ON rh.user_id = gu.user_id
+    WHERE rh.round_id = #{roundId}
+    AND rh.user_id = #{userId}
+    AND gu.group_user_status = 'ACTIVE'
+</select>
+
+<!-- 게시물 승인 및 반려 API - 본인 검증용 -->
+<select id="getPostById" resultType="com.kb.youngly.dto.posts.PostDTO">
+    SELECT post_id, user_id, post_status
+    FROM posts
+    WHERE post_id = #{postId}
+</select>
+
+<!-- 5. 중복 평가 여부 확인 -->
+<select id="checkDuplicateApproval" resultType="int">
+    SELECT COUNT(*)
+    FROM post_approvals
+    WHERE post_id = #{postId} AND user_id = #{userId}
+</select>
+
+<!-- 6. 평가 내역 저장 -->
+<insert id="insertPostApproval">
+    INSERT INTO post_approvals (user_id, post_id, approval_status, reject_reason, created_at, updated_at)
+    VALUES (#{dto.userId}, #{postId}, #{dto.approvalStatus}, #{dto.rejectReason}, NOW(), NOW())
+</insert>
+
+<!-- 7-1. 승인 시 posts 테이블의 승인 카운트 +1 증가 -->
+<update id="incrementApproveCount">
+    UPDATE posts
+    SET approve_count = approve_count + 1
+    WHERE post_id = #{postId}
+</update>
+
+<!-- 7-2. 반려 시 posts 테이블의 반려 카운트 +1 증가 -->
+<update id="incrementRejectCount">
+    UPDATE posts
+    SET reject_count = reject_count + 1
+    WHERE post_id = #{postId}
+</update>
+
+</mapper>
