@@ -65,17 +65,12 @@
     AND gu.group_user_status = 'ACTIVE'
 </select>
 
-    <!-- 게시물 승인 및 반려 API - 본인 검증 및 과반수 계산용 -->
-    <select id="getPostById" resultType="com.kb.youngly.dto.posts.PostDTO">
-        SELECT post_id,
-        user_id,
-        post_status,
-        round_id,
-        approve_count,
-        reject_count
-        FROM posts
-        WHERE post_id = #{postId}
-    </select>
+<!-- 게시물 승인 및 반려 API - 본인 검증용 -->
+<select id="getPostById" resultType="com.kb.youngly.dto.posts.PostDTO">
+    SELECT post_id, user_id, post_status
+    FROM posts
+    WHERE post_id = #{postId}
+</select>
 
 <!-- 5. 중복 평가 여부 확인 -->
 <select id="checkDuplicateApproval" resultType="int">
