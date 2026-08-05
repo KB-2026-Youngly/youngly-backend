@@ -46,4 +46,7 @@ public interface PostMapper {
 
     // 9. 과반수 투표 달성 시 게시글의 최종 상태 및 상태변경시간 업데이트
     void updatePostStatus(@Param("postId") Long postId, @Param("status") String status);
+
+    // 10. 시간 초과된 PENDING 게시글 일괄 자동 승인 처리 (업데이트된 행의 개수 반환)
+    int updatePostsToAutoApproved();
 }

@@ -65,12 +65,17 @@
     AND gu.group_user_status = 'ACTIVE'
 </select>
 
-<!-- 게시물 승인 및 반려 API - 본인 검증용 -->
-<select id="getPostById" resultType="com.kb.youngly.dto.posts.PostDTO">
-    SELECT post_id, user_id, post_status
-    FROM posts
-    WHERE post_id = #{postId}
-</select>
+    <!-- 게시물 승인 및 반려 API - 본인 검증 및 과반수 계산용 -->
+    <select id="getPostById" resultType="com.kb.youngly.dto.posts.PostDTO">
+        SELECT post_id,
+        user_id,
+        post_status,
+        round_id,
+        approve_count,
+        reject_count
+        FROM posts
+        WHERE post_id = #{postId}
+    </select>
 
 <!-- 5. 중복 평가 여부 확인 -->
 <select id="checkDuplicateApproval" resultType="int">
@@ -116,6 +121,15 @@
     SET post_status = #{status},
         status_changed_at = NOW()
     WHERE post_id = #{postId}
+</update>
+
+<!-- 10. 작성일 기준 다음날 하루(유예 기간)가 지나고, 그 다음날 자정이 되면 PENDING 상태의 게시글 일괄 자동 승인 -->
+<update id="updatePostsToAutoApproved">
+    UPDATE posts
+    SET post_status = 'APPROVED',
+    status_changed_at = NOW()
+    WHERE post_status = 'PENDING'
+    AND posted_at &lt; DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY) <!--  오늘 기준 하루 전(어제 자정)보다 과거인 글만 타겟팅!-->
 </update>
 
 </mapper>
