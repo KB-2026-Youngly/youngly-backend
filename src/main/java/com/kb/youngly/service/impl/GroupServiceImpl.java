@@ -208,4 +208,26 @@ public class GroupServiceImpl implements GroupService {
                 .message("Success")
                 .build();
     }
+
+    // 승인 대기 목록 조회
+    @Override
+    public List<JoinRequestResponse> getJoinRequests(
+            String userId,
+            String groupId) {
+
+        // 그룹 존재 확인
+        GroupVO group = groupMapper.findGroupById(groupId);
+
+        if (group == null) {
+            throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
+        }
+
+        // 총무 권한 확인
+        if (!group.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("조회 권한이 없습니다.");
+        }
+
+        // 승인 대기 목록 조회
+        return groupUserMapper.findPendingGroupUsers(groupId);
+    }
 }
