@@ -15,7 +15,7 @@ import java.util.List;
  * 주간 챌린지 자동 결산 스케줄러.
  *
  * <p>매일 하루가 끝나는 시점에 실행되어 라운드 시작일을 기준으로
- * 당일이 주간 마감일인 라운드를 조회하고 사용자별 달성 결과를 반영한다.</p>
+ * 전날이 주간 마감일인 라운드를 조회하고 사용자별 달성 결과를 반영한다.</p>
  *
  * <p>승인 게시물 집계와 {@code round_history.success_count},
  * {@code group_users.streak_count} 갱신은 서비스 계층에서 처리한다.</p>
@@ -44,7 +44,7 @@ public class WeeklySettlementScheduler {
         // LocalDate.now()가 서버 기본 시간대를 따르지 않도록 한국 시간대를 명시한다.
         LocalDate settlementDate = LocalDate.now(SERVICE_ZONE);
 
-        // 시작일로부터 6, 13, 20, 27...일째인 진행 중 라운드만 조회한다.
+        // 시작일로부터 7, 14, 21, 28...일째인 진행 중 라운드만 조회한다.
         // == 결산이 필요한 라운드를 조회한다.
         List<WeeklySettlementTarget> targets =
                 weeklySettlementService.findDueSettlements(settlementDate);
