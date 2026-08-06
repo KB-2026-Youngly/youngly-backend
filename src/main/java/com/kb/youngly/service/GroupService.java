@@ -53,4 +53,27 @@ public interface GroupService {
     List<JoinRequestResponse> getJoinRequests(
             String userId,
             String groupId);
+
+    // 승인
+    MessageResponse approveJoinRequest(
+            String userId,
+            String groupId,
+            Long groupUserId);
+
+//    // 거절
+//    MessageResponse rejectJoinRequest(
+//            String userId,
+//            String groupId,
+//            Long groupUserId);
+//
+//    // 강퇴
+//    MessageResponse kickGroupUser(
+//            String userId,
+//            String groupId,
+//            Long groupUserId);
+//
+//    // 탈퇴
+//    MessageResponse leaveGroup(
+//            String userId,
+//            String groupId);
 }

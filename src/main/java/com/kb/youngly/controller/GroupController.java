@@ -118,4 +118,20 @@ public class GroupController {
                 )
         );
     }
+
+    // 그룹 참여 승인
+    @PutMapping("/{groupId}/join-requests/{groupUserId}/approve")
+    public ResponseEntity<MessageResponse> approveJoinRequest(
+            Authentication authentication,
+            @PathVariable String groupId,
+            @PathVariable Long groupUserId) {
+
+        return ResponseEntity.ok(
+                groupService.approveJoinRequest(
+                        authentication.getName(),
+                        groupId,
+                        groupUserId
+                )
+        );
+    }
 }
