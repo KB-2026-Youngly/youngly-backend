@@ -5,6 +5,7 @@ import com.kb.youngly.enums.AccountType;
 import com.kb.youngly.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,10 +26,10 @@ public class AccountController {
     }
     @PostMapping
     public ResponseEntity<AccountRegisterResponseDTO> register(
-            @RequestBody AccountRegisterDTO dto) {
+            @RequestBody AccountRegisterDTO dto,
+            Authentication authentication) {
 
-        // TODO : JWT 적용 후 로그인 사용자로 변경
-        String userId = "user01";
+        String userId = authentication.getName();
 
         String accountId = accountService.register(dto, userId);
 
@@ -41,9 +42,9 @@ public class AccountController {
     }
     @GetMapping
     public ResponseEntity<AccountDTO> getAccount(
-            @RequestParam AccountType accountType) {
-        // TODO : JWT 적용 후 로그인 사용자 ID 사용
-        String userId = "user01";
+            @RequestParam AccountType accountType,
+            Authentication authentication)  {
+        String userId = authentication.getName();
 
         return ResponseEntity.ok(
                 accountService.getAccount(userId, accountType)

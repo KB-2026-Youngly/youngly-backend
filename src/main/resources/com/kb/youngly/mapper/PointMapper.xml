@@ -24,7 +24,7 @@
     </update>
 
     <insert id="insertPointHistory"
-            parameterType="PointHistoryVO"
+            parameterType="com.kb.youngly.vo.point.PointHistoryVO"
             useGeneratedKeys="true"
             keyProperty="pointLogId">
         INSERT INTO point_history (
@@ -34,15 +34,15 @@
             amount,
             content
         ) VALUES (
-            #{userId},
-            #{itemId},
-            #{pointType},
-            #{amount},
-            #{content}
-        )
+                     #{userId},
+                     #{itemId},
+                     #{pointType},
+                     #{amount},
+                     #{content}
+                 )
     </insert>
 
-    <select id="findPointHistoriesByUserId" resultType="PointHistoryVO">
+    <select id="findPointHistoriesByUserId" resultType="com.kb.youngly.vo.point.PointHistoryVO">
         SELECT
             point_log_id,
             user_id,
@@ -54,7 +54,7 @@
         FROM point_history
         WHERE user_id = #{userId}
         ORDER BY created_at DESC, point_log_id DESC
-        LIMIT #{limit}
+            LIMIT #{limit}
         OFFSET #{offset}
     </select>
 </mapper>

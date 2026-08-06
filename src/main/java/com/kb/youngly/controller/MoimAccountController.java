@@ -6,6 +6,7 @@ import com.kb.youngly.dto.moimaccount.*;
 import com.kb.youngly.service.MoimAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,10 +21,10 @@ public class MoimAccountController {
 
     @PostMapping
     public ResponseEntity<MoimAccountRegisterResponseDTO> register(
-            @RequestBody MoimAccountRegisterDTO dto) {
+            @RequestBody MoimAccountRegisterDTO dto,
+            Authentication authentication) {
 
-        // TODO : JWT 적용 후 로그인 사용자로 변경
-        String userId = "user01";
+        String userId = authentication.getName();
 
         String moimAccountId =
                 moimAccountService.register(dto, userId);
@@ -37,10 +38,10 @@ public class MoimAccountController {
     }
 
     @GetMapping
-    public ResponseEntity<List<MoimAccountDTO>> getAccount() {
+    public ResponseEntity<List<MoimAccountDTO>> getAccounts(
+            Authentication authentication) {
 
-        // TODO : JWT 적용 후 로그인 사용자로 변경
-        String userId = "user01";
+        String userId = authentication.getName();
 
         return ResponseEntity.ok(
                 moimAccountService.getAccounts(userId)

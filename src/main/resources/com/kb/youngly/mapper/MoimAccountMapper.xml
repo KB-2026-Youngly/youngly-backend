@@ -6,18 +6,34 @@
     <select id="findByUserId"
             resultType="com.kb.youngly.dto.moimaccount.MoimAccountDTO">
 
-        SELECT
+        SELECT DISTINCT
             m.moim_account_id,
             k.account_number,
             k.bank_name,
             k.balance,
-            k.interest_rate,
-            m.account_name
+            m.account_name,
+            owner_user.name AS owner_name,
+            CASE
+                WHEN m.user_id = #{userId} THEN TRUE
+                ELSE FALSE
+                END AS owner
         FROM moim_accounts m
                  INNER JOIN kb_accounts k
                             ON m.kb_account_id = k.kb_account_id
-        WHERE m.user_id = #{userId}
-          AND m.account_status='ACTIVE'
+                 INNER JOIN users owner_user
+                            ON owner_user.user_id = m.user_id
+                 LEFT JOIN `groups` g
+                           ON g.moim_account_id = m.moim_account_id
+                 LEFT JOIN group_users gu
+                           ON gu.group_id = g.group_id
+                               AND gu.user_id = #{userId}
+                               AND gu.group_user_status = 'ACTIVE'
+        WHERE m.account_status = 'ACTIVE'
+          AND (
+            m.user_id = #{userId}
+                OR g.user_id = #{userId}
+                OR gu.user_id IS NOT NULL
+            )
 
     </select>
     <update id="updateStatus">
@@ -82,12 +98,12 @@
             resultType="com.kb.youngly.dto.account.KbAccountDTO">
 
         SELECT
-            kb_account_id,
-            account_number,
-            bank_name,
-            balance,
-            interest_rate,
-            account_type
+            k.kb_account_id,
+            k.account_number,
+            k.bank_name,
+            k.balance,
+            k.interest_rate,
+            k.account_type
         FROM kb_accounts k
                  LEFT JOIN moim_accounts m
                            ON k.kb_account_id = m.kb_account_id
