@@ -66,6 +66,11 @@ public interface GroupService {
             String groupId,
             Long groupUserId);
 
+    // 그룹 참여자 조회
+    List<GroupUserResponse> getGroupUsers(
+            String userId,
+            String groupId);
+
 //    // 강퇴
 //    MessageResponse kickGroupUser(
 //            String userId,

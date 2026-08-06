@@ -295,4 +295,31 @@ public class GroupServiceImpl implements GroupService {
 
         return groupUser;
     }
+
+    // 그룹 참여자 조회
+    @Override
+    public List<GroupUserResponse> getGroupUsers(
+            String userId,
+            String groupId) {
+
+        // 그룹 존재 확인
+        GroupVO group = groupMapper.findGroupById(groupId);
+
+        if (group == null) {
+            throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
+        }
+
+        // 로그인한 사용자가 그룹 참여자인지 확인
+        GroupUserVO groupUser =
+                groupUserMapper.findGroupUser(groupId, userId);
+
+        if (groupUser == null ||
+                groupUser.getGroupUserStatus() != GroupUserStatus.ACTIVE) {
+
+            throw new IllegalArgumentException("조회 권한이 없습니다.");
+        }
+
+        // 참여자 목록 조회
+        return groupUserMapper.findGroupUsers(groupId);
+    }
 }

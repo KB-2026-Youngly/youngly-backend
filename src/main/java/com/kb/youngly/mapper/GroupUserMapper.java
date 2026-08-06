@@ -1,5 +1,6 @@
 package com.kb.youngly.mapper;
 
+import com.kb.youngly.dto.group.GroupUserResponse;
 import com.kb.youngly.dto.group.JoinRequestResponse;
 import com.kb.youngly.enums.GroupUserStatus;
 import com.kb.youngly.vo.group.GroupUserVO;
@@ -25,4 +26,7 @@ public interface GroupUserMapper {
     void updateGroupUserStatus(
             @Param("groupUserId") Long groupUserId,
             @Param("status") GroupUserStatus status);
+
+    // 그룹 참여자 목록 조회
+    List<GroupUserResponse> findGroupUsers(String groupId);
 }
