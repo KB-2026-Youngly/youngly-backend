@@ -48,6 +48,7 @@ DROP TABLE IF EXISTS `interest_users`;
 DROP TABLE IF EXISTS `collectible_items`;
 DROP TABLE IF EXISTS `interests`;
 DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `market_daily_snapshot`;
 
 -- 예시 (실제 컬럼은 ERD 확정 후 교체)
 -- CREATE TABLE users (
@@ -384,6 +385,28 @@ CREATE TABLE `interest_users` (
                                   `user_id`	VARCHAR(50)	NOT NULL,
                                   `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE market_daily_snapshot (
+                                       id BIGINT NOT NULL AUTO_INCREMENT,
+                                       market_date DATE NOT NULL,
+                                       source_subject VARCHAR(500) NOT NULL,
+                                       pdf_file_name VARCHAR(500) NOT NULL,
+                                       pdf_url TEXT NOT NULL,
+                                       raw_text LONGTEXT NULL,
+                                       summary_text LONGTEXT NULL,
+                                       kospi DECIMAL(12, 2) NULL,
+                                       kosdaq DECIMAL(12, 2) NULL,
+                                       nasdaq DECIMAL(12, 2) NULL,
+                                       usdkrw DECIMAL(12, 2) NULL,
+                                       treasury_3y DECIMAL(8, 4) NULL,
+                                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                       PRIMARY KEY (id),
+                                       UNIQUE KEY uk_market_daily_snapshot_pdf_file_name (pdf_file_name),
+                                       UNIQUE KEY uk_market_daily_snapshot_date_subject (market_date, source_subject),
+                                       KEY idx_market_daily_snapshot_market_date (market_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 ALTER TABLE `user_items` ADD CONSTRAINT `PK_USER_ITEMS` PRIMARY KEY (
                                                                      `user_item_id`

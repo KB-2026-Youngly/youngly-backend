@@ -10,9 +10,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.client.RestTemplate;
 
 import javax.sql.DataSource;
 
@@ -34,10 +36,9 @@ import javax.sql.DataSource;
 @EnableScheduling
 @ComponentScan(basePackages = {
         "com.kb.youngly"
-})
+}, excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Configuration.class))
 @MapperScan(basePackages = {"com.kb.youngly.mapper"})
 @PropertySource(value = {"classpath:/application.properties"})
-@EnableScheduling
 public class RootConfig {
 
     @Value("${jdbc.driver}")
@@ -99,5 +100,17 @@ public class RootConfig {
     @Bean
     public DataSourceTransactionManager transactionManager() {
         return new DataSourceTransactionManager(dataSource());
+    }
+
+    /**
+     * 외부 Open API / PDF 다운로드용 HTTP 클라이언트.
+     * WebFlux 미사용 환경이므로 RestTemplate 을 사용한다.
+     */
+    @Bean
+    public RestTemplate restTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10_000);
+        factory.setReadTimeout(30_000);
+        return new RestTemplate(factory);
     }
 }

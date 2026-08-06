@@ -3,6 +3,7 @@ package com.kb.youngly.controller;
 import com.kb.youngly.dto.common.MessageResponse;
 import com.kb.youngly.dto.group.*;
 import com.kb.youngly.service.GroupService;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
