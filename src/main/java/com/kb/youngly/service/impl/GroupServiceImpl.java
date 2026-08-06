@@ -322,4 +322,39 @@ public class GroupServiceImpl implements GroupService {
         // 참여자 목록 조회
         return groupUserMapper.findGroupUsers(groupId);
     }
+
+    // 참여자 강퇴
+    @Override
+    @Transactional
+    public MessageResponse kickGroupUser(
+            String userId,
+            String groupId,
+            Long groupUserId) {
+
+        // 총무 권한 검증
+        GroupVO group = validateLeader(userId, groupId);
+
+        // 강퇴 대상 조회
+        GroupUserVO target = validateGroupUser(groupUserId, groupId);
+
+        // ACTIVE 상태만 강퇴 가능
+        if (target.getGroupUserStatus() != GroupUserStatus.ACTIVE) {
+            throw new IllegalArgumentException("강퇴 가능한 상태가 아닙니다.");
+        }
+
+        // 총무 자기 자신 강퇴 방지
+        if (target.getUserId().equals(group.getUserId())) {
+            throw new IllegalArgumentException("총무는 자신을 강퇴할 수 없습니다.");
+        }
+
+        // 상태 변경
+        groupUserMapper.updateGroupUserStatus(
+                groupUserId,
+                GroupUserStatus.WITHDRAWN
+        );
+
+        return MessageResponse.builder()
+                .message("Success")
+                .build();
+    }
 }

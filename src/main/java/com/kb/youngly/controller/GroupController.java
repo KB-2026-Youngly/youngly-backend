@@ -165,4 +165,20 @@ public class GroupController {
                 )
         );
     }
+
+    // 참여자 강퇴
+    @DeleteMapping("/{groupId}/groupusers/{groupUserId}")
+    public ResponseEntity<MessageResponse> kickGroupUser(
+            Authentication authentication,
+            @PathVariable String groupId,
+            @PathVariable Long groupUserId) {
+
+        return ResponseEntity.ok(
+                groupService.kickGroupUser(
+                        authentication.getName(),
+                        groupId,
+                        groupUserId
+                )
+        );
+    }
 }

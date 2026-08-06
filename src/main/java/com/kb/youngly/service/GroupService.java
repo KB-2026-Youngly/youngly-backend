@@ -71,12 +71,12 @@ public interface GroupService {
             String userId,
             String groupId);
 
-//    // 강퇴
-//    MessageResponse kickGroupUser(
-//            String userId,
-//            String groupId,
-//            Long groupUserId);
-//
+    // 강퇴
+    MessageResponse kickGroupUser(
+            String userId,
+            String groupId,
+            Long groupUserId);
+
 //    // 탈퇴
 //    MessageResponse leaveGroup(
 //            String userId,
