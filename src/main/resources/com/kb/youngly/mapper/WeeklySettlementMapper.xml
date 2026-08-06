@@ -10,31 +10,33 @@
 
         결산 대상 조건
         1. 아직 진행 중인(ONGOING) 라운드
-        2. 결산일이 라운드 시작일과 종료일 사이에 포함되는 라운드
-        3. 시작일로부터 6, 13, 20, 27...일째인 라운드
+        2. 결산 대상 주간의 종료일이 라운드 시작일과 종료일 사이에 포함되는 라운드
+        3. 시작일로부터 7, 14, 21, 28...일째인 라운드
 
-        DATEDIFF 결과를 7로 나눈 몫에 1을 더해 현재 주차를 계산한다.
-        예: 시작일부터 6일 경과 = 1주차, 13일 경과 = 2주차
+        결산은 주간 집계 기간이 끝난 다음 날 23:59에 실행한다.
+        DATEDIFF 결과를 7로 나눈 몫으로 결산할 주차를 계산한다.
+        예: 시작일부터 7일 경과 = 1주차, 14일 경과 = 2주차
 
-        week_start_date와 week_end_date는 이후 승인 게시물 집계 범위로 사용된다.
+        week_start_date와 week_end_date는 결산일 전날까지의 7일간 승인 게시물
+        집계 범위로 사용된다.
     -->
     <select id="findDueWeeklySettlements"
             resultType="com.kb.youngly.dto.round.WeeklySettlementTarget">
         SELECT r.round_id,
                r.group_id,
-               (DATEDIFF(#{settlementDate}, r.start_date) DIV 7) + 1 AS week_no,
+               DATEDIFF(#{settlementDate}, r.start_date) DIV 7 AS week_no,
                DATE_ADD(
                    r.start_date,
-                   INTERVAL ((DATEDIFF(#{settlementDate}, r.start_date) DIV 7) * 7) DAY
+                   INTERVAL (((DATEDIFF(#{settlementDate}, r.start_date) DIV 7) - 1) * 7) DAY
                ) AS week_start_date,
-               #{settlementDate} AS week_end_date,
+               DATE_SUB(#{settlementDate}, INTERVAL 1 DAY) AS week_end_date,
                g.min_count
         FROM rounds r
         INNER JOIN `groups` g ON g.group_id = r.group_id
         WHERE r.round_status = 'ONGOING'
-          AND #{settlementDate} BETWEEN r.start_date AND r.end_date
-          AND DATEDIFF(#{settlementDate}, r.start_date) &gt;= 6
-          AND MOD(DATEDIFF(#{settlementDate}, r.start_date), 7) = 6
+          AND DATE_SUB(#{settlementDate}, INTERVAL 1 DAY) BETWEEN r.start_date AND r.end_date
+          AND DATEDIFF(#{settlementDate}, r.start_date) &gt;= 7
+          AND MOD(DATEDIFF(#{settlementDate}, r.start_date), 7) = 0
         ORDER BY r.round_id
     </select>
 
