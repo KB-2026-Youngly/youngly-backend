@@ -181,4 +181,18 @@ public class GroupController {
                 )
         );
     }
+
+    // 그룹 탈퇴
+    @DeleteMapping("/{groupId}/leave")
+    public ResponseEntity<MessageResponse> leaveGroup(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.leaveGroup(
+                        authentication.getName(),
+                        groupId
+                )
+        );
+    }
 }

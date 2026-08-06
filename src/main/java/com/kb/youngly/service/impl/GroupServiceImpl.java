@@ -357,4 +357,47 @@ public class GroupServiceImpl implements GroupService {
                 .message("Success")
                 .build();
     }
+
+    // 그룹 탈퇴
+    @Override
+    @Transactional
+    public MessageResponse leaveGroup(
+            String userId,
+            String groupId) {
+
+        // 그룹 존재 확인
+        GroupVO group = groupMapper.findGroupById(groupId);
+
+        if (group == null) {
+            throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
+        }
+
+        // 총무는 탈퇴 불가
+        if (group.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("총무는 그룹을 탈퇴할 수 없습니다.");
+        }
+
+        // 내 참여 정보 조회
+        GroupUserVO groupUser =
+                groupUserMapper.findGroupUser(groupId, userId);
+
+        if (groupUser == null) {
+            throw new IllegalArgumentException("그룹 참여자가 아닙니다.");
+        }
+
+        // ACTIVE 상태만 탈퇴 가능
+        if (groupUser.getGroupUserStatus() != GroupUserStatus.ACTIVE) {
+            throw new IllegalArgumentException("탈퇴 가능한 상태가 아닙니다.");
+        }
+
+        // 탈퇴 처리
+        groupUserMapper.updateGroupUserStatus(
+                groupUser.getGroupUserId(),
+                GroupUserStatus.WITHDRAWN
+        );
+
+        return MessageResponse.builder()
+                .message("Success")
+                .build();
+    }
 }
