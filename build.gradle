@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'war'
+    id 'io.freefair.lombok' version '8.14.4'
 }
 
 group = 'com.kb.youngly'
@@ -90,6 +91,7 @@ dependencies {
 
     testImplementation "org.springframework:spring-test:${springVersion}"
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+    testImplementation 'junit:junit:4.13.2'
     testImplementation "org.mockito:mockito-core:4.11.0"
     testImplementation "org.mockito:mockito-junit-jupiter:4.11.0"
     testRuntimeOnly    "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
@@ -108,11 +110,9 @@ dependencies {
 
     implementation 'com.google.guava:guava:20.0'
 
-    // implementation "org.springframework:spring-websocket:${springVersion}"
-    // implementation "org.springframework:spring-messaging:${springVersion}"
-
-    // implementation 'org.apache.httpcomponents:httpclient:4.5.13'
-    // implementation 'org.apache.httpcomponents:httpcore:4.4.15'
+    // 금감원 금융시장동향 PDF 텍스트 추출
+    implementation 'org.apache.pdfbox:pdfbox:3.0.3'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -125,7 +125,21 @@ tasks.withType(Javadoc).configureEach {
 }
 
 test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags 'integration'
+    }
+    systemProperty 'youngly.e2e', System.getProperty('youngly.e2e', 'false')
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+tasks.register('integrationTest', Test) {
+    useJUnitPlatform {
+        includeTags 'integration'
+    }
+    shouldRunAfter test
     testLogging {
         events 'passed', 'skipped', 'failed'
         exceptionFormat 'full'
