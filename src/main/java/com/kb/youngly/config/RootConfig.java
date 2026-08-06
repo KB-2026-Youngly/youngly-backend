@@ -37,7 +37,6 @@ import javax.sql.DataSource;
 })
 @MapperScan(basePackages = {"com.kb.youngly.mapper"})
 @PropertySource(value = {"classpath:/application.properties"})
-@EnableScheduling
 public class RootConfig {
 
     @Value("${jdbc.driver}")

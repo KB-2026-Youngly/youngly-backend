@@ -39,4 +39,11 @@ public interface GroupService {
     MessageResponse deleteGroup(
             String userId,
             String groupId);
+
+    /**
+     * 그룹 참여
+     */
+    MessageResponse joinGroup(
+            String userId,
+            JoinGroupRequest request);
 }

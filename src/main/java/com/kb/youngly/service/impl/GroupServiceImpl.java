@@ -3,8 +3,11 @@ package com.kb.youngly.service.impl;
 import com.kb.youngly.dto.common.MessageResponse;
 import com.kb.youngly.dto.group.*;
 import com.kb.youngly.enums.GroupStatus;
+import com.kb.youngly.enums.GroupUserStatus;
 import com.kb.youngly.mapper.GroupMapper;
+import com.kb.youngly.mapper.GroupUserMapper;
 import com.kb.youngly.service.GroupService;
+import com.kb.youngly.vo.group.GroupUserVO;
 import com.kb.youngly.vo.group.GroupVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,9 +19,13 @@ import java.util.UUID;
 public class GroupServiceImpl implements GroupService {
 
     private final GroupMapper groupMapper;
+    private final GroupUserMapper groupUserMapper;
 
-    public GroupServiceImpl(GroupMapper groupMapper) {
+    public GroupServiceImpl(GroupMapper groupMapper,
+                            GroupUserMapper groupUserMapper) {
+
         this.groupMapper = groupMapper;
+        this.groupUserMapper = groupUserMapper;
     }
 
     // 그룹 생성
@@ -123,6 +130,7 @@ public class GroupServiceImpl implements GroupService {
                 .build();
     }
 
+    // 그룹 종료
     @Override
     @Transactional
     public MessageResponse deleteGroup(String userId,
@@ -144,6 +152,57 @@ public class GroupServiceImpl implements GroupService {
         }
 
         groupMapper.finishGroup(groupId);
+
+        return MessageResponse.builder()
+                .message("Success")
+                .build();
+    }
+
+    // 그룹 참여
+    @Override
+    @Transactional
+    public MessageResponse joinGroup(String userId,
+                                     JoinGroupRequest request) {
+
+        // 초대코드로 그룹 조회
+        GroupVO group = groupMapper.findGroupByInviteCode(request.getInviteCode());
+
+        if (group == null) {
+            throw new IllegalArgumentException("존재하지 않는 초대코드입니다.");
+        }
+
+        // 종료된 그룹 확인
+        if (group.getGroupStatus() == GroupStatus.FINISHED) {
+            throw new IllegalArgumentException("종료된 그룹입니다.");
+        }
+
+        // 이미 참여 여부 확인
+        GroupUserVO groupUser =
+                groupUserMapper.findGroupUser(group.getGroupId(), userId);
+
+        if (groupUser != null) {
+
+            switch (groupUser.getGroupUserStatus()) {
+
+                case ACTIVE:
+                    throw new IllegalArgumentException("이미 참여 중인 그룹입니다.");
+
+                case PENDING_APPROVAL:
+                    throw new IllegalArgumentException("이미 가입 신청한 그룹입니다.");
+
+                default:
+                    break;
+            }
+        }
+
+        // 참여 신청
+        GroupUserVO newGroupUser = GroupUserVO.builder()
+                .groupId(group.getGroupId())
+                .userId(userId)
+                .groupUserStatus(GroupUserStatus.PENDING_APPROVAL)
+                .build();
+
+        groupUserMapper.insertGroupUser(newGroupUser);
 
         return MessageResponse.builder()
                 .message("Success")

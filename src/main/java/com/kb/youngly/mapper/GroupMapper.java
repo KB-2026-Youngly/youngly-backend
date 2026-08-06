@@ -2,11 +2,6 @@ package com.kb.youngly.mapper;
 
 import com.kb.youngly.dto.group.GroupListResponse;
 import com.kb.youngly.vo.group.GroupVO;
-import java.util.List;
-
-import java.util.List;
-
-import java.util.List;
 
 import java.util.List;
 
@@ -36,4 +31,9 @@ public interface GroupMapper {
      * 그룹 종료
      */
     void finishGroup(String groupId);
+
+    /**
+     * 그룹 참여
+     */
+    GroupVO findGroupByInviteCode(String inviteCode);
 }
