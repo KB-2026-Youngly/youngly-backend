@@ -164,4 +164,21 @@
         WHERE round_id = #{roundId}
 
     </select>
+
+    <select id="findRoundUsers"
+            resultType="com.kb.youngly.dto.round.RoundUserResponse">
+
+        SELECT
+            rh.round_history_id AS roundUserId,
+            rh.user_id,
+            u.nickname,
+            rh.success_count
+        FROM round_history rh
+                 INNER JOIN users u
+                            ON rh.user_id = u.user_id
+        WHERE rh.round_id = #{roundId}
+        ORDER BY rh.success_count DESC,
+                 rh.round_history_id ASC
+
+    </select>
 </mapper>

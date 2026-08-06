@@ -3,6 +3,9 @@ package com.kb.youngly.service;
 import com.kb.youngly.dto.round.CreateRoundRequest;
 import com.kb.youngly.dto.round.CreateRoundResponse;
 import com.kb.youngly.dto.round.RoundResponse;
+import com.kb.youngly.dto.round.RoundUserResponse;
+
+import java.util.List;
 
 /**
  * 그룹 챌린지의 라운드 생성 기능을 제공한다.
@@ -26,4 +29,9 @@ public interface RoundService {
      * 라운드 조회
      */
     RoundResponse getRound(Long roundId);
+
+    /**
+     * 라운드 참여자 조회
+     */
+    List<RoundUserResponse> getRoundUsers(Long roundId);
 }

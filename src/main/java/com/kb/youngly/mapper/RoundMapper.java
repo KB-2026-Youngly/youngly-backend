@@ -2,6 +2,7 @@ package com.kb.youngly.mapper;
 
 import com.kb.youngly.dto.round.RoundParticipantDTO;
 import com.kb.youngly.dto.round.RoundResponse;
+import com.kb.youngly.dto.round.RoundUserResponse;
 import com.kb.youngly.vo.group.GroupVO;
 import com.kb.youngly.vo.round.RoundHistoryVO;
 import com.kb.youngly.vo.round.RoundVO;
@@ -49,4 +50,9 @@ public interface RoundMapper {
      * 라운드 조회
      */
     RoundVO findRoundById(Long roundId);
+
+    /**
+     * 라운드 참여자 조회
+     */
+    List<RoundUserResponse> findRoundUsers(Long roundId);
 }

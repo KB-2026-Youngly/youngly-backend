@@ -1,9 +1,6 @@
 package com.kb.youngly.service.impl;
 
-import com.kb.youngly.dto.round.CreateRoundRequest;
-import com.kb.youngly.dto.round.CreateRoundResponse;
-import com.kb.youngly.dto.round.RoundParticipantDTO;
-import com.kb.youngly.dto.round.RoundResponse;
+import com.kb.youngly.dto.round.*;
 import com.kb.youngly.enums.RoundStatus;
 import com.kb.youngly.mapper.RoundMapper;
 import com.kb.youngly.service.RoundService;
@@ -159,5 +156,23 @@ public class RoundServiceImpl implements RoundService {
                 .endDate(round.getEndDate())
                 .roundStatus(round.getRoundStatus())
                 .build();
+    }
+
+    // 라운드 참여자 조회
+    @Override
+    @Transactional(readOnly = true)
+    public List<RoundUserResponse> getRoundUsers(Long roundId) {
+
+        if (roundId == null) {
+            throw new IllegalArgumentException("라운드 ID는 필수입니다.");
+        }
+
+        RoundVO round = roundMapper.findRoundById(roundId);
+
+        if (round == null) {
+            throw new IllegalArgumentException("라운드를 찾을 수 없습니다.");
+        }
+
+        return roundMapper.findRoundUsers(roundId);
     }
 }
