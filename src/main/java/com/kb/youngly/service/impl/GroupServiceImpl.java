@@ -400,4 +400,26 @@ public class GroupServiceImpl implements GroupService {
                 .message("Success")
                 .build();
     }
+
+    // 초대 코드 재발급
+    @Override
+    @Transactional
+    public RegenerateInviteCodeResponse regenerateInviteCode(
+            String userId,
+            String groupId) {
+
+        // 총무 권한 검증
+        validateLeader(userId, groupId);
+
+        // 새 초대코드 생성
+        String inviteCode = UUID.randomUUID().toString();
+
+        // DB 업데이트
+        groupMapper.updateInviteCode(groupId, inviteCode);
+
+        // 응답
+        return RegenerateInviteCodeResponse.builder()
+                .inviteCode(inviteCode)
+                .build();
+    }
 }

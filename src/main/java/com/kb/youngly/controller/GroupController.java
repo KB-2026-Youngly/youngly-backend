@@ -195,4 +195,18 @@ public class GroupController {
                 )
         );
     }
+
+    // 초대 코드 재발급
+    @PostMapping("/{groupId}/invite-code/regenerate")
+    public ResponseEntity<RegenerateInviteCodeResponse> regenerateInviteCode(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.regenerateInviteCode(
+                        authentication.getName(),
+                        groupId
+                )
+        );
+    }
 }
