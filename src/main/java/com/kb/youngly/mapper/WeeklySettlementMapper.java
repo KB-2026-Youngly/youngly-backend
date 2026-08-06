@@ -9,7 +9,7 @@ import java.util.List;
 /** 주간 챌린지 결산 조회 및 갱신 Mapper. */
 public interface WeeklySettlementMapper {
 
-    /** 지정한 날짜가 시작일로부터 6, 13, 20...일째인 진행 중 라운드를 조회한다. */
+    /** 지정한 날짜가 시작일로부터 7, 14, 21...일째인 진행 중 라운드를 조회한다. */
     List<WeeklySettlementTarget> findDueWeeklySettlements(
             @Param("settlementDate") LocalDate settlementDate);
 
