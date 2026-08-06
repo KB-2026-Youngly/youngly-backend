@@ -46,4 +46,11 @@ public interface GroupService {
     MessageResponse joinGroup(
             String userId,
             JoinGroupRequest request);
+
+    /**
+     * 승인 대기 목록 조회
+     */
+    List<JoinRequestResponse> getJoinRequests(
+            String userId,
+            String groupId);
 }

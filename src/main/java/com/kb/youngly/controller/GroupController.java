@@ -104,4 +104,18 @@ public class GroupController {
                 )
         );
     }
+
+    // 승인 대기 목록 조회
+    @GetMapping("/{groupId}/join-requests")
+    public ResponseEntity<List<JoinRequestResponse>> getJoinRequests(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.getJoinRequests(
+                        authentication.getName(),
+                        groupId
+                )
+        );
+    }
 }

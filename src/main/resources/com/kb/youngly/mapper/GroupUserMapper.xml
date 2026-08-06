@@ -31,4 +31,21 @@
 
     </insert>
 
+    <select id="findPendingGroupUsers"
+            parameterType="string"
+            resultType="com.kb.youngly.dto.group.JoinRequestResponse">
+
+        SELECT
+            gu.group_user_id,
+            gu.user_id,
+            u.nickname,
+            u.profile_image_url
+        FROM group_users gu
+                 JOIN users u
+                      ON gu.user_id = u.user_id
+        WHERE gu.group_id = #{groupId}
+          AND gu.group_user_status = 'PENDING_APPROVAL'
+        ORDER BY gu.created_at ASC
+
+    </select>
 </mapper>
