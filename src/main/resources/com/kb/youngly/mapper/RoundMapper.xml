@@ -5,13 +5,25 @@
 
 <mapper namespace="com.kb.youngly.mapper.RoundMapper">
 
+    <!-- 매일 자동 전환할 진행 중 그룹의 당일 종료 라운드를 조회한다. -->
+    <select id="findDueRoundGroupIds" resultType="string">
+        SELECT r.group_id
+        FROM rounds r
+        INNER JOIN `groups` g ON g.group_id = r.group_id
+        WHERE g.group_status = 'ONGOING'
+          AND r.round_status = 'ONGOING'
+          AND r.end_date = #{endDate}
+        ORDER BY r.group_id
+    </select>
+
     <!-- 같은 그룹에서 동시에 라운드를 만들 때 round_no가 중복되지 않도록 잠근다. -->
     <select id="findGroupForUpdate"
             resultType="com.kb.youngly.vo.group.GroupVO">
         SELECT group_id,
                moim_account_id,
                user_id,
-               round_cycle_days
+               round_cycle_days,
+               group_status
         FROM `groups`
         WHERE group_id = #{groupId}
         FOR UPDATE
@@ -29,6 +41,24 @@
                created_at
         FROM rounds
         WHERE group_id = #{groupId}
+        ORDER BY round_no DESC
+        LIMIT 1
+    </select>
+
+    <!-- 대상 조회 후 상태가 바뀌었는지 그룹 잠금 안에서 다시 확인한다. -->
+    <select id="findOngoingRoundEndingOn"
+            resultType="com.kb.youngly.vo.round.RoundVO">
+        SELECT round_id,
+               group_id,
+               round_no,
+               start_date,
+               end_date,
+               round_status,
+               created_at
+        FROM rounds
+        WHERE group_id = #{groupId}
+          AND round_status = 'ONGOING'
+          AND end_date = #{endDate}
         ORDER BY round_no DESC
         LIMIT 1
     </select>
@@ -52,6 +82,24 @@
             #{roundStatus}
         )
     </insert>
+
+    <!-- 중복 실행 시 이미 전환된 라운드가 다시 처리되지 않도록 기존 상태와 종료일을 확인한다. -->
+    <update id="markRoundWaitingSettlement">
+        UPDATE rounds
+        SET round_status = 'WAITING_SETTLEMENT'
+        WHERE round_id = #{roundId}
+          AND round_status = 'ONGOING'
+          AND end_date = #{endDate}
+    </update>
+
+    <!-- 첫 라운드 생성 시 모집 중인 그룹만 진행 중으로 전환한다. -->
+    <update id="startRecruitingGroup">
+        UPDATE `groups`
+        SET group_status = 'ONGOING',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE group_id = #{groupId}
+          AND group_status = 'RECRUITING'
+    </update>
 
     <!--
         라운드 생성 대상 상태의 사용자만 조회한다.
