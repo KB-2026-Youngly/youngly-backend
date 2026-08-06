@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RoundController {
 
     /** 인증 연동 전 라운드 생성 API 호출에 사용할 임시 사용자 ID. */
-    private static final String DEVELOPMENT_USER_ID = "user01";
+    private static final String DEVELOPMENT_USER_ID = "ab307e87-a99c-4108-9d6f-656768636a92";
 
     private final RoundService roundService;
 

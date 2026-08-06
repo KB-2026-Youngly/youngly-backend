@@ -149,4 +149,19 @@
         )
     </insert>
 
+    <select id="findRoundById"
+            resultType="com.kb.youngly.vo.round.RoundVO">
+
+        SELECT
+            round_id,
+            group_id,
+            round_no,
+            start_date,
+            end_date,
+            round_status,
+            created_at
+        FROM rounds
+        WHERE round_id = #{roundId}
+
+    </select>
 </mapper>

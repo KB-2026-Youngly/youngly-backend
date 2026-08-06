@@ -1,6 +1,7 @@
 package com.kb.youngly.mapper;
 
 import com.kb.youngly.dto.round.RoundParticipantDTO;
+import com.kb.youngly.dto.round.RoundResponse;
 import com.kb.youngly.vo.group.GroupVO;
 import com.kb.youngly.vo.round.RoundHistoryVO;
 import com.kb.youngly.vo.round.RoundVO;
@@ -43,4 +44,9 @@ public interface RoundMapper {
 
     /** 한 사용자의 라운드 시작 시점 이력을 저장한다. */
     int insertRoundHistory(RoundHistoryVO roundHistory);
+
+    /**
+     * 라운드 조회
+     */
+    RoundVO findRoundById(Long roundId);
 }
