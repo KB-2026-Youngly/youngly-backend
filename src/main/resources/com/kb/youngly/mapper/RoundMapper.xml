@@ -183,4 +183,69 @@
                  rh.round_history_id ASC
 
     </select>
+
+    <select id="findRoundRanking"
+            resultType="com.kb.youngly.dto.round.RoundRankingResponse">
+
+        SELECT
+            rh.user_id AS userId,
+            u.nickname AS nickname,
+            RANK() OVER (
+            ORDER BY rh.success_count DESC
+        ) AS rankNo,
+            rh.success_count AS successCount
+        FROM round_history rh
+                 INNER JOIN users u
+                            ON u.user_id = rh.user_id
+        WHERE rh.round_id = #{roundId}
+        ORDER BY
+            rankNo ASC,
+            rh.round_history_id ASC
+
+    </select>
+    <update id="updateRoundRanks">
+
+        UPDATE round_history rh
+            INNER JOIN (
+            SELECT
+            ranked.round_history_id,
+            ranked.calculated_rank
+            FROM (
+            SELECT
+            rh2.round_history_id,
+            RANK() OVER (
+            ORDER BY rh2.success_count DESC
+            ) AS calculated_rank
+            FROM round_history rh2
+            WHERE rh2.round_id = #{roundId}
+            ) ranked
+            ) result
+        ON result.round_history_id = rh.round_history_id
+            SET rh.rank_no = result.calculated_rank
+        WHERE rh.round_id = #{roundId}
+
+    </update>
+    <select id="findRoundSettlements"
+            resultType="com.kb.youngly.dto.round.RoundSettlementResponse">
+
+        SELECT
+            rh.round_history_id AS settlementId,
+            rh.user_id AS userId,
+            rh.settlement_amount AS settlementAmount,
+            rh.settlement_at AS createdAt
+        FROM round_history rh
+        WHERE rh.round_id = #{roundId}
+          AND rh.settlement_at IS NOT NULL
+        ORDER BY
+            rh.rank_no ASC,
+            rh.user_id ASC
+
+    </select>
+    <select id="existsRound" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM rounds
+            WHERE round_id = #{roundId}
+        )
+    </select>
 </mapper>

@@ -62,7 +62,7 @@
             g.user_id = #{userId}
            OR (
             gu.user_id = #{userId}
-                AND gu.group_user_status = 'ACTIVE'
+                AND gu.group_user_status IN ('ACTIVE', 'PENDING_DEPOSIT')
             )
         GROUP BY
             g.group_id,

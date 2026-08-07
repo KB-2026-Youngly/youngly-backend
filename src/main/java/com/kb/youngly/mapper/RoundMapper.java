@@ -1,8 +1,6 @@
 package com.kb.youngly.mapper;
 
-import com.kb.youngly.dto.round.RoundParticipantDTO;
-import com.kb.youngly.dto.round.RoundResponse;
-import com.kb.youngly.dto.round.RoundUserResponse;
+import com.kb.youngly.dto.round.*;
 import com.kb.youngly.vo.group.GroupVO;
 import com.kb.youngly.vo.round.RoundHistoryVO;
 import com.kb.youngly.vo.round.RoundVO;
@@ -54,5 +52,15 @@ public interface RoundMapper {
     /**
      * 라운드 참여자 조회
      */
-    List<RoundUserResponse> findRoundUsers(Long roundId);
+    // 누적 성공 횟수를 기준으로 라운드 순위 저장
+    int updateRoundRanks(@Param("roundId") Long roundId);
+    // 라운드 참여자 조회
+    List<RoundUserResponse> findRoundUsers(@Param("roundId") Long roundId);
+    // 라운드별 사용자 랭킹 조회
+    List<RoundRankingResponse> findRoundRanking(@Param("roundId") Long roundId);
+    // 라운드별 정산 결과 조회
+    List<RoundSettlementResponse> findRoundSettlements(@Param("roundId") Long roundId);
+    // 라운드 존재 여부 확인
+    boolean existsRound(@Param("roundId") Long roundId);
+
 }
