@@ -322,4 +322,104 @@ public class GroupServiceImpl implements GroupService {
         // 참여자 목록 조회
         return groupUserMapper.findGroupUsers(groupId);
     }
+
+    // 참여자 강퇴
+    @Override
+    @Transactional
+    public MessageResponse kickGroupUser(
+            String userId,
+            String groupId,
+            Long groupUserId) {
+
+        // 총무 권한 검증
+        GroupVO group = validateLeader(userId, groupId);
+
+        // 강퇴 대상 조회
+        GroupUserVO target = validateGroupUser(groupUserId, groupId);
+
+        // ACTIVE 상태만 강퇴 가능
+        if (target.getGroupUserStatus() != GroupUserStatus.ACTIVE) {
+            throw new IllegalArgumentException("강퇴 가능한 상태가 아닙니다.");
+        }
+
+        // 총무 자기 자신 강퇴 방지
+        if (target.getUserId().equals(group.getUserId())) {
+            throw new IllegalArgumentException("총무는 자신을 강퇴할 수 없습니다.");
+        }
+
+        // 상태 변경
+        groupUserMapper.updateGroupUserStatus(
+                groupUserId,
+                GroupUserStatus.WITHDRAWN
+        );
+
+        return MessageResponse.builder()
+                .message("Success")
+                .build();
+    }
+
+    // 그룹 탈퇴
+    @Override
+    @Transactional
+    public MessageResponse leaveGroup(
+            String userId,
+            String groupId) {
+
+        // 그룹 존재 확인
+        GroupVO group = groupMapper.findGroupById(groupId);
+
+        if (group == null) {
+            throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
+        }
+
+        // 총무는 탈퇴 불가
+        if (group.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("총무는 그룹을 탈퇴할 수 없습니다.");
+        }
+
+        // 내 참여 정보 조회
+        GroupUserVO groupUser =
+                groupUserMapper.findGroupUser(groupId, userId);
+
+        if (groupUser == null) {
+            throw new IllegalArgumentException("그룹 참여자가 아닙니다.");
+        }
+
+        // ACTIVE 상태만 탈퇴 가능
+        if (groupUser.getGroupUserStatus() != GroupUserStatus.ACTIVE) {
+            throw new IllegalArgumentException("탈퇴 가능한 상태가 아닙니다.");
+        }
+
+        // 탈퇴 처리
+        groupUserMapper.updateGroupUserStatus(
+                groupUser.getGroupUserId(),
+                GroupUserStatus.WITHDRAWN
+        );
+
+        return MessageResponse.builder()
+                .message("Success")
+                .build();
+    }
+
+    // 초대 코드 재발급
+    @Override
+    @Transactional
+    public RegenerateInviteCodeResponse regenerateInviteCode(
+            String userId,
+            String groupId) {
+
+        // 총무 권한 검증
+        validateLeader(userId, groupId);
+
+        // 새 초대코드 생성
+        String inviteCode = UUID.randomUUID().toString();
+
+        // DB 업데이트
+        groupMapper.updateInviteCode(groupId, inviteCode);
+
+        // 응답
+        return RegenerateInviteCodeResponse.builder()
+                .inviteCode(inviteCode)
+                .build();
+    }
 }

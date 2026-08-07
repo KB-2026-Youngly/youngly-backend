@@ -156,4 +156,12 @@
         WHERE invite_code = #{inviteCode}
 
     </select>
+
+    <update id="updateInviteCode">
+
+        UPDATE `groups`
+        SET invite_code = #{inviteCode}
+        WHERE group_id = #{groupId}
+
+    </update>
 </mapper>
