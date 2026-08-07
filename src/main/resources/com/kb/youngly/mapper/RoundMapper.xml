@@ -23,6 +23,8 @@
                moim_account_id,
                user_id,
                round_cycle_days,
+               future_deposit_ratio_rule,
+               base_deposit_amount,
                group_status
         FROM `groups`
         WHERE group_id = #{groupId}
@@ -149,4 +151,36 @@
         )
     </insert>
 
+    <select id="findRoundById"
+            resultType="com.kb.youngly.vo.round.RoundVO">
+
+        SELECT
+            round_id,
+            group_id,
+            round_no,
+            start_date,
+            end_date,
+            round_status,
+            created_at
+        FROM rounds
+        WHERE round_id = #{roundId}
+
+    </select>
+
+    <select id="findRoundUsers"
+            resultType="com.kb.youngly.dto.round.RoundUserResponse">
+
+        SELECT
+            rh.round_history_id AS roundUserId,
+            rh.user_id,
+            u.nickname,
+            rh.success_count
+        FROM round_history rh
+                 INNER JOIN users u
+                            ON rh.user_id = u.user_id
+        WHERE rh.round_id = #{roundId}
+        ORDER BY rh.success_count DESC,
+                 rh.round_history_id ASC
+
+    </select>
 </mapper>
