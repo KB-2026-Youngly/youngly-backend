@@ -16,9 +16,9 @@ public interface WeeklySettlementMapper {
     /** 참여자별 승인 게시물 수를 주간 결산 결과로 저장한다. */
     int insertWeeklySettlementResults(WeeklySettlementTarget target);
 
-    /** 주간 승인 게시물 수가 최소 횟수 이상인 참여자의 성공 횟수를 증가시킨다. */
+    /** 목표를 달성했거나 실패 패스로 부족분을 충당한 참여자의 성공 횟수를 증가시킨다. */
     int incrementRoundHistorySuccessCount(WeeklySettlementTarget target);
 
-    /** 성공한 참여자의 그룹 연속 성공 횟수를 증가시킨다. */
+    /** 목표 달성 또는 실패 패스 사용으로 성공한 참여자의 그룹 연속 성공 횟수를 증가시킨다. */
     int incrementGroupUserStreakCount(WeeklySettlementTarget target);
 }

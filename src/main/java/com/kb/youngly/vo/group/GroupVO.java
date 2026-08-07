@@ -29,6 +29,7 @@ public class GroupVO {
     private Integer durationDays;
     private Integer minCount;
     private Integer roundCycleDays;
+    private Integer defaultFailPassCount;
     private BigDecimal baseDepositAmount;
     private GroupStatus groupStatus;
     private LocalDateTime updatedAt;

@@ -23,6 +23,7 @@
                moim_account_id,
                user_id,
                round_cycle_days,
+               default_fail_pass_count,
                future_deposit_ratio_rule,
                base_deposit_amount,
                group_status

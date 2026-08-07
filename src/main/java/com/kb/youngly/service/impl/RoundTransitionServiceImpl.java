@@ -84,6 +84,9 @@ public class RoundTransitionServiceImpl implements RoundTransitionService {
         if (group.getRoundCycleDays() == null || group.getRoundCycleDays() <= 0) {
             throw new IllegalStateException("그룹의 라운드 주기가 올바르지 않습니다.");
         }
+        if (group.getDefaultFailPassCount() != null && group.getDefaultFailPassCount() < 0) {
+            throw new IllegalStateException("그룹의 실패 패스 기본 횟수가 올바르지 않습니다.");
+        }
         if (group.getMoimAccountId() == null || group.getMoimAccountId().trim().isEmpty()) {
             throw new IllegalStateException("그룹에 연결된 모임통장이 없습니다.");
         }
@@ -126,6 +129,9 @@ public class RoundTransitionServiceImpl implements RoundTransitionService {
 
         // 새 라운드 시작 시점의 참여자와 수령 계좌를 round_history에 고정한다.
         List<RoundParticipantDTO> participants = roundMapper.findRoundParticipants(groupId.trim());
+        int defaultFailPassCount = group.getDefaultFailPassCount() == null
+                ? 0
+                : group.getDefaultFailPassCount();
         for (RoundParticipantDTO participant : participants) {
             if (participant.getAccountId() == null || participant.getAccountId().trim().isEmpty()) {
                 throw new IllegalStateException(
@@ -139,7 +145,7 @@ public class RoundTransitionServiceImpl implements RoundTransitionService {
                     .accountId(participant.getAccountId())
                     .moimAccountId(group.getMoimAccountId())
                     .successCount(0)
-                    .remainingFailPassCount(0)
+                    .remainingFailPassCount(defaultFailPassCount)
                     .build();
 
             // 참여자 한 명이라도 이력이 저장되지 않으면 라운드 생성과 상태 변경도 함께 롤백한다.

@@ -49,6 +49,9 @@ public class RoundServiceImpl implements RoundService {
         if (group.getRoundCycleDays() == null || group.getRoundCycleDays() <= 0) {
             throw new IllegalStateException("그룹의 라운드 주기가 올바르지 않습니다.");
         }
+        if (group.getDefaultFailPassCount() != null && group.getDefaultFailPassCount() < 0) {
+            throw new IllegalStateException("그룹의 실패 패스 기본 횟수가 올바르지 않습니다.");
+        }
         if (group.getMoimAccountId() == null || group.getMoimAccountId().trim().isEmpty()) {
             throw new IllegalStateException("그룹에 연결된 모임통장이 없습니다.");
         }
@@ -78,6 +81,9 @@ public class RoundServiceImpl implements RoundService {
 
         // 참여 대기 및 참여 중인 사용자만 새 라운드의 정산 대상 이력에 포함한다.
         List<RoundParticipantDTO> participants = roundMapper.findRoundParticipants(normalizedGroupId);
+        int defaultFailPassCount = group.getDefaultFailPassCount() == null
+                ? 0
+                : group.getDefaultFailPassCount();
         for (RoundParticipantDTO participant : participants) {
             if (participant.getAccountId() == null || participant.getAccountId().trim().isEmpty()) {
                 throw new IllegalStateException(
@@ -92,7 +98,7 @@ public class RoundServiceImpl implements RoundService {
                     .accountId(participant.getAccountId())
                     .moimAccountId(group.getMoimAccountId())
                     .successCount(0)
-                    .remainingFailPassCount(0)
+                    .remainingFailPassCount(defaultFailPassCount)
                     .build();
             if (roundMapper.insertRoundHistory(history) != 1) {
                 throw new IllegalStateException("라운드 참여 이력 생성에 실패했습니다.");

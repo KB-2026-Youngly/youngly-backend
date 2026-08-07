@@ -75,9 +75,10 @@ public class WeeklySettlementServiceImpl implements WeeklySettlementService {
             return 0;
         }
 
-        // 저장된 approved_post_count가 min_count 이상인 참여자의 두 카운트를 갱신한다.
-        int successCount = weeklySettlementMapper.incrementRoundHistorySuccessCount(target);
+        // 실패 패스 차감 전 잔여 횟수를 기준으로 성공 대상자의 streak를 먼저 갱신한다.
         int streakCount = weeklySettlementMapper.incrementGroupUserStreakCount(target);
+        // 목표 달성자는 성공 횟수만, 패스로 부족분을 충당한 참여자는 성공 횟수와 패스 잔여량을 갱신한다.
+        int successCount = weeklySettlementMapper.incrementRoundHistorySuccessCount(target);
 
         // 갱신 인원이 다르면 일부 데이터만 변경된 상태이므로 예외를 발생시켜 모두 롤백한다.
         if (successCount != streakCount) {
