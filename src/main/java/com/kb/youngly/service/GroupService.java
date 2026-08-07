@@ -71,14 +71,19 @@ public interface GroupService {
             String userId,
             String groupId);
 
-//    // 강퇴
-//    MessageResponse kickGroupUser(
-//            String userId,
-//            String groupId,
-//            Long groupUserId);
-//
-//    // 탈퇴
-//    MessageResponse leaveGroup(
-//            String userId,
-//            String groupId);
+    // 강퇴
+    MessageResponse kickGroupUser(
+            String userId,
+            String groupId,
+            Long groupUserId);
+
+    // 탈퇴
+    MessageResponse leaveGroup(
+            String userId,
+            String groupId);
+
+    // 초대 코드 재발급
+    RegenerateInviteCodeResponse regenerateInviteCode(
+            String userId,
+            String groupId);
 }

@@ -165,4 +165,48 @@ public class GroupController {
                 )
         );
     }
+
+    // 참여자 강퇴
+    @DeleteMapping("/{groupId}/groupusers/{groupUserId}")
+    public ResponseEntity<MessageResponse> kickGroupUser(
+            Authentication authentication,
+            @PathVariable String groupId,
+            @PathVariable Long groupUserId) {
+
+        return ResponseEntity.ok(
+                groupService.kickGroupUser(
+                        authentication.getName(),
+                        groupId,
+                        groupUserId
+                )
+        );
+    }
+
+    // 그룹 탈퇴
+    @DeleteMapping("/{groupId}/leave")
+    public ResponseEntity<MessageResponse> leaveGroup(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.leaveGroup(
+                        authentication.getName(),
+                        groupId
+                )
+        );
+    }
+
+    // 초대 코드 재발급
+    @PostMapping("/{groupId}/invite-code/regenerate")
+    public ResponseEntity<RegenerateInviteCodeResponse> regenerateInviteCode(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.regenerateInviteCode(
+                        authentication.getName(),
+                        groupId
+                )
+        );
+    }
 }
