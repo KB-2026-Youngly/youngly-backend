@@ -164,4 +164,16 @@
         WHERE group_id = #{groupId}
 
     </update>
+
+    <select id="existsInviteCode"
+            parameterType="string"
+            resultType="boolean">
+
+        SELECT EXISTS(
+            SELECT 1
+            FROM `groups`
+            WHERE invite_code = #{inviteCode}
+        )
+
+    </select>
 </mapper>

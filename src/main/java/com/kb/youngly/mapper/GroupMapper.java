@@ -44,4 +44,6 @@ public interface GroupMapper {
     void updateInviteCode(
             @Param("groupId") String groupId,
             @Param("inviteCode") String inviteCode);
+
+    boolean existsInviteCode(String inviteCode);
 }
