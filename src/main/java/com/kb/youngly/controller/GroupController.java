@@ -3,7 +3,6 @@ package com.kb.youngly.controller;
 import com.kb.youngly.dto.common.MessageResponse;
 import com.kb.youngly.dto.group.*;
 import com.kb.youngly.service.GroupService;
-import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,9 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/groups")
 public class GroupController {
-
-    /** 인증 연동 전 그룹 생성 API 호출에 사용할 임시 사용자 ID. */
-    private static final String DEVELOPMENT_USER_ID = "user01";
 
     private final GroupService groupService;
 
@@ -30,8 +26,9 @@ public class GroupController {
             Authentication authentication,
             @RequestBody CreateGroupRequest request) {
 
+        String userId = authentication.getName();
         CreateGroupResponse response =
-                groupService.createGroup(DEVELOPMENT_USER_ID, request);
+                groupService.createGroup(userId, request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)

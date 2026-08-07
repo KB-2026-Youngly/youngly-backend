@@ -6,6 +6,7 @@ import com.kb.youngly.service.RoundService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,9 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RoundController {
 
-    /** 인증 연동 전 라운드 생성 API 호출에 사용할 임시 사용자 ID. */
-    private static final String DEVELOPMENT_USER_ID = "ab307e87-a99c-4108-9d6f-656768636a92";
-
     private final RoundService roundService;
 
     /**
@@ -31,8 +29,10 @@ public class RoundController {
     @PostMapping("/rounds")
     public ResponseEntity<CreateRoundResponse> createRound(
             @PathVariable String groupId,
-            @RequestBody(required = false) CreateRoundRequest request) {
+            @RequestBody(required = false) CreateRoundRequest request,
+            Authentication authentication) {
+        String userId = authentication.getName();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(roundService.createRound(DEVELOPMENT_USER_ID, groupId, request));
+                .body(roundService.createRound(userId, groupId, request));
     }
 }
