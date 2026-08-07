@@ -81,4 +81,9 @@ public interface GroupService {
     MessageResponse leaveGroup(
             String userId,
             String groupId);
+
+    // 초대 코드 재발급
+    RegenerateInviteCodeResponse regenerateInviteCode(
+            String userId,
+            String groupId);
 }

@@ -2,6 +2,7 @@ package com.kb.youngly.mapper;
 
 import com.kb.youngly.dto.group.GroupListResponse;
 import com.kb.youngly.vo.group.GroupVO;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -36,4 +37,11 @@ public interface GroupMapper {
      * 그룹 참여
      */
     GroupVO findGroupByInviteCode(String inviteCode);
+
+    /**
+     * 초대코드 재발급
+     */
+    void updateInviteCode(
+            @Param("groupId") String groupId,
+            @Param("inviteCode") String inviteCode);
 }
