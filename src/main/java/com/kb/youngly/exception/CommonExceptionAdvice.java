@@ -3,6 +3,7 @@ package com.kb.youngly.exception;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -36,6 +37,13 @@ public class CommonExceptionAdvice {
                                                                 HttpServletRequest request) {
         log.warn("[WARN] 잘못된 요청. message={}", e.getMessage());
         return build(HttpStatus.BAD_REQUEST, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException e,
+                                                                  HttpServletRequest request) {
+        log.warn("[WARN] 접근 권한 없음. message={}", e.getMessage());
+        return build(HttpStatus.FORBIDDEN, e.getMessage(), request);
     }
 
     @ExceptionHandler(NoSuchElementException.class)

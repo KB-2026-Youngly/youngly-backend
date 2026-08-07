@@ -5,7 +5,7 @@
 <mapper namespace="com.kb.youngly.mapper.MarketDailySnapshotMapper">
 
     <insert id="upsertMarketDailySnapshot"
-            parameterType="MarketDailySnapshotVO"
+            parameterType="com.kb.youngly.vo.market.MarketDailySnapshotVO"
             useGeneratedKeys="true"
             keyProperty="id">
         INSERT INTO market_daily_snapshot (
@@ -47,7 +47,7 @@
             updated_at = CURRENT_TIMESTAMP
     </insert>
 
-    <select id="findByPdfFileName" resultType="MarketDailySnapshotVO">
+    <select id="findByPdfFileName" resultType="com.kb.youngly.vo.market.MarketDailySnapshotVO">
         SELECT
             id,
             market_date,
@@ -67,7 +67,7 @@
         WHERE pdf_file_name = #{pdfFileName}
     </select>
 
-    <select id="findRecentSnapshots" resultType="MarketDailySnapshotVO">
+    <select id="findRecentSnapshots" resultType="com.kb.youngly.vo.market.MarketDailySnapshotVO">
         SELECT
             id,
             market_date,
