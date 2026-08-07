@@ -1,6 +1,7 @@
 package com.kb.youngly.scheduler;
 
 import com.kb.youngly.service.RoundTransitionService;
+import com.kb.youngly.service.RoundSettlementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,10 +12,10 @@ import java.time.ZoneId;
 import java.util.List;
 
 /**
- * 종료된 라운드를 정산 대기로 전환하고 다음 라운드를 자동 생성하는 스케줄러.
+ * 종료된 라운드의 정산과 다음 라운드 전환을 자동 실행하는 스케줄러.
  *
  * <p>한국시간 기준 매일 23시 59분에 실행되며 다음 조건을 모두 만족하는
- * 라운드를 처리한다.</p>
+ * 라운드 전환 및 정산 작업을 처리한다.</p>
  *
  * <ul>
  *     <li>그룹 상태가 {@code ONGOING}일 것</li>
@@ -36,6 +37,42 @@ public class RoundTransitionScheduler {
 
     /** 전환 대상 조회와 그룹별 라운드 전환 트랜잭션을 수행하는 서비스. */
     private final RoundTransitionService roundTransitionService;
+
+    /** 종료일 다음 날이 된 라운드의 계좌 이체와 정산 완료 처리를 수행하는 서비스. */
+    private final RoundSettlementService roundSettlementService;
+
+    /**
+     * 매일 한국시간 23시 59분에 전날 종료된 정산 대기 라운드를 정산한다.
+     *
+     * <p>공동 순위를 포함한 참여자별 적립금 이체는 그룹별 독립 트랜잭션으로
+     * 실행한다. 한 그룹의 계좌 잔액이나 규칙에 문제가 있어도 다른 그룹은 계속
+     * 처리하며, 실패한 그룹은 WAITING_SETTLEMENT 상태로 남아 재처리할 수 있다.</p>
+     */
+    @Scheduled(cron = "0 59 23 * * *", zone = "Asia/Seoul")
+    public void settleWaitingRounds() {
+        LocalDate settlementDate = LocalDate.now(SERVICE_ZONE);
+        List<String> groupIds = roundSettlementService.findDueGroupIds(settlementDate);
+        int settledCount = 0;
+        int failedCount = 0;
+
+        for (String groupId : groupIds) {
+            try {
+                // 계좌·예치금·원장·이력·라운드 상태는 서비스의 한 트랜잭션에서 반영된다.
+                if (roundSettlementService.settleRound(groupId, settlementDate)) {
+                    settledCount++;
+                }
+            } catch (RuntimeException exception) {
+                failedCount++;
+                // 운영자가 원인을 확인하고 해당 그룹만 다시 처리할 수 있도록 식별자를 남긴다.
+                log.error("라운드 자동 정산 실패: groupId={}, settlementDate={}",
+                        groupId, settlementDate, exception);
+            }
+        }
+
+        log.info("라운드 자동 정산 완료: settlementDate={}, targetCount={}, "
+                        + "settledCount={}, failedCount={}",
+                settlementDate, groupIds.size(), settledCount, failedCount);
+    }
 
     /**
      * 매일 한국시간 23시 59분에 당일 종료 라운드를 전환한다.
