@@ -86,4 +86,15 @@ public interface GroupService {
     RegenerateInviteCodeResponse regenerateInviteCode(
             String userId,
             String groupId);
+
+    // 챌린지 생성/수정
+    MessageResponse updateChallenge(
+            String userId,
+            String groupId,
+            UpdateChallengeRequest request);
+
+    // 챌린지 삭제
+    MessageResponse deleteChallenge(
+            String userId,
+            String groupId);
 }
