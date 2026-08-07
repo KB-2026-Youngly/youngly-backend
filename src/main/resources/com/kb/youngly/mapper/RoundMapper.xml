@@ -23,6 +23,8 @@
                moim_account_id,
                user_id,
                round_cycle_days,
+               future_deposit_ratio_rule,
+               base_deposit_amount,
                group_status
         FROM `groups`
         WHERE group_id = #{groupId}
