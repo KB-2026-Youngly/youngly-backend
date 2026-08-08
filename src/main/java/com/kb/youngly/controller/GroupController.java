@@ -206,4 +206,34 @@ public class GroupController {
                 )
         );
     }
+
+    // 챌린지 생성/수정
+    @PutMapping("/{groupId}/challenge")
+    public ResponseEntity<MessageResponse> updateChallenge(
+            Authentication authentication,
+            @PathVariable String groupId,
+            @RequestBody UpdateChallengeRequest request) {
+
+        return ResponseEntity.ok(
+                groupService.updateChallenge(
+                        authentication.getName(),
+                        groupId,
+                        request
+                )
+        );
+    }
+
+    // 챌린지 삭제
+    @DeleteMapping("/{groupId}/challenge")
+    public ResponseEntity<MessageResponse> deleteChallenge(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.deleteChallenge(
+                        authentication.getName(),
+                        groupId
+                )
+        );
+    }
 }

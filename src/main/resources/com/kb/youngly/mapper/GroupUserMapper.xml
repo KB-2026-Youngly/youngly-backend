@@ -88,7 +88,7 @@
             group_user_status = #{status},
             approved_at =
                 CASE
-                    WHEN #{status} = 'ACTIVE' THEN NOW()
+                    WHEN #{status} = 'PENDING_DEPOSIT' THEN NOW()
                     ELSE approved_at
                     END
         WHERE group_user_id = #{groupUserId}

@@ -164,4 +164,49 @@
         WHERE group_id = #{groupId}
 
     </update>
+
+    <select id="existsInviteCode"
+            parameterType="string"
+            resultType="boolean">
+
+        SELECT EXISTS(
+            SELECT 1
+            FROM `groups`
+            WHERE invite_code = #{inviteCode}
+        )
+
+    </select>
+
+    <update id="updateChallenge"
+            parameterType="com.kb.youngly.vo.group.GroupVO">
+
+        UPDATE `groups`
+        SET
+            challenge_type = #{challengeType},
+            content = #{content},
+            future_deposit_ratio_rule = #{futureDepositRatioRule},
+            duration_days = #{durationDays},
+            min_count = #{minCount},
+            round_cycle_days = #{roundCycleDays},
+            base_deposit_amount = #{baseDepositAmount},
+            updated_at = NOW()
+        WHERE group_id = #{groupId}
+
+    </update>
+
+    <update id="deleteChallenge">
+
+        UPDATE `groups`
+        SET
+            challenge_type = 'DRAFT',
+            content = NULL,
+            future_deposit_ratio_rule = '',
+            duration_days = 7,
+            min_count = 1,
+            round_cycle_days = 28,
+            base_deposit_amount = 0,
+            updated_at = NOW()
+        WHERE group_id = #{groupId}
+
+    </update>
 </mapper>

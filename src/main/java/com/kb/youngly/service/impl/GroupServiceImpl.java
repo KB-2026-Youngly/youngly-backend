@@ -12,6 +12,9 @@ import com.kb.youngly.vo.group.GroupVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -223,7 +226,7 @@ public class GroupServiceImpl implements GroupService {
 
         groupUserMapper.updateGroupUserStatus(
                 groupUserId,
-                GroupUserStatus.ACTIVE
+                GroupUserStatus.PENDING_DEPOSIT
         );
 
         return MessageResponse.builder()
@@ -337,8 +340,9 @@ public class GroupServiceImpl implements GroupService {
         // 강퇴 대상 조회
         GroupUserVO target = validateGroupUser(groupUserId, groupId);
 
-        // ACTIVE 상태만 강퇴 가능
-        if (target.getGroupUserStatus() != GroupUserStatus.ACTIVE) {
+        // ACTIVE, PENDING_DEPOSIT 상태만 강퇴 가능
+        if (target.getGroupUserStatus() != GroupUserStatus.ACTIVE &&
+                target.getGroupUserStatus() != GroupUserStatus.PENDING_DEPOSIT) {
             throw new IllegalArgumentException("강퇴 가능한 상태가 아닙니다.");
         }
 
@@ -385,8 +389,9 @@ public class GroupServiceImpl implements GroupService {
             throw new IllegalArgumentException("그룹 참여자가 아닙니다.");
         }
 
-        // ACTIVE 상태만 탈퇴 가능
-        if (groupUser.getGroupUserStatus() != GroupUserStatus.ACTIVE) {
+        // ACTIVE, PENDING_DEPOSIT 상태만 탈퇴 가능
+        if (groupUser.getGroupUserStatus() != GroupUserStatus.ACTIVE &&
+                groupUser.getGroupUserStatus() != GroupUserStatus.PENDING_DEPOSIT) {
             throw new IllegalArgumentException("탈퇴 가능한 상태가 아닙니다.");
         }
 
@@ -412,7 +417,13 @@ public class GroupServiceImpl implements GroupService {
         validateLeader(userId, groupId);
 
         // 새 초대코드 생성
-        String inviteCode = UUID.randomUUID().toString();
+        String inviteCode;
+
+        do {
+            inviteCode = generateInviteCode();
+        } while (groupMapper.existsInviteCode(inviteCode));
+
+        groupMapper.updateInviteCode(groupId, inviteCode);
 
         // DB 업데이트
         groupMapper.updateInviteCode(groupId, inviteCode);
@@ -420,6 +431,95 @@ public class GroupServiceImpl implements GroupService {
         // 응답
         return RegenerateInviteCodeResponse.builder()
                 .inviteCode(inviteCode)
+                .build();
+    }
+
+    private String generateInviteCode() {
+
+        String uuid = UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 6)
+                .toUpperCase();
+
+        //String timestamp = LocalDateTime.now()
+        //        .format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
+
+        //return uuid + timestamp;
+        return uuid;
+    }
+
+    // 챌린지 생성/수정
+    @Override
+    @Transactional
+    public MessageResponse updateChallenge(
+            String userId,
+            String groupId,
+            UpdateChallengeRequest request) {
+
+        GroupVO group = validateLeader(userId, groupId);
+
+        validateChallenge(request);
+
+        group.setChallengeType(request.getChallengeType());
+        group.setContent(request.getContent());
+        group.setFutureDepositRatioRule(request.getFutureDepositRatioRule());
+        group.setDurationDays(request.getDurationDays());
+        group.setMinCount(request.getMinCount());
+        group.setRoundCycleDays(request.getRoundCycleDays());
+        group.setBaseDepositAmount(request.getBaseDepositAmount());
+
+        groupMapper.updateChallenge(group);
+
+        return MessageResponse.builder()
+                .message("Success")
+                .build();
+    }
+
+    private void validateChallenge(UpdateChallengeRequest request) {
+
+        if (request == null) {
+            throw new IllegalArgumentException("챌린지 정보는 필수입니다.");
+        }
+
+        if (request.getChallengeType() == null) {
+            throw new IllegalArgumentException("챌린지 유형은 필수입니다.");
+        }
+
+        if (request.getDurationDays() == null ||
+                request.getDurationDays() <= 0) {
+            throw new IllegalArgumentException("챌린지 기간은 1일 이상이어야 합니다.");
+        }
+
+        if (request.getMinCount() == null ||
+                request.getMinCount() <= 0) {
+            throw new IllegalArgumentException("최소 인증 횟수는 1 이상이어야 합니다.");
+        }
+
+        if (request.getRoundCycleDays() == null ||
+                request.getRoundCycleDays() <= 0) {
+            throw new IllegalArgumentException("라운드 주기는 1일 이상이어야 합니다.");
+        }
+
+        if (request.getBaseDepositAmount() == null ||
+                request.getBaseDepositAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("기본 예치금은 0보다 커야 합니다.");
+        }
+    }
+
+    // 챌린지 삭제
+    @Override
+    @Transactional
+    public MessageResponse deleteChallenge(
+            String userId,
+            String groupId) {
+
+        validateLeader(userId, groupId);
+
+        groupMapper.deleteChallenge(groupId);
+
+        return MessageResponse.builder()
+                .message("Success")
                 .build();
     }
 }
