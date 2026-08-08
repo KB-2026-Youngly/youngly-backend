@@ -442,10 +442,11 @@ public class GroupServiceImpl implements GroupService {
                 .substring(0, 6)
                 .toUpperCase();
 
-        String timestamp = LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
+        //String timestamp = LocalDateTime.now()
+        //        .format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
 
-        return uuid + timestamp;
+        //return uuid + timestamp;
+        return uuid;
     }
 
     // 챌린지 생성/수정
