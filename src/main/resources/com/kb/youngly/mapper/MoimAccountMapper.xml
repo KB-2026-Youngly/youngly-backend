@@ -27,7 +27,10 @@
                  LEFT JOIN group_users gu
                            ON gu.group_id = g.group_id
                                AND gu.user_id = #{userId}
-                               AND gu.group_user_status = 'ACTIVE'
+                               AND gu.group_user_status IN (
+                                                            'ACTIVE',
+                                                            'PENDING_DEPOSIT'
+                                   )
         WHERE m.account_status = 'ACTIVE'
           AND (
             m.user_id = #{userId}

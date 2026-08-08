@@ -44,6 +44,7 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
     /** 정산 대상·계좌 잠금 조회와 실제 잔액 및 이력 변경을 담당한다. */
     private final RoundSettlementMapper roundSettlementMapper;
 
+
     /**
      * 스케줄 실행일을 기준으로 정산해야 할 그룹을 조회한다.
      *
@@ -119,6 +120,16 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
         // 예: "1:30/2:50/3:70"을 {1=30, 2=50, 3=70} 형태로 변환한다.
         Map<Integer, BigDecimal> ratiosByRank = parseRatioRule(group.getFutureDepositRatioRule());
         // round_history, group_users 및 연결 계좌 정보를 조회하며 변경 대상 행을 잠근다.
+        // 누적된 주간 성공 횟수를 기준으로 참여자별 최종 순위를 저장한다.
+        int updatedRankCount =
+                roundMapper.updateRoundRanks(round.getRoundId());
+
+        if (updatedRankCount == 0) {
+            throw new IllegalStateException(
+                    "순위를 계산할 라운드 참여자가 없습니다."
+            );
+        }
+
         List<RoundSettlementParticipant> participants =
                 roundSettlementMapper.findParticipantsForUpdate(round.getRoundId());
         if (participants.isEmpty()) {

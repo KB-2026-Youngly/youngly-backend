@@ -1,10 +1,14 @@
 package com.kb.youngly.controller;
 
+import com.kb.youngly.dto.round.RoundRankingResponse;
 import com.kb.youngly.dto.round.RoundResponse;
+import com.kb.youngly.dto.round.RoundSettlementResponse;
 import com.kb.youngly.dto.round.RoundUserResponse;
+import com.kb.youngly.service.RoundQueryService;
 import com.kb.youngly.service.RoundService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,6 +19,7 @@ import java.util.List;
 public class RoundQueryController {
 
     private final RoundService roundService;
+    private final RoundQueryService roundQueryService;
 
     // 라운드 조회
     @GetMapping("/{roundId}")
@@ -35,4 +40,26 @@ public class RoundQueryController {
                 roundService.getRoundUsers(roundId)
         );
     }
+
+    // 라운드별 사용자 랭킹 조회
+        @GetMapping("/{roundId}/ranking")
+        public ResponseEntity<List<RoundRankingResponse>> getRanking(
+                @AuthenticationPrincipal String userId,
+                @PathVariable Long roundId
+        ) {
+            return ResponseEntity.ok(
+                    roundQueryService.getRoundRanking(userId, roundId)
+            );
+        }
+
+    // 라운드별 정산 결과 조회
+        @GetMapping("/{roundId}/settlements")
+        public ResponseEntity<List<RoundSettlementResponse>> getSettlements(
+                @AuthenticationPrincipal String userId,
+                @PathVariable Long roundId
+        ) {
+            return ResponseEntity.ok(
+                    roundQueryService.getRoundSettlements(userId, roundId)
+            );
+        }
 }
