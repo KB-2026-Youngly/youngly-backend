@@ -171,6 +171,7 @@ CREATE TABLE `groups` (
                           `duration_days`	INT	NOT NULL	DEFAULT 7	COMMENT '일단 디폴트로 7일',
                           `min_count`	INT	NOT NULL,
                           `round_cycle_days`	INT	NOT NULL	DEFAULT 28	COMMENT '디폴트로 28일',
+                          `default_fail_pass_count`	INT	NULL,
                           `base_deposit_amount`	DECIMAL(19,2)	NOT NULL,
                           `group_status`	ENUM( 'RECRUITING', 'ONGOING', 'FINISHED' )	NOT NULL,
                           `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

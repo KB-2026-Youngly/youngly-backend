@@ -93,6 +93,7 @@
             duration_days,
             min_count,
             round_cycle_days,
+            default_fail_pass_count,
             base_deposit_amount,
             group_status,
             updated_at
@@ -149,6 +150,7 @@
             duration_days,
             min_count,
             round_cycle_days,
+            default_fail_pass_count,
             base_deposit_amount,
             group_status,
             updated_at

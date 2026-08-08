@@ -252,6 +252,7 @@ INSERT INTO `groups` (
     duration_days,
     min_count,
     round_cycle_days,
+    default_fail_pass_count,
     base_deposit_amount,
     group_status,
     updated_at
@@ -260,17 +261,17 @@ INSERT INTO `groups` (
      '11111111-1111-4111-8111-111111111111', '새벽 러닝 챌린지', 3,
      '2026-06-20 11:00:00', '주 3회 이상 30분 러닝', 'EXERCISE',
      '한 달 동안 함께 달리며 운동 습관을 만드는 모임',
-     '1:40/2:60/3:80', 7, 3, 28, 200000.00, 'ONGOING', '2026-07-31 09:00:00'),
+     '1:40/2:60/3:80', 7, 3, 28, 2, 200000.00, 'ONGOING', '2026-07-31 09:00:00'),
     ('group-study-01', 'moim-account-02', 'user04',
      '22222222-2222-4222-8222-222222222222', '매일 코딩 챌린지', 3,
      '2026-06-21 11:00:00', '하루 1커밋 또는 알고리즘 1문제', 'STUDY',
      '매일 꾸준히 개발 공부를 인증하는 모임',
-     '1:50/2:70/3:90', 7, 5, 28, 150000.00, 'ONGOING', '2026-07-31 09:00:00'),
+     '1:50/2:70/3:90', 7, 5, 28, 0, 150000.00, 'ONGOING', '2026-07-31 09:00:00'),
     ('group-reading-01', 'moim-account-03', 'user07',
      '33333333-3333-4333-8333-333333333333', '한 달 독서 챌린지', 3,
      '2026-06-22 11:00:00', '주 4회 이상 20분 독서', 'READING',
      '매일 책을 읽고 짧게 인증하는 독서 습관 모임',
-     '1:40/2:60/3:80', 7, 4, 28, 100000.00, 'ONGOING', '2026-07-31 09:00:00');
+     '1:40/2:60/3:80', 7, 4, 28, 0, 100000.00, 'ONGOING', '2026-07-31 09:00:00');
 
 -- ============================================================================
 -- 6. 그룹 이력 최초 스냅샷
@@ -473,10 +474,11 @@ INSERT INTO account_transactions (
 
 -- ==========================================================================
 -- 주간 결산 테스트 데이터 시작
--- POST /api/dev/weekly-settlements?date=2026-08-01
+-- POST /api/dev/weekly-settlements?date=2026-08-02
 -- group-exercise-01의 2라운드 1주차(2026-07-26~2026-08-01)를 결산한다.
--- 승인 게시물 수: user01=3개(성공), user02=2개(실패), user03=4개(성공)
--- 그룹의 min_count가 3이므로 user01과 user03의 success_count/streak_count가 증가한다.
+-- user01: 승인 3개, 패스 2개 -> 정상 성공, 패스 유지
+-- user02: 승인 2개, 패스 1개 -> 부족분 1개를 패스로 충당하여 성공, 패스 0
+-- user03: 승인 1개, 패스 1개 -> 부족분 2개를 충당하지 못해 실패, 패스 유지
 -- ==========================================================================
 
 -- 라운드 시작 당시 결산 대상이 되는 참여자별 이력을 생성한다.
@@ -490,11 +492,11 @@ INSERT INTO round_history (
     created_at
 ) VALUES
     ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
-     'user01', 'account-user01-pension', 'moim-account-01', 0, 0, '2026-07-25 23:00:00'),
+     'user01', 'account-user01-pension', 'moim-account-01', 0, 2, '2026-07-25 23:00:00'),
     ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
-     'user02', 'account-user02-deposit', 'moim-account-01', 0, 0, '2026-07-25 23:00:00'),
+     'user02', 'account-user02-deposit', 'moim-account-01', 0, 1, '2026-07-25 23:00:00'),
     ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
-     'user03', 'account-user03-pension', 'moim-account-01', 0, 0, '2026-07-25 23:00:00');
+     'user03', 'account-user03-pension', 'moim-account-01', 0, 1, '2026-07-25 23:00:00');
 
 -- 1주차 게시물을 생성한다. APPROVED 상태인 게시물만 주간 결산에서 집계된다.
 INSERT INTO posts (
@@ -531,19 +533,19 @@ INSERT INTO posts (
      'user02', '/test/weekly-settlement/user02-day6-rejected.jpg', 'user02 6일차 반려 게시물',
      'REJECTED', '2026-07-31 07:00:00', '2026-07-31 07:00:00', '2026-07-31 09:00:00', 0, 2),
 
-    -- user03: 승인 4개
+    -- user03: 승인 1개와 반려 3개
     ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
      'user03', '/test/weekly-settlement/user03-day1.jpg', 'user03 1일차 러닝',
      'APPROVED', '2026-07-26 08:00:00', '2026-07-26 08:00:00', '2026-07-26 10:00:00', 2, 0),
     ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
      'user03', '/test/weekly-settlement/user03-day2.jpg', 'user03 2일차 러닝',
-     'APPROVED', '2026-07-27 08:00:00', '2026-07-27 08:00:00', '2026-07-27 10:00:00', 2, 0),
+     'REJECTED', '2026-07-27 08:00:00', '2026-07-27 08:00:00', '2026-07-27 10:00:00', 0, 2),
     ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
      'user03', '/test/weekly-settlement/user03-day4.jpg', 'user03 4일차 러닝',
-     'APPROVED', '2026-07-29 08:00:00', '2026-07-29 08:00:00', '2026-07-29 10:00:00', 2, 0),
+     'REJECTED', '2026-07-29 08:00:00', '2026-07-29 08:00:00', '2026-07-29 10:00:00', 0, 2),
     ((SELECT round_id FROM rounds WHERE group_id = 'group-exercise-01' AND round_no = 2),
      'user03', '/test/weekly-settlement/user03-day7.jpg', 'user03 7일차 러닝',
-     'APPROVED', '2026-08-01 08:00:00', '2026-08-01 08:00:00', '2026-08-01 10:00:00', 2, 0);
+     'REJECTED', '2026-08-01 08:00:00', '2026-08-01 08:00:00', '2026-08-01 10:00:00', 0, 2);
 
 -- 각 테스트 게시물의 최초 최종 상태를 게시물 변경 이력으로 저장한다.
 INSERT INTO post_history (
@@ -612,7 +614,7 @@ WHERE p.photo_url LIKE '/test/weekly-settlement/%';
 
 -- ==========================================================================
 -- round_id=3 주간 결산 게시물 테스트 데이터 시작
--- POST /api/dev/weekly-settlements?date=2026-08-01
+-- POST /api/dev/weekly-settlements?date=2026-08-02
 -- 4주차(2026-07-26~2026-08-01) 승인 수: user04=5, user05=4, user06=5
 -- group-study-01의 min_count가 5이므로 user04와 user06만 성공한다.
 -- ==========================================================================

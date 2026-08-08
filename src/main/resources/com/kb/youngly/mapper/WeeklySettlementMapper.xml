@@ -79,22 +79,8 @@
     </insert>
 
     <!--
-        주간 목표를 달성한 참여자의 round_history.success_count를 1 증가시킨다.
-
-        round_history를 기준으로 참여자를 조회하므로 라운드 시작 시 생성된
-        참여 이력이 있는 사용자만 결산 대상에 포함된다.
-
-        게시물 집계 조건
-        1. 결산 대상 라운드와 작성자가 일치할 것
-        2. 최종 게시물 상태가 APPROVED일 것
-        3. posted_at이 해당 주차 시작일 00:00 이상일 것
-        4. posted_at이 주차 종료일 다음 날 00:00 미만일 것
-
-        LEFT JOIN을 사용하므로 승인 게시물이 없는 참여자도 집계 과정에는 남지만,
-        HAVING 조건에서 승인 게시물 수가 min_count 미만이면 갱신 대상에서 제외된다.
-
-        승인 게시물을 다시 집계하지 않고 weekly_settlements에 저장된 결산 시점의
-        approved_post_count를 기준으로 성공 참여자를 결정한다.
+        목표를 달성했거나 부족 횟수를 실패 패스로 충당할 수 있는 참여자를 성공 처리한다.
+        승인 횟수가 min_count보다 적을 때만 부족분만큼 remaining_fail_pass_count를 차감한다.
     -->
     <update id="incrementRoundHistorySuccessCount"
             parameterType="com.kb.youngly.dto.round.WeeklySettlementTarget">
@@ -102,33 +88,56 @@
         INNER JOIN weekly_settlements ws
           ON ws.round_id = rh.round_id
          AND ws.user_id = rh.user_id
-        SET rh.success_count = rh.success_count + 1
+        INNER JOIN rounds r
+          ON r.round_id = rh.round_id
+        INNER JOIN `groups` g
+          ON g.group_id = r.group_id
+        SET rh.success_count = rh.success_count + 1,
+            rh.remaining_fail_pass_count = CASE
+                WHEN g.min_count &gt; ws.approved_post_count
+                    THEN rh.remaining_fail_pass_count - (g.min_count - ws.approved_post_count)
+                ELSE rh.remaining_fail_pass_count
+            END
         WHERE rh.round_id = #{roundId}
+          AND g.group_id = #{groupId}
           AND ws.week_no = #{weekNo}
-          AND ws.approved_post_count &gt;= #{minCount}
+          AND (
+              ws.approved_post_count &gt;= g.min_count
+              OR (
+                  g.min_count &gt; ws.approved_post_count
+                  AND g.min_count - ws.approved_post_count &lt;= rh.remaining_fail_pass_count
+              )
+          )
     </update>
 
     <!--
-        위 success_count 갱신과 동일한 성공 조건으로 group_users.streak_count를
-        1 증가시킨다.
-
-        weekly_settlements에 저장된 승인 게시물 수를 기준으로 성공 사용자를 찾고,
-        WHERE 조건은 다른 그룹에 존재하는 동일 사용자의 streak가 함께 변경되지
-        않도록 결산 대상 group_id로 범위를 제한한다.
-
-        서비스 계층은 이 쿼리의 갱신 행 수와 success_count 갱신 행 수가
-        일치하는지 확인하며, 다르면 두 변경을 모두 롤백한다.
+        위와 동일한 성공 조건으로 group_users.streak_count를 증가시킨다.
+        실패 패스 차감 전에 실행하여 차감 전 잔여 횟수로 충당 가능 여부를 판단한다.
     -->
     <update id="incrementGroupUserStreakCount"
             parameterType="com.kb.youngly.dto.round.WeeklySettlementTarget">
         UPDATE group_users gu
         INNER JOIN weekly_settlements ws
           ON ws.user_id = gu.user_id
+        INNER JOIN round_history rh
+          ON rh.round_id = ws.round_id
+         AND rh.user_id = ws.user_id
+        INNER JOIN rounds r
+          ON r.round_id = ws.round_id
+         AND r.group_id = gu.group_id
+        INNER JOIN `groups` g
+          ON g.group_id = r.group_id
         SET gu.streak_count = gu.streak_count + 1
         WHERE gu.group_id = #{groupId}
           AND ws.round_id = #{roundId}
           AND ws.week_no = #{weekNo}
-          AND ws.approved_post_count &gt;= #{minCount}
+          AND (
+              ws.approved_post_count &gt;= g.min_count
+              OR (
+                  g.min_count &gt; ws.approved_post_count
+                  AND g.min_count - ws.approved_post_count &lt;= rh.remaining_fail_pass_count
+              )
+          )
     </update>
 
 </mapper>
