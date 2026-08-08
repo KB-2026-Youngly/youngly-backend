@@ -35,7 +35,6 @@ public class DepositServiceImpl implements DepositService {
      * 개발 중 예치금 흐름을 빠르게 확인하기 위한 임시 사용자 ID.
      * 인증 연동 전용이므로 운영 배포 전에는 요청 인증 정보로 반드시 교체해야 한다.
      */
-    private static final String DEVELOPMENT_USER_ID = "user01";
 
     private final DepositMapper depositMapper;
 
@@ -45,7 +44,8 @@ public class DepositServiceImpl implements DepositService {
     @Override
     @Transactional
     public DepositResponse deposit(String userId, String groupId, DepositRequest request) {
-        String normalizedUserId = DEVELOPMENT_USER_ID;
+        String normalizedUserId =
+                requireText(userId, "인증된 사용자 정보가 없습니다.");
         String normalizedGroupId = requireText(groupId, "그룹 ID는 필수입니다.");
         if (request == null) {
             throw new IllegalArgumentException("예치 요청 정보가 필요합니다.");
@@ -125,7 +125,8 @@ public class DepositServiceImpl implements DepositService {
     @Override
     @Transactional(readOnly = true)
     public DepositResponse getMyDeposit(String userId, String groupId) {
-        String normalizedUserId = DEVELOPMENT_USER_ID;
+        String normalizedUserId =
+                requireText(userId, "인증된 사용자 정보가 없습니다.");
         String normalizedGroupId = requireText(groupId, "그룹 ID는 필수입니다.");
         return toResponse(getGroup(normalizedGroupId), getGroupUser(normalizedGroupId, normalizedUserId), null);
     }
@@ -134,7 +135,8 @@ public class DepositServiceImpl implements DepositService {
     @Override
     @Transactional(readOnly = true)
     public List<MemberDepositStatusResponse> getMemberDepositStatuses(String requesterUserId, String groupId) {
-        String normalizedUserId = DEVELOPMENT_USER_ID;
+        String normalizedUserId =
+                requireText(requesterUserId, "인증된 사용자 정보가 없습니다.");
         String normalizedGroupId = requireText(groupId, "그룹 ID는 필수입니다.");
         getGroup(normalizedGroupId);
         getGroupUser(normalizedGroupId, normalizedUserId);

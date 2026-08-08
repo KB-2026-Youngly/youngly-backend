@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kb.youngly.mapper.AccountTransactionMapper">
+
+    <!-- 개인 입출금·개인연금 계좌 접근 권한 확인 -->
+    <select id="findPersonalKbAccountId" resultType="string">
+        SELECT a.kb_account_id
+        FROM accounts a
+                 INNER JOIN kb_accounts k
+                            ON k.kb_account_id = a.kb_account_id
+        WHERE a.account_id = #{accountId}
+          AND a.user_id = #{userId}
+          AND k.account_type = #{accountType}
+            LIMIT 1
+    </select>
+
+    <!--
+        모임통장 접근 권한 확인
+        1. 모임통장 연동 사용자
+        2. 그룹 생성자
+        3. ACTIVE 상태의 그룹 참여자
+    -->
+    <select id="findMoimKbAccountId" resultType="string">
+        SELECT DISTINCT m.kb_account_id
+        FROM moim_accounts m
+                 LEFT JOIN `groups` g
+                           ON g.moim_account_id = m.moim_account_id
+                 LEFT JOIN group_users gu
+                           ON gu.group_id = g.group_id
+                               AND gu.user_id = #{userId}
+                               AND gu.group_user_status IN ('ACTIVE', 'PENDING_DEPOSIT')
+        WHERE m.moim_account_id = #{moimAccountId}
+          AND m.account_status = 'ACTIVE'
+          AND (
+            m.user_id = #{userId}
+                OR g.user_id = #{userId}
+                OR gu.user_id IS NOT NULL
+            )
+            LIMIT 1
+    </select>
+
+    <!-- 특정 계좌의 거래내역 -->
+    <select id="findByKbAccountId"
+            resultType="com.kb.youngly.vo.account.AccountTransactionVO">
+        SELECT
+            account_transaction_id,
+            kb_account_id,
+            group_user_id,
+            round_id,
+            transaction_type,
+            transaction_category,
+            amount,
+            balance_after,
+            idempotency_key,
+            description,
+            another_account_number,
+            another_bank_name,
+            another_name,
+            created_at
+        FROM account_transactions
+        WHERE kb_account_id = #{kbAccountId}
+        ORDER BY created_at DESC, account_transaction_id DESC
+            LIMIT #{limit}
+        OFFSET #{offset}
+    </select>
+
+</mapper>

@@ -44,4 +44,16 @@ public interface GroupMapper {
     void updateInviteCode(
             @Param("groupId") String groupId,
             @Param("inviteCode") String inviteCode);
+
+    boolean existsInviteCode(String inviteCode);
+
+    /**
+     * 챌린지 생성/수정
+     */
+    void updateChallenge(GroupVO group);
+
+    /**
+     * 챌린지 삭제
+     */
+    void deleteChallenge(String groupId);
 }
