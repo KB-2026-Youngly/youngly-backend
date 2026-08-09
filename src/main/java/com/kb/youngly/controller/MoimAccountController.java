@@ -67,4 +67,23 @@ public class MoimAccountController {
                 Map.of("message", "Success")
         );
     }
+    // 모임통장 이름 변경
+    @PatchMapping("/{moimAccountId}/name")
+    public ResponseEntity<Map<String, String>> updateAccountName(
+            @PathVariable String moimAccountId,
+            @RequestBody MoimAccountNameUpdateRequest request,
+            Authentication authentication
+    ) {
+        String userId = authentication.getName();
+
+        moimAccountService.updateAccountName(
+                userId,
+                moimAccountId,
+                request
+        );
+
+        return ResponseEntity.ok(
+                Map.of("message", "Success")
+        );
+    }
 }
