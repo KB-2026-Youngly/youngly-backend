@@ -22,6 +22,7 @@ public class OwnedCharacterResponse {
     private String name;
     private String imageUrl;
     private LocalDateTime acquiredAt;
+    private boolean equipped;
 
     public static OwnedCharacterResponse from(OwnedCharacterVO character) {
         return OwnedCharacterResponse.builder()
@@ -29,6 +30,7 @@ public class OwnedCharacterResponse {
                 .name(character.getName())
                 .imageUrl(character.getImageUrl())
                 .acquiredAt(character.getAcquiredAt())
+                .equipped(character.isEquipped())
                 .build();
     }
 }
