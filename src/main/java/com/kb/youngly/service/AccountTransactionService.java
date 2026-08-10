@@ -11,6 +11,7 @@ public interface AccountTransactionService {
             String userId,
             AccountType accountType,
             String accountId,
+            Long roundId,
             int page,
             int size
     );

@@ -27,6 +27,7 @@ public class AccountTransactionServiceImpl
             String userId,
             AccountType accountType,
             String accountId,
+            Long roundId,
             int page,
             int size
     ) {
@@ -47,7 +48,7 @@ public class AccountTransactionServiceImpl
         int offset = Math.multiplyExact(page, size);
 
         return accountTransactionMapper
-                .findByKbAccountId(kbAccountId, size, offset)
+                .findByKbAccountId(kbAccountId, roundId, size, offset)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -131,6 +132,8 @@ public class AccountTransactionServiceImpl
                 .amount(transaction.getAmount())
                 .balanceAfter(transaction.getBalanceAfter())
                 .description(transaction.getDescription())
+                .roundId(transaction.getRoundId())
+                .roundNo(transaction.getRoundNo())
                 .anotherAccountNumber(
                         transaction.getAnotherAccountNumber()
                 )

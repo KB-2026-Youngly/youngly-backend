@@ -22,6 +22,7 @@ public class AccountTransactionResponse {
     private String anotherAccountNumber;
     private String anotherBankName;
     private String anotherName;
-
+    private Long roundId;
+    private Integer roundNo;
     private LocalDateTime createdAt;
 }

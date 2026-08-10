@@ -28,4 +28,5 @@ public class AccountTransactionVO {
     private String anotherBankName;
     private String anotherName;
     private LocalDateTime createdAt;
+    private Integer roundNo;
 }
