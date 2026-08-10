@@ -2,6 +2,7 @@ package com.kb.youngly.service;
 
 import com.kb.youngly.dto.common.MessageResponse;
 import com.kb.youngly.dto.group.*;
+import com.kb.youngly.dto.round.RoundResponse;
 
 import java.util.List;
 
@@ -22,6 +23,13 @@ public interface GroupService {
      * 그룹 상세 조회
      */
     GroupDetailResponse getGroupDetail(
+            String userId,
+            String groupId);
+
+    /**
+     * 그룹 라운드 목록 조회
+     */
+    List<RoundResponse> getGroupRounds(
             String userId,
             String groupId);
 

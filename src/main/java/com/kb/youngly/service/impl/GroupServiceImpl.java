@@ -2,14 +2,17 @@ package com.kb.youngly.service.impl;
 
 import com.kb.youngly.dto.common.MessageResponse;
 import com.kb.youngly.dto.group.*;
+import com.kb.youngly.dto.round.RoundResponse;
 import com.kb.youngly.enums.GroupStatus;
 import com.kb.youngly.enums.GroupUserStatus;
 import com.kb.youngly.mapper.GroupMapper;
 import com.kb.youngly.mapper.GroupUserMapper;
+import com.kb.youngly.mapper.RoundMapper;
 import com.kb.youngly.service.GroupService;
 import com.kb.youngly.vo.group.GroupUserVO;
 import com.kb.youngly.vo.group.GroupVO;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -23,12 +26,15 @@ public class GroupServiceImpl implements GroupService {
 
     private final GroupMapper groupMapper;
     private final GroupUserMapper groupUserMapper;
+    private final RoundMapper roundMapper;
 
     public GroupServiceImpl(GroupMapper groupMapper,
-                            GroupUserMapper groupUserMapper) {
+                            GroupUserMapper groupUserMapper,
+                            RoundMapper roundMapper) {
 
         this.groupMapper = groupMapper;
         this.groupUserMapper = groupUserMapper;
+        this.roundMapper = roundMapper;
     }
 
     // 그룹 생성
@@ -99,6 +105,38 @@ public class GroupServiceImpl implements GroupService {
                 .baseDepositAmount(group.getBaseDepositAmount())
                 .groupStatus(group.getGroupStatus())
                 .build();
+    }
+
+    /**
+     * 로그인 사용자가 조회할 수 있는 그룹인지 확인한 후,
+     * 해당 그룹이 진행한 라운드 목록을 최신 회차순으로 반환한다.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<RoundResponse> getGroupRounds(String userId,
+                                              String groupId) {
+
+        // 존재하지 않는 그룹의 라운드가 조회되지 않도록 그룹을 먼저 확인한다.
+        GroupVO group = groupMapper.findGroupById(groupId);
+
+        if (group == null) {
+            throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
+        }
+
+        // 그룹장은 별도의 group_users 정보가 없어도 라운드 목록을 조회할 수 있다.
+        if (!group.getUserId().equals(userId)) {
+            // 그룹장이 아니라면 승인된 참여자인지 확인한다.
+            // 예치 전(PENDING_DEPOSIT) 또는 참여 중(ACTIVE)인 사용자만 조회를 허용한다.
+            GroupUserVO groupUser = groupUserMapper.findGroupUser(groupId, userId);
+            if (groupUser == null ||
+                    (groupUser.getGroupUserStatus() != GroupUserStatus.ACTIVE &&
+                            groupUser.getGroupUserStatus() != GroupUserStatus.PENDING_DEPOSIT)) {
+                throw new AccessDeniedException("라운드 목록 조회 권한이 없습니다.");
+            }
+        }
+
+        // 그룹의 모든 라운드를 회차 번호 내림차순으로 조회한다.
+        return roundMapper.findRoundsByGroupId(groupId);
     }
 
     // 그룹 수정
