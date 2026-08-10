@@ -13,6 +13,7 @@
             k.balance,
             m.account_name,
             owner_user.name AS owner_name,
+            m.synced_at,
             CASE
                 WHEN m.user_id = #{userId} THEN TRUE
                 ELSE FALSE
@@ -56,6 +57,7 @@
             m.account_status,
             m.account_name,
             m.created_at,
+            m.synced_at,
             m.updated_at
         FROM moim_accounts m
         WHERE m.moim_account_id = #{moimAccountId}
@@ -91,10 +93,35 @@
             account_status,
             account_name,
             created_at,
+            synced_at,
             updated_at
         FROM moim_accounts
         WHERE kb_account_id = #{kbAccountId}
             LIMIT 1
+    </select>
+
+    <update id="updateSyncedAt">
+
+        UPDATE moim_accounts
+        SET synced_at = CURRENT_TIMESTAMP
+        WHERE moim_account_id = #{moimAccountId}
+          AND user_id = #{userId}
+
+    </update>
+
+    <select id="findBalanceSyncResult"
+            resultType="com.kb.youngly.dto.moimaccount.MoimAccountBalanceSyncResponseDTO">
+
+        SELECT
+            m.moim_account_id,
+            k.balance,
+            m.synced_at
+        FROM moim_accounts m
+                 INNER JOIN kb_accounts k
+                            ON m.kb_account_id = k.kb_account_id
+        WHERE m.moim_account_id = #{moimAccountId}
+          AND m.user_id = #{userId}
+
     </select>
     <select id="search"
             parameterType="com.kb.youngly.dto.account.AccountSearchDTO"

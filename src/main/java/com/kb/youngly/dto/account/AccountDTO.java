@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,4 +19,5 @@ public class AccountDTO {
     private String bankName;
     private BigDecimal balance;
     private AccountStatus accountStatus;
+    private LocalDateTime syncedAt;
 }

@@ -67,4 +67,18 @@ public class MoimAccountController {
                 Map.of("message", "Success")
         );
     }
+
+    @PatchMapping("/{moimAccountId}/sync")
+    public ResponseEntity<MoimAccountBalanceSyncResponseDTO> syncBalance(
+            @PathVariable String moimAccountId,
+            Authentication authentication) {
+
+        // 인증 주체를 서비스에 전달해 본인이 등록한 모임통장만 동기화한다.
+        String userId = authentication.getName();
+
+        // KB 원장의 최신 잔액과 이번 동기화 시각을 응답한다.
+        return ResponseEntity.ok(
+                moimAccountService.syncBalance(moimAccountId, userId)
+        );
+    }
 }

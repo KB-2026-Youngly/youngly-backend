@@ -32,7 +32,8 @@
             k.account_number,
             k.bank_name,
             k.balance,
-            a.account_status
+            a.account_status,
+            a.synced_at
         FROM accounts a
                  JOIN kb_accounts k
                       ON a.kb_account_id = k.kb_account_id
@@ -69,6 +70,7 @@
             a.account_status,
             a.account_name,
             a.created_at,
+            a.synced_at,
             a.updated_at
         FROM accounts a
                  INNER JOIN kb_accounts k
@@ -83,5 +85,29 @@
         WHERE account_id = #{accountId}
 
     </update>
+
+    <update id="updateSyncedAt">
+
+        UPDATE accounts
+        SET synced_at = CURRENT_TIMESTAMP
+        WHERE account_id = #{accountId}
+          AND user_id = #{userId}
+
+    </update>
+
+    <select id="findBalanceSyncResult"
+            resultType="com.kb.youngly.dto.account.AccountBalanceSyncResponseDTO">
+
+        SELECT
+            a.account_id,
+            k.balance,
+            a.synced_at
+        FROM accounts a
+                 INNER JOIN kb_accounts k
+                            ON a.kb_account_id = k.kb_account_id
+        WHERE a.account_id = #{accountId}
+          AND a.user_id = #{userId}
+
+    </select>
 
 </mapper>

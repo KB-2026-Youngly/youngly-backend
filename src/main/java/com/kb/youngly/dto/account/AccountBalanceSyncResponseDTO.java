@@ -1,4 +1,4 @@
-package com.kb.youngly.dto.moimaccount;
+package com.kb.youngly.dto.account;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,22 +12,11 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MoimAccountDTO {
+public class AccountBalanceSyncResponseDTO {
 
-    private String moimAccountId;
-
-    private String accountNumber;
-
-    private String bankName;
+    private String accountId;
 
     private BigDecimal balance;
 
-    private String accountName;
-
-    private Boolean owner;
-
-    private String ownerName;
-
     private LocalDateTime syncedAt;
-
 }
