@@ -24,6 +24,8 @@ public class MoimAccountVO {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime syncedAt;
+
     private LocalDateTime updatedAt;
 
     private MoimAccountStatus accountStatus;

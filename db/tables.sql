@@ -189,8 +189,9 @@ CREATE TABLE `moim_accounts` (
                                  `moim_account_id`	VARCHAR(50)	NOT NULL,
                                  `user_id`	VARCHAR(50)	NOT NULL,
                                  `kb_account_id`	VARCHAR(50)	NOT NULL,
-								`account_status`  ENUM ('ACTIVE', 'DEACTIVATED') NOT NULL DEFAULT 'ACTIVE',
+                                 `account_status`  ENUM ('ACTIVE', 'DEACTIVATED') NOT NULL DEFAULT 'ACTIVE',
                                  `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                 `synced_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                  `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                                  `account_name`	VARCHAR(50)	NOT NULL	COMMENT 'default로 bank_name(모임) + account_number'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -262,6 +263,7 @@ CREATE TABLE `accounts` (
                             `user_id`	VARCHAR(50)	NOT NULL,
                             `kb_account_id`	VARCHAR(50)	NOT NULL,
                             `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                            `synced_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP,
                             `account_status`	ENUM('INCOME','OUTCOME', 'INOUTCOME','NONE')	NOT NULL,
                             `account_name`	VARCHAR(50)	NOT NULL	COMMENT 'default로 bank_name + account_number로 설정',
                             `updated_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
