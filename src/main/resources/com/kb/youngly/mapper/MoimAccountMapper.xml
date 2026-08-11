@@ -120,4 +120,13 @@
             )
 
     </select>
+    <!-- 소유한 모임통장 이름 변경 -->
+    <update id="updateAccountName">
+        UPDATE moim_accounts
+        SET account_name = #{accountName},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE moim_account_id = #{moimAccountId}
+          AND user_id = #{userId}
+          AND account_status = 'ACTIVE'
+    </update>
 </mapper>
