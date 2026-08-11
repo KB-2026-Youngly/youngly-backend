@@ -35,8 +35,9 @@ public class CachedRecommendationProvider implements RecommendationProvider {
 
         if (isUsableLiveRecommendation(cached)) {
             log.info(
-                    "[INFO] 검증된 AI 개인연금 인사이트를 캐시에서 반환합니다. userId={}",
-                    userId
+                    "[PENSION_INSIGHT_CACHE_HIT] userId={}, recommendationId={}",
+                    userId,
+                    cached.getRecommendationId()
             );
 
             // DB 원본 generationMode(LIVE)는 유지하고, API 응답만 CACHED로 표기한다.
@@ -44,20 +45,7 @@ public class CachedRecommendationProvider implements RecommendationProvider {
                     .withGenerationMode(GenerationMode.CACHED);
         }
 
-        if (cached != null) {
-            log.info(
-                    "[INFO] 기존 추천 결과가 LIVE/PASSED가 아니므로 새로 생성합니다. "
-                            + "userId={}, generationMode={}, guardrailStatus={}",
-                    userId,
-                    cached.getGenerationMode(),
-                    cached.getGuardrailStatus()
-            );
-        } else {
-            log.info(
-                    "[INFO] 저장된 인사이트가 없어 새로 생성합니다. userId={}",
-                    userId
-            );
-        }
+        log.info("[PENSION_INSIGHT_CACHE_MISS] userId={}", userId);
 
         return recommendationService.generateRecommendation(userId);
     }
