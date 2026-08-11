@@ -99,12 +99,14 @@ class CharacterControllerTest {
         characterMapper.addOwnedItem(
                 USER_ID,
                 1L,
-                LocalDateTime.of(2026, 8, 1, 10, 0)
+                LocalDateTime.of(2026, 8, 1, 10, 0),
+                false
         );
         characterMapper.addOwnedItem(
                 USER_ID,
                 2L,
-                LocalDateTime.of(2026, 8, 2, 10, 0)
+                LocalDateTime.of(2026, 8, 2, 10, 0),
+                true
         );
 
         MvcResult result = mockMvc.perform(get("/api/characters/owned")
@@ -116,7 +118,9 @@ class CharacterControllerTest {
         assertEquals(2, body.size());
         assertEquals(2L, body.get(0).get("characterId").asLong());
         assertEquals("2026-08-02T10:00:00", body.get(0).get("acquiredAt").asText());
+        assertTrue(body.get(0).get("equipped").asBoolean());
         assertEquals(1L, body.get(1).get("characterId").asLong());
+        assertFalse(body.get(1).get("equipped").asBoolean());
         assertFalse(body.get(0).has("userId"));
         assertFalse(body.get(0).has("userItemId"));
         assertFalse(body.get(0).has("dropRate"));

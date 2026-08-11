@@ -23,4 +23,5 @@ public class OwnedCharacterVO {
     private String name;
     private String imageUrl;
     private LocalDateTime acquiredAt;
+    private boolean equipped;
 }

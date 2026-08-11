@@ -147,8 +147,8 @@ class CharacterServiceTest {
         characterMapper.addItem(item(3L, "프레임", ItemCategory.FRAME));
         LocalDateTime older = LocalDateTime.of(2026, 8, 1, 10, 0);
         LocalDateTime newer = LocalDateTime.of(2026, 8, 2, 10, 0);
-        characterMapper.addOwnedItem(USER_ID, 1L, older);
-        characterMapper.addOwnedItem(USER_ID, 2L, newer);
+        characterMapper.addOwnedItem(USER_ID, 1L, older, false);
+        characterMapper.addOwnedItem(USER_ID, 2L, newer, true);
         characterMapper.addOwnedItem(USER_ID, 3L, newer.plusHours(1));
 
         List<OwnedCharacterResponse> response =
@@ -157,8 +157,10 @@ class CharacterServiceTest {
         assertEquals(2, response.size());
         assertEquals(2L, response.get(0).getCharacterId());
         assertEquals(newer, response.get(0).getAcquiredAt());
+        assertTrue(response.get(0).isEquipped());
         assertEquals(1L, response.get(1).getCharacterId());
         assertEquals(older, response.get(1).getAcquiredAt());
+        assertFalse(response.get(1).isEquipped());
     }
 
     @Test
