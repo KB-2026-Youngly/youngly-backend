@@ -27,7 +27,6 @@ public interface MoimAccountService {
     MoimAccountBalanceSyncResponseDTO syncBalance(String moimAccountId,
                                                   String userId);
 
-}
     // 모임통장 이름 변경
     void updateAccountName(String userId, String moimAccountId, MoimAccountNameUpdateRequest request);
 }
