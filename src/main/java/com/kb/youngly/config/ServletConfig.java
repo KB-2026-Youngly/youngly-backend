@@ -30,7 +30,10 @@ import java.util.List;
         "com.kb.youngly.controller",
         "com.kb.youngly.exception"
 })
-@PropertySource(value = {"classpath:/application.properties"})
+@PropertySource(value = {
+        "classpath:/application.properties",
+        "classpath:/application-${spring.profiles.active:demo}.properties"
+}, ignoreResourceNotFound = true)
 public class ServletConfig implements WebMvcConfigurer {
 
     /** Vite 개발 서버 주소. 운영 배포 시 실제 도메인으로 교체한다. */
