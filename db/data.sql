@@ -1684,3 +1684,189 @@ INSERT INTO account_transactions (
 );
 
 COMMIT;
+
+
+-- ==========================================================================
+-- 데일리 통합 배치 API 테스트 데이터
+--
+-- 실행 API: POST /api/dev/daily-batches?date=2026-08-14
+--
+-- 한 번의 호출로 다음 작업을 모두 확인한다.
+--   1. 2026-08-09에 등록된 PENDING 게시글 1건 자동 승인
+--   2. group-batch-weekly-01의 1주차 결산
+--   3. 2026-08-13 종료된 group-batch-transition-01 라운드 전환
+--   4. 2026-08-12 종료된 group-batch-settlement-01 라운드 최종 정산
+--
+-- 이 데이터는 배치 실행 시 계좌 잔액과 상태가 변경되므로 반복 테스트 전에는
+-- tables.sql과 data.sql을 다시 실행해 초기 상태로 복원한다.
+-- ==========================================================================
+
+START TRANSACTION;
+
+-- 세 배치 대상 그룹이 기존 모임통장 잔액에 영향을 주지 않도록 전용 통장을 생성한다.
+INSERT INTO kb_accounts (
+    kb_account_id,
+    account_type,
+    account_number,
+    bank_name,
+    balance,
+    interest_rate,
+    name,
+    birthday,
+    created_at,
+    updated_at
+) VALUES
+    ('kb-batch-moim-weekly', 'MOIM', '025202-22-339971', '국민',
+     300000.00, 0.10, '김민준', '1998-03-12', '2026-08-01 09:00:00', '2026-08-12 23:00:00'),
+    ('kb-batch-moim-transition', 'MOIM', '025202-22-339972', '국민',
+     450000.00, 0.10, '최유진', '2000-01-18', '2026-07-15 09:00:00', '2026-08-12 23:00:00'),
+    ('kb-batch-moim-settlement', 'MOIM', '025202-22-339973', '국민',
+     300000.00, 0.10, '송지아', '2001-02-14', '2026-07-14 09:00:00', '2026-08-12 23:00:00');
+
+INSERT INTO moim_accounts (
+    moim_account_id,
+    user_id,
+    kb_account_id,
+    account_status,
+    account_name,
+    created_at,
+    synced_at,
+    updated_at
+) VALUES
+    ('moim-batch-weekly', 'user01', 'kb-batch-moim-weekly', 'ACTIVE',
+     '통합배치 주간결산 통장', '2026-08-01 09:00:00', '2026-08-01 09:00:00', '2026-08-12 23:00:00'),
+    ('moim-batch-transition', 'user04', 'kb-batch-moim-transition', 'ACTIVE',
+     '통합배치 라운드전환 통장', '2026-07-15 09:00:00', '2026-07-15 09:00:00', '2026-08-12 23:00:00'),
+    ('moim-batch-settlement', 'user07', 'kb-batch-moim-settlement', 'ACTIVE',
+     '통합배치 최종정산 통장', '2026-07-14 09:00:00', '2026-07-14 09:00:00', '2026-08-12 23:00:00');
+
+-- 단계별 대상 조건이 겹치지 않도록 주간 결산, 전환, 최종 정산 그룹을 분리한다.
+INSERT INTO `groups` (
+    group_id,
+    moim_account_id,
+    user_id,
+    invite_code,
+    group_name,
+    group_count,
+    created_at,
+    custom_rule,
+    challenge_type,
+    content,
+    future_deposit_ratio_rule,
+    duration_days,
+    min_count,
+    round_cycle_days,
+    default_fail_pass_count,
+    base_deposit_amount,
+    group_status,
+    updated_at
+) VALUES
+    ('group-batch-weekly-01', 'moim-batch-weekly', 'user01',
+     '97111111-1111-4111-8111-111111111111', '통합배치 주간결산 그룹', 3,
+     '2026-08-01 09:00:00', '주 3회 인증', 'EXERCISE',
+     '데일리 배치 주간 결산 단계 테스트', '1:30/2:50/3:70',
+     7, 3, 28, 1, 100000.00, 'ONGOING', '2026-08-12 23:00:00'),
+    ('group-batch-transition-01', 'moim-batch-transition', 'user04',
+     '97222222-2222-4222-8222-222222222222', '통합배치 라운드전환 그룹', 3,
+     '2026-07-15 09:00:00', '주 3회 인증', 'STUDY',
+     '데일리 배치 라운드 전환 단계 테스트', '1:30/2:50/3:70',
+     7, 3, 28, 1, 150000.00, 'ONGOING', '2026-08-12 23:00:00'),
+    ('group-batch-settlement-01', 'moim-batch-settlement', 'user07',
+     '97333333-3333-4333-8333-333333333333', '통합배치 최종정산 그룹', 3,
+     '2026-07-14 09:00:00', '주 3회 인증', 'READING',
+     '데일리 배치 최종 정산 단계 테스트', '1:30/2:50/3:70',
+     7, 3, 28, 1, 100000.00, 'ONGOING', '2026-08-12 23:00:00');
+
+-- 기존 사용자의 수령 계좌를 재사용하되 그룹별 예치금은 독립된 group_users로 관리한다.
+INSERT INTO group_users (
+    group_id,
+    user_id,
+    group_user_status,
+    approved_at,
+    current_deposit_amount,
+    streak_count,
+    created_at,
+    updated_at
+) VALUES
+    ('group-batch-weekly-01', 'user01', 'ACTIVE', '2026-08-01 10:00:00', 100000.00, 0, '2026-08-01 10:00:00', '2026-08-12 23:00:00'),
+    ('group-batch-weekly-01', 'user02', 'ACTIVE', '2026-08-01 10:01:00', 100000.00, 0, '2026-08-01 10:01:00', '2026-08-12 23:00:00'),
+    ('group-batch-weekly-01', 'user03', 'ACTIVE', '2026-08-01 10:02:00', 100000.00, 0, '2026-08-01 10:02:00', '2026-08-12 23:00:00'),
+    ('group-batch-transition-01', 'user04', 'ACTIVE', '2026-07-15 10:00:00', 150000.00, 0, '2026-07-15 10:00:00', '2026-08-12 23:00:00'),
+    ('group-batch-transition-01', 'user05', 'ACTIVE', '2026-07-15 10:01:00', 150000.00, 0, '2026-07-15 10:01:00', '2026-08-12 23:00:00'),
+    ('group-batch-transition-01', 'user06', 'ACTIVE', '2026-07-15 10:02:00', 150000.00, 0, '2026-07-15 10:02:00', '2026-08-12 23:00:00'),
+    ('group-batch-settlement-01', 'user07', 'ACTIVE', '2026-07-14 10:00:00', 100000.00, 4, '2026-07-14 10:00:00', '2026-08-12 23:00:00'),
+    ('group-batch-settlement-01', 'user08', 'ACTIVE', '2026-07-14 10:01:00', 100000.00, 3, '2026-07-14 10:01:00', '2026-08-12 23:00:00'),
+    ('group-batch-settlement-01', 'user09', 'ACTIVE', '2026-07-14 10:02:00', 100000.00, 3, '2026-07-14 10:02:00', '2026-08-12 23:00:00');
+
+-- 8월 14일 배치 기준: 주간 결산일 D, 전환 종료일 D-1, 최종 정산 종료일 D-2.
+INSERT INTO rounds (
+    round_id,
+    group_id,
+    round_no,
+    start_date,
+    end_date,
+    round_status,
+    created_at
+) VALUES
+    (9801, 'group-batch-weekly-01', 1, '2026-08-06', '2026-09-02', 'ONGOING', '2026-08-05 23:00:00'),
+    (9802, 'group-batch-transition-01', 1, '2026-07-17', '2026-08-13', 'ONGOING', '2026-07-16 23:00:00'),
+    (9803, 'group-batch-settlement-01', 1, '2026-07-16', '2026-08-12', 'WAITING_SETTLEMENT', '2026-07-15 23:00:00');
+
+-- 주간 결산 그룹은 user01과 user02가 성공하고 user03은 실패하도록 구성한다.
+-- user02는 승인 2건과 실패 패스 1개로 부족한 1회를 충당한다.
+INSERT INTO round_history (
+    round_history_id,
+    round_id,
+    user_id,
+    account_id,
+    moim_account_id,
+    rank_no,
+    success_count,
+    settlement_amount,
+    remaining_fail_pass_count,
+    prior_failure_response,
+    created_at,
+    settlement_at
+) VALUES
+    (98001, 9801, 'user01', 'account-user01-pension', 'moim-batch-weekly', NULL, 0, NULL, 0, NULL, '2026-08-05 23:00:00', NULL),
+    (98002, 9801, 'user02', 'account-user02-deposit', 'moim-batch-weekly', NULL, 0, NULL, 1, NULL, '2026-08-05 23:00:00', NULL),
+    (98003, 9801, 'user03', 'account-user03-pension', 'moim-batch-weekly', NULL, 0, NULL, 0, NULL, '2026-08-05 23:00:00', NULL),
+
+    -- 전환 대상 라운드의 기존 참여 이력. 다음 라운드 이력은 배치가 자동 생성한다.
+    (98004, 9802, 'user04', 'account-user04-deposit', 'moim-batch-transition', NULL, 4, NULL, 1, NULL, '2026-07-16 23:00:00', NULL),
+    (98005, 9802, 'user05', 'account-user05-pension', 'moim-batch-transition', NULL, 3, NULL, 1, NULL, '2026-07-16 23:00:00', NULL),
+    (98006, 9802, 'user06', 'account-user06-deposit', 'moim-batch-transition', NULL, 2, NULL, 1, NULL, '2026-07-16 23:00:00', NULL),
+
+    -- 최종 정산은 success_count 5, 3, 3으로 공동 2등을 검증한다.
+    (98007, 9803, 'user07', 'account-user07-pension', 'moim-batch-settlement', NULL, 5, NULL, 1, 'RETRY', '2026-07-15 23:00:00', NULL),
+    (98008, 9803, 'user08', 'account-user08-deposit', 'moim-batch-settlement', NULL, 3, NULL, 1, 'EASE', '2026-07-15 23:00:00', NULL),
+    (98009, 9803, 'user09', 'account-user09-pension', 'moim-batch-settlement', NULL, 3, NULL, 1, 'GIVE_UP', '2026-07-15 23:00:00', NULL);
+
+-- 8월 14일 주간 결산 범위는 8월 6일~12일이다.
+-- user01의 PENDING 게시글은 자동 승인된 뒤 세 번째 승인 건으로 집계된다.
+INSERT INTO posts (
+    round_id,
+    user_id,
+    photo_url,
+    content,
+    post_status,
+    created_at,
+    posted_at,
+    status_changed_at,
+    approve_count,
+    reject_count
+) VALUES
+    (9801, 'user01', '/test/daily-batch/user01-approved-1.jpg', '통합배치 user01 승인 1',
+     'APPROVED', '2026-08-06 07:00:00', '2026-08-06 07:00:00', '2026-08-06 09:00:00', 2, 0),
+    (9801, 'user01', '/test/daily-batch/user01-approved-2.jpg', '통합배치 user01 승인 2',
+     'APPROVED', '2026-08-07 07:00:00', '2026-08-07 07:00:00', '2026-08-07 09:00:00', 2, 0),
+    (9801, 'user01', '/test/daily-batch/user01-auto-approve.jpg', '통합배치 user01 자동 승인 대상',
+     'PENDING', '2026-08-09 07:00:00', '2026-08-09 07:00:00', NULL, 0, 0),
+    (9801, 'user02', '/test/daily-batch/user02-approved-1.jpg', '통합배치 user02 승인 1',
+     'APPROVED', '2026-08-06 08:00:00', '2026-08-06 08:00:00', '2026-08-06 10:00:00', 2, 0),
+    (9801, 'user02', '/test/daily-batch/user02-approved-2.jpg', '통합배치 user02 승인 2',
+     'APPROVED', '2026-08-08 08:00:00', '2026-08-08 08:00:00', '2026-08-08 10:00:00', 2, 0),
+    (9801, 'user03', '/test/daily-batch/user03-approved-1.jpg', '통합배치 user03 승인 1',
+     'APPROVED', '2026-08-07 08:30:00', '2026-08-07 08:30:00', '2026-08-07 10:30:00', 2, 0);
+
+COMMIT;
