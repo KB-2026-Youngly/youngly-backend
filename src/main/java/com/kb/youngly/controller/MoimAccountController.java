@@ -81,7 +81,7 @@ public class MoimAccountController {
                 moimAccountService.syncBalance(moimAccountId, userId)
         );
     }
-}
+
     // 모임통장 이름 변경
     @PatchMapping("/{moimAccountId}/name")
     public ResponseEntity<Map<String, String>> updateAccountName(

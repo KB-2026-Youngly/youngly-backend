@@ -37,7 +37,7 @@ public interface MoimAccountMapper {
     MoimAccountBalanceSyncResponseDTO findBalanceSyncResult(
             @Param("moimAccountId") String moimAccountId,
             @Param("userId") String userId);
-}
+
     //모임통장 이름 변경
     int updateAccountName(@Param("moimAccountId") String moimAccountId, @Param("userId") String userId, @Param("accountName") String accountName);
 }
