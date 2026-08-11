@@ -23,6 +23,7 @@ public class AccountTransactionController {
             Authentication authentication,
             @RequestParam AccountType accountType,
             @RequestParam String accountId,
+            @RequestParam(required = false) Long roundId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
@@ -33,6 +34,7 @@ public class AccountTransactionController {
                         userId,
                         accountType,
                         accountId,
+                        roundId,
                         page,
                         size
                 )

@@ -25,7 +25,8 @@ public interface AccountTransactionMapper {
 
     List<AccountTransactionVO> findByKbAccountId(
             @Param("kbAccountId") String kbAccountId,
-            @Param("limit") int limit,
+            @Param("roundId") Long roundId,
+            @Param("limit") int size,
             @Param("offset") int offset
     );
 }

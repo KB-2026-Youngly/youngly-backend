@@ -46,25 +46,32 @@
     <select id="findByKbAccountId"
             resultType="com.kb.youngly.vo.account.AccountTransactionVO">
         SELECT
-            account_transaction_id,
-            kb_account_id,
-            group_user_id,
-            round_id,
-            transaction_type,
-            transaction_category,
-            amount,
-            balance_after,
-            idempotency_key,
-            description,
-            another_account_number,
-            another_bank_name,
-            another_name,
-            created_at
-        FROM account_transactions
-        WHERE kb_account_id = #{kbAccountId}
-        ORDER BY created_at DESC, account_transaction_id DESC
-            LIMIT #{limit}
+        at.account_transaction_id,
+        at.kb_account_id,
+        at.group_user_id,
+        at.round_id,
+        r.round_no,
+        at.transaction_type,
+        at.transaction_category,
+        at.amount,
+        at.balance_after,
+        at.idempotency_key,
+        at.description,
+        at.another_account_number,
+        at.another_bank_name,
+        at.another_name,
+        at.created_at
+        FROM account_transactions at
+        LEFT JOIN rounds r
+        ON r.round_id = at.round_id
+        WHERE at.kb_account_id = #{kbAccountId}
+
+        <if test="roundId != null">
+            AND at.round_id = #{roundId}
+        </if>
+
+        ORDER BY at.created_at DESC, at.account_transaction_id DESC
+        LIMIT #{limit}
         OFFSET #{offset}
     </select>
-
 </mapper>
