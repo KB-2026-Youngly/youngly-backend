@@ -96,26 +96,27 @@ INSERT INTO users (
     password,
     user_status,
     point,
-    birthday
+    birthday,
+    is_notification_agreement
 ) VALUES
     ('user01', '김민준', 'minjun01', '민준', 'minjun01@youngly.test', NULL,
-     '2026-06-01 09:00:00', '2026-07-31 09:00:00', 'user01', 'ACTIVE', 60, '1998-03-12 00:00:00'),
+     '2026-06-01 09:00:00', '2026-07-31 09:00:00', 'user01', 'ACTIVE', 60, '1998-03-12 00:00:00', TRUE),
     ('user02', '이서연', 'seoyeon02', '서연', 'seoyeon02@youngly.test', NULL,
-     '2026-06-02 09:00:00', '2026-07-31 09:00:00', 'user02', 'ACTIVE', 50, '1999-07-21 00:00:00'),
+     '2026-06-02 09:00:00', '2026-07-31 09:00:00', 'user02', 'ACTIVE', 50, '1999-07-21 00:00:00', TRUE),
     ('user03', '박지훈', 'jihoon03', '지훈', 'jihoon03@youngly.test', NULL,
-     '2026-06-03 09:00:00', '2026-07-31 09:00:00', 'user03', 'ACTIVE', 80, '1997-11-05 00:00:00'),
+     '2026-06-03 09:00:00', '2026-07-31 09:00:00', 'user03', 'ACTIVE', 80, '1997-11-05 00:00:00', TRUE),
     ('user04', '최유진', 'yujin04', '유진', 'yujin04@youngly.test', NULL,
-     '2026-06-04 09:00:00', '2026-07-31 09:00:00', 'user04', 'ACTIVE', 40, '2000-01-18 00:00:00'),
+     '2026-06-04 09:00:00', '2026-07-31 09:00:00', 'user04', 'ACTIVE', 40, '2000-01-18 00:00:00', TRUE),
     ('user05', '정하늘', 'haneul05', '하늘', 'haneul05@youngly.test', NULL,
-     '2026-06-05 09:00:00', '2026-07-31 09:00:00', 'user05', 'ACTIVE', 70, '1998-09-30 00:00:00'),
+     '2026-06-05 09:00:00', '2026-07-31 09:00:00', 'user05', 'ACTIVE', 70, '1998-09-30 00:00:00', TRUE),
     ('user06', '강도윤', 'doyun06', '도윤', 'doyun06@youngly.test', NULL,
-     '2026-06-06 09:00:00', '2026-07-31 09:00:00', 'user06', 'ACTIVE', 30, '1999-05-09 00:00:00'),
+     '2026-06-06 09:00:00', '2026-07-31 09:00:00', 'user06', 'ACTIVE', 30, '1999-05-09 00:00:00', TRUE),
     ('user07', '송지아', 'jia07', '지아', 'jia07@youngly.test', NULL,
-     '2026-06-07 09:00:00', '2026-07-31 09:00:00', 'user07', 'ACTIVE', 90, '2001-02-14 00:00:00'),
+     '2026-06-07 09:00:00', '2026-07-31 09:00:00', 'user07', 'ACTIVE', 90, '2001-02-14 00:00:00', TRUE),
     ('user08', '오현우', 'hyunwoo08', '현우', 'hyunwoo08@youngly.test', NULL,
-     '2026-06-08 09:00:00', '2026-07-31 09:00:00', 'user08', 'ACTIVE', 45, '1998-12-03 00:00:00'),
+     '2026-06-08 09:00:00', '2026-07-31 09:00:00', 'user08', 'ACTIVE', 45, '1998-12-03 00:00:00', TRUE),
     ('user09', '임수빈', 'subin09', '수빈', 'subin09@youngly.test', NULL,
-     '2026-06-09 09:00:00', '2026-07-31 09:00:00', 'user09', 'ACTIVE', 55, '2000-06-25 00:00:00');
+     '2026-06-09 09:00:00', '2026-07-31 09:00:00', 'user09', 'ACTIVE', 55, '2000-06-25 00:00:00', TRUE);
 
 -- ============================================================================
 -- 2. KB 원장 계좌
@@ -820,6 +821,8 @@ WHERE p.photo_url LIKE '/test/weekly-settlement/%'
    OR p.photo_url LIKE '/test/weekly-settlement-round3/%';
 
 -- posts의 비정규화된 리액션/댓글 카운트를 실제 생성된 데이터와 일치시킨다.
+SET SQL_SAFE_UPDATES = 0;
+
 UPDATE posts p
 SET like_count = (
         SELECT COUNT(*)
@@ -841,6 +844,7 @@ SET like_count = (
 WHERE p.photo_url LIKE '/test/weekly-settlement/%'
    OR p.photo_url LIKE '/test/weekly-settlement-round3/%';
 
+SET SQL_SAFE_UPDATES = 1;
 -- ==========================================================================
 -- 주간 결산 테스트 게시물 reactions/comments 데이터 끝
 -- ==========================================================================
@@ -859,7 +863,8 @@ INSERT INTO users (
     password,
     user_status,
     point,
-    birthday
+    birthday,
+    is_notification_agreement
 ) VALUES (
              'aitest01',          -- user_id
              'AI 테스트',         -- name
@@ -872,8 +877,8 @@ INSERT INTO users (
              '$2a$10$JG6aEjTMBlkUc/ZPV0THRe/xEY1VN5VNsFAP7JUm/cv6kGMPZoF4e', -- 여기 bcrypt로 생성한 해시 문자열 그대로
              'ACTIVE',
              0,
-             '1998-01-01 00:00:00' -- 예시 생일 (20대 후반)
-         );
+             '1998-01-01 00:00:00', -- 예시 생일 (20대 후반)
+             TRUE);
 
 INSERT INTO survey_results (
     survey_result_id,
@@ -1087,3 +1092,595 @@ VALUES
     (9303, 'kb-moim-aiuser02-rd', 9002, 9103, 'DEPOSIT', 'CHARGE', 100000.00, 100000.00,
      'AIUSER02-RD-R1-INITIAL', '독서 챌린지 1라운드 예치금', 'kb-deposit-aiuser02', '국민', '테스트유저',
      '2026-07-05 10:10:00');
+
+
+-- ============================================================================
+-- 추가 통합 테스트 데이터
+-- ============================================================================
+
+USE youngly_db;
+
+START TRANSACTION;
+
+-- =========================================================
+-- 1. 테스트 사용자
+-- 로그인 비밀번호: test
+-- =========================================================
+INSERT INTO users (
+    user_id,
+    name,
+    login_id,
+    nickname,
+    email,
+    profile_image_url,
+    password,
+    user_status,
+    point,
+    birthday,
+    created_at,
+    updated_at,
+    is_notification_agreement
+) VALUES
+(
+    'test_user01', '테스트일', 'test_user01', '테스트일',
+    'test_user01@youngly.test', NULL,
+    '$2a$10$0MW4k3X6g./yliQpJO7mxe27eIMc6mGU0BOhPL8dQUHb8.h1FsLMW',
+    'ACTIVE', 0, '1998-01-01',
+    '2026-07-01 09:00:00', '2026-08-01 09:00:00', TRUE),
+(
+    'test_user02', '테스트이', 'test_user02', '테스트이',
+    'test_user02@youngly.test', NULL,
+    '$2a$10$0MW4k3X6g./yliQpJO7mxe27eIMc6mGU0BOhPL8dQUHb8.h1FsLMW',
+    'ACTIVE', 0, '1998-02-02',
+    '2026-07-01 09:01:00', '2026-08-01 09:00:00', TRUE),
+(
+    'test_user03', '테스트삼', 'test_user03', '테스트삼',
+    'test_user03@youngly.test', NULL,
+    '$2a$10$0MW4k3X6g./yliQpJO7mxe27eIMc6mGU0BOhPL8dQUHb8.h1FsLMW',
+    'ACTIVE', 0, '1998-03-03',
+    '2026-07-01 09:02:00', '2026-08-01 09:00:00', TRUE),
+(
+    'test_user04', '테스트사', 'test_user04', '테스트사',
+    'test_user04@youngly.test', NULL,
+    '$2a$10$0MW4k3X6g./yliQpJO7mxe27eIMc6mGU0BOhPL8dQUHb8.h1FsLMW',
+    'ACTIVE', 0, '1998-04-04',
+    '2026-07-01 09:03:00', '2026-08-01 09:00:00', TRUE);
+
+-- =========================================================
+-- 2. KB 입출금·개인연금·모임통장
+-- 잔액은 아래 거래가 모두 끝난 최종 잔액
+-- =========================================================
+INSERT INTO kb_accounts (
+    kb_account_id,
+    account_type,
+    account_number,
+    bank_name,
+    balance,
+    interest_rate,
+    name,
+    birthday,
+    created_at,
+    updated_at
+) VALUES
+-- test_user01
+(
+    'kb-test-deposit-01', 'DEPOSIT', '025202-90-100001',
+    '국민', 1800000.00, 0.10, '테스트일', '1998-01-01',
+    '2026-07-01 09:10:00', '2026-08-01 09:00:00'
+),
+(
+    'kb-test-pension-01', 'PENSION', '025202-91-100001',
+    '국민', 3040000.00, 2.50, '테스트일', '1998-01-01',
+    '2026-07-01 09:11:00', '2026-08-01 09:00:00'
+),
+
+-- test_user02
+(
+    'kb-test-deposit-02', 'DEPOSIT', '025202-90-100002',
+    '국민', 1850000.00, 0.10, '테스트이', '1998-02-02',
+    '2026-07-01 09:12:00', '2026-08-01 09:00:00'
+),
+(
+    'kb-test-pension-02', 'PENSION', '025202-91-100002',
+    '국민', 3030000.00, 2.50, '테스트이', '1998-02-02',
+    '2026-07-01 09:13:00', '2026-08-01 09:00:00'
+),
+
+-- test_user03
+(
+    'kb-test-deposit-03', 'DEPOSIT', '025202-90-100003',
+    '국민', 1900000.00, 0.10, '테스트삼', '1998-03-03',
+    '2026-07-01 09:14:00', '2026-08-01 09:00:00'
+),
+(
+    'kb-test-pension-03', 'PENSION', '025202-91-100003',
+    '국민', 3020000.00, 2.50, '테스트삼', '1998-03-03',
+    '2026-07-01 09:15:00', '2026-08-01 09:00:00'
+),
+
+-- test_user04
+(
+    'kb-test-deposit-04', 'DEPOSIT', '025202-90-100004',
+    '국민', 1950000.00, 0.10, '테스트사', '1998-04-04',
+    '2026-07-01 09:16:00', '2026-08-01 09:00:00'
+),
+(
+    'kb-test-pension-04', 'PENSION', '025202-91-100004',
+    '국민', 3010000.00, 2.50, '테스트사', '1998-04-04',
+    '2026-07-01 09:17:00', '2026-08-01 09:00:00'
+),
+
+-- 공용 모임통장
+(
+    'kb-test-moim-01', 'MOIM', '025202-92-200001',
+    '국민', 400000.00, 2.50, '테스트일', '1998-01-01',
+    '2026-07-01 10:00:00', '2026-08-01 09:00:00'
+);
+
+-- =========================================================
+-- 3. 서비스에 연동된 개인 계좌
+-- =========================================================
+INSERT INTO accounts (
+    account_id,
+    user_id,
+    kb_account_id,
+    account_status,
+    account_name,
+    created_at,
+    updated_at
+) VALUES
+(
+    'account-test-user01-deposit', 'test_user01',
+    'kb-test-deposit-01', 'OUTCOME',
+    '국민 025202-90-100001',
+    '2026-07-01 09:20:00', '2026-08-01 09:00:00'
+),
+(
+    'account-test-user01-pension', 'test_user01',
+    'kb-test-pension-01', 'INCOME',
+    'KB 개인연금',
+    '2026-07-01 09:21:00', '2026-08-01 09:00:00'
+),
+(
+    'account-test-user02-deposit', 'test_user02',
+    'kb-test-deposit-02', 'OUTCOME',
+    '국민 025202-90-100002',
+    '2026-07-01 09:22:00', '2026-08-01 09:00:00'
+),
+(
+    'account-test-user02-pension', 'test_user02',
+    'kb-test-pension-02', 'INCOME',
+    'KB 개인연금',
+    '2026-07-01 09:23:00', '2026-08-01 09:00:00'
+),
+(
+    'account-test-user03-deposit', 'test_user03',
+    'kb-test-deposit-03', 'OUTCOME',
+    '국민 025202-90-100003',
+    '2026-07-01 09:24:00', '2026-08-01 09:00:00'
+),
+(
+    'account-test-user03-pension', 'test_user03',
+    'kb-test-pension-03', 'INCOME',
+    'KB 개인연금',
+    '2026-07-01 09:25:00', '2026-08-01 09:00:00'
+),
+(
+    'account-test-user04-deposit', 'test_user04',
+    'kb-test-deposit-04', 'OUTCOME',
+    '국민 025202-90-100004',
+    '2026-07-01 09:26:00', '2026-08-01 09:00:00'
+),
+(
+    'account-test-user04-pension', 'test_user04',
+    'kb-test-pension-04', 'INCOME',
+    'KB 개인연금',
+    '2026-07-01 09:27:00', '2026-08-01 09:00:00'
+);
+
+-- =========================================================
+-- 4. 모임통장 연동
+-- test_user01이 모임통장 연동 사용자
+-- =========================================================
+INSERT INTO moim_accounts (
+    moim_account_id,
+    user_id,
+    kb_account_id,
+    account_status,
+    account_name,
+    created_at,
+    updated_at
+) VALUES (
+    'moim-account-test-01',
+    'test_user01',
+    'kb-test-moim-01',
+    'ACTIVE',
+    '테스트 공동 저축통장',
+    '2026-07-01 10:05:00',
+    '2026-08-01 09:00:00'
+);
+
+-- =========================================================
+-- 5. 네 사용자가 참여하는 동일 그룹
+-- =========================================================
+INSERT INTO `groups` (
+    group_id,
+    moim_account_id,
+    user_id,
+    invite_code,
+    group_name,
+    group_count,
+    custom_rule,
+    challenge_type,
+    content,
+    future_deposit_ratio_rule,
+    duration_days,
+    min_count,
+    round_cycle_days,
+    base_deposit_amount,
+    group_status,
+    created_at,
+    updated_at
+) VALUES (
+    'group-test-savings-01',
+    'moim-account-test-01',
+    'test_user01',
+    '44444444-4444-4444-8444-444444444444',
+    '테스트 공동 저축 챌린지',
+    4,
+    '매주 3회 이상 목표 인증',
+    'HABIT',
+    '서로 다른 예치금과 거래내역을 확인하기 위한 테스트 그룹',
+    '1:40/2:60/3:80/4:100',
+    7,
+    3,
+    28,
+    200000.00,
+    'ONGOING',
+    '2026-07-01 10:10:00',
+    '2026-08-01 09:00:00'
+);
+
+-- =========================================================
+-- 6. 그룹 참여자
+-- user01: 200,000원 / 납부 완료
+-- user02: 150,000원 / 50,000원 부족
+-- user03: 100,000원 / 100,000원 부족
+-- user04:  50,000원 / 150,000원 부족
+-- =========================================================
+INSERT INTO group_users (
+    group_id,
+    user_id,
+    group_user_status,
+    approved_at,
+    current_deposit_amount,
+    streak_count,
+    created_at,
+    updated_at
+) VALUES
+(
+    'group-test-savings-01', 'test_user01',
+    'ACTIVE', '2026-07-01 11:00:00',
+    200000.00, 4,
+    '2026-07-01 10:20:00', '2026-08-01 09:00:00'
+),
+(
+    'group-test-savings-01', 'test_user02',
+    'PENDING_DEPOSIT', '2026-07-01 11:01:00',
+    150000.00, 3,
+    '2026-07-01 10:21:00', '2026-08-01 09:00:00'
+),
+(
+    'group-test-savings-01', 'test_user03',
+    'PENDING_DEPOSIT', '2026-07-01 11:02:00',
+    100000.00, 2,
+    '2026-07-01 10:22:00', '2026-08-01 09:00:00'
+),
+(
+    'group-test-savings-01', 'test_user04',
+    'PENDING_DEPOSIT', '2026-07-01 11:03:00',
+    50000.00, 1,
+    '2026-07-01 10:23:00', '2026-08-01 09:00:00'
+);
+
+-- =========================================================
+-- 7. 테스트 라운드
+-- =========================================================
+INSERT INTO rounds (
+    group_id,
+    round_no,
+    start_date,
+    end_date,
+    round_status,
+    created_at
+) VALUES (
+    'group-test-savings-01',
+    1,
+    '2026-07-01',
+    '2026-07-28',
+    'SETTLED',
+    '2026-07-01 12:00:00'
+);
+
+SET @test_round_id = (
+    SELECT round_id
+    FROM rounds
+    WHERE group_id = 'group-test-savings-01'
+      AND round_no = 1
+);
+
+SET @test_gu01 = (
+    SELECT group_user_id
+    FROM group_users
+    WHERE group_id = 'group-test-savings-01'
+      AND user_id = 'test_user01'
+);
+
+SET @test_gu02 = (
+    SELECT group_user_id
+    FROM group_users
+    WHERE group_id = 'group-test-savings-01'
+      AND user_id = 'test_user02'
+);
+
+SET @test_gu03 = (
+    SELECT group_user_id
+    FROM group_users
+    WHERE group_id = 'group-test-savings-01'
+      AND user_id = 'test_user03'
+);
+
+SET @test_gu04 = (
+    SELECT group_user_id
+    FROM group_users
+    WHERE group_id = 'group-test-savings-01'
+      AND user_id = 'test_user04'
+);
+
+-- =========================================================
+-- 8. 개인계좌 → 모임통장 예치 거래
+-- 각각 2회씩 나누어 납부
+-- =========================================================
+INSERT INTO account_transactions (
+    kb_account_id,
+    group_user_id,
+    round_id,
+    transaction_type,
+    transaction_category,
+    amount,
+    balance_after,
+    idempotency_key,
+    description,
+    another_account_number,
+    another_bank_name,
+    another_name,
+    created_at
+) VALUES
+-- test_user01: 80,000 + 120,000 = 200,000
+(
+    'kb-test-deposit-01', @test_gu01, @test_round_id,
+    'WITHDRAW', 'CHARGE', 80000.00, 1920000.00,
+    'TEST-U01-CHARGE-01-OUT',
+    '모임 예치금 출금',
+    '025202-92-200001', '국민', '테스트 공동 저축통장',
+    '2026-07-02 10:00:00'
+),
+(
+    'kb-test-moim-01', @test_gu01, @test_round_id,
+    'DEPOSIT', 'CHARGE', 80000.00, 80000.00,
+    'TEST-U01-CHARGE-01-IN',
+    '테스트일 예치금 입금',
+    '025202-90-100001', '국민', '테스트일',
+    '2026-07-02 10:00:01'
+),
+(
+    'kb-test-deposit-01', @test_gu01, @test_round_id,
+    'WITHDRAW', 'CHARGE', 120000.00, 1800000.00,
+    'TEST-U01-CHARGE-02-OUT',
+    '모임 예치금 출금',
+    '025202-92-200001', '국민', '테스트 공동 저축통장',
+    '2026-07-05 10:00:00'
+),
+(
+    'kb-test-moim-01', @test_gu01, @test_round_id,
+    'DEPOSIT', 'CHARGE', 120000.00, 200000.00,
+    'TEST-U01-CHARGE-02-IN',
+    '테스트일 예치금 입금',
+    '025202-90-100001', '국민', '테스트일',
+    '2026-07-05 10:00:01'
+),
+
+-- test_user02: 50,000 + 100,000 = 150,000
+(
+    'kb-test-deposit-02', @test_gu02, @test_round_id,
+    'WITHDRAW', 'CHARGE', 50000.00, 1950000.00,
+    'TEST-U02-CHARGE-01-OUT',
+    '모임 예치금 출금',
+    '025202-92-200001', '국민', '테스트 공동 저축통장',
+    '2026-07-06 10:00:00'
+),
+(
+    'kb-test-moim-01', @test_gu02, @test_round_id,
+    'DEPOSIT', 'CHARGE', 50000.00, 250000.00,
+    'TEST-U02-CHARGE-01-IN',
+    '테스트이 예치금 입금',
+    '025202-90-100002', '국민', '테스트이',
+    '2026-07-06 10:00:01'
+),
+(
+    'kb-test-deposit-02', @test_gu02, @test_round_id,
+    'WITHDRAW', 'CHARGE', 100000.00, 1850000.00,
+    'TEST-U02-CHARGE-02-OUT',
+    '모임 예치금 출금',
+    '025202-92-200001', '국민', '테스트 공동 저축통장',
+    '2026-07-09 10:00:00'
+),
+(
+    'kb-test-moim-01', @test_gu02, @test_round_id,
+    'DEPOSIT', 'CHARGE', 100000.00, 350000.00,
+    'TEST-U02-CHARGE-02-IN',
+    '테스트이 예치금 입금',
+    '025202-90-100002', '국민', '테스트이',
+    '2026-07-09 10:00:01'
+),
+
+-- test_user03: 40,000 + 60,000 = 100,000
+(
+    'kb-test-deposit-03', @test_gu03, @test_round_id,
+    'WITHDRAW', 'CHARGE', 40000.00, 1960000.00,
+    'TEST-U03-CHARGE-01-OUT',
+    '모임 예치금 출금',
+    '025202-92-200001', '국민', '테스트 공동 저축통장',
+    '2026-07-10 10:00:00'
+),
+(
+    'kb-test-moim-01', @test_gu03, @test_round_id,
+    'DEPOSIT', 'CHARGE', 40000.00, 390000.00,
+    'TEST-U03-CHARGE-01-IN',
+    '테스트삼 예치금 입금',
+    '025202-90-100003', '국민', '테스트삼',
+    '2026-07-10 10:00:01'
+),
+(
+    'kb-test-deposit-03', @test_gu03, @test_round_id,
+    'WITHDRAW', 'CHARGE', 60000.00, 1900000.00,
+    'TEST-U03-CHARGE-02-OUT',
+    '모임 예치금 출금',
+    '025202-92-200001', '국민', '테스트 공동 저축통장',
+    '2026-07-13 10:00:00'
+),
+(
+    'kb-test-moim-01', @test_gu03, @test_round_id,
+    'DEPOSIT', 'CHARGE', 60000.00, 450000.00,
+    'TEST-U03-CHARGE-02-IN',
+    '테스트삼 예치금 입금',
+    '025202-90-100003', '국민', '테스트삼',
+    '2026-07-13 10:00:01'
+),
+
+-- test_user04: 20,000 + 30,000 = 50,000
+(
+    'kb-test-deposit-04', @test_gu04, @test_round_id,
+    'WITHDRAW', 'CHARGE', 20000.00, 1980000.00,
+    'TEST-U04-CHARGE-01-OUT',
+    '모임 예치금 출금',
+    '025202-92-200001', '국민', '테스트 공동 저축통장',
+    '2026-07-14 10:00:00'
+),
+(
+    'kb-test-moim-01', @test_gu04, @test_round_id,
+    'DEPOSIT', 'CHARGE', 20000.00, 470000.00,
+    'TEST-U04-CHARGE-01-IN',
+    '테스트사 예치금 입금',
+    '025202-90-100004', '국민', '테스트사',
+    '2026-07-14 10:00:01'
+),
+(
+    'kb-test-deposit-04', @test_gu04, @test_round_id,
+    'WITHDRAW', 'CHARGE', 30000.00, 1950000.00,
+    'TEST-U04-CHARGE-02-OUT',
+    '모임 예치금 출금',
+    '025202-92-200001', '국민', '테스트 공동 저축통장',
+    '2026-07-17 10:00:00'
+),
+(
+    'kb-test-moim-01', @test_gu04, @test_round_id,
+    'DEPOSIT', 'CHARGE', 30000.00, 500000.00,
+    'TEST-U04-CHARGE-02-IN',
+    '테스트사 예치금 입금',
+    '025202-90-100004', '국민', '테스트사',
+    '2026-07-17 10:00:01'
+);
+
+-- =========================================================
+-- 9. 모임통장 → 개인연금 정산
+-- 모임통장 500,000원 → 정산 후 400,000원
+-- =========================================================
+INSERT INTO account_transactions (
+    kb_account_id,
+    group_user_id,
+    round_id,
+    transaction_type,
+    transaction_category,
+    amount,
+    balance_after,
+    idempotency_key,
+    description,
+    another_account_number,
+    another_bank_name,
+    another_name,
+    created_at
+) VALUES
+-- test_user01: 40,000원 정산
+(
+    'kb-test-moim-01', @test_gu01, @test_round_id,
+    'WITHDRAW', 'SETTLEMENT', 40000.00, 460000.00,
+    'TEST-U01-SETTLEMENT-OUT',
+    '테스트일 미래 적립금 정산',
+    '025202-91-100001', '국민', '테스트일 개인연금',
+    '2026-07-29 09:00:00'
+),
+(
+    'kb-test-pension-01', @test_gu01, @test_round_id,
+    'DEPOSIT', 'SETTLEMENT', 40000.00, 3040000.00,
+    'TEST-U01-SETTLEMENT-IN',
+    '챌린지 미래 적립금 입금',
+    '025202-92-200001', '국민', '테스트 공동 저축 챌린지',
+    '2026-07-29 09:00:01'
+),
+
+-- test_user02: 30,000원 정산
+(
+    'kb-test-moim-01', @test_gu02, @test_round_id,
+    'WITHDRAW', 'SETTLEMENT', 30000.00, 430000.00,
+    'TEST-U02-SETTLEMENT-OUT',
+    '테스트이 미래 적립금 정산',
+    '025202-91-100002', '국민', '테스트이 개인연금',
+    '2026-07-29 09:01:00'
+),
+(
+    'kb-test-pension-02', @test_gu02, @test_round_id,
+    'DEPOSIT', 'SETTLEMENT', 30000.00, 3030000.00,
+    'TEST-U02-SETTLEMENT-IN',
+    '챌린지 미래 적립금 입금',
+    '025202-92-200001', '국민', '테스트 공동 저축 챌린지',
+    '2026-07-29 09:01:01'
+),
+
+-- test_user03: 20,000원 정산
+(
+    'kb-test-moim-01', @test_gu03, @test_round_id,
+    'WITHDRAW', 'SETTLEMENT', 20000.00, 410000.00,
+    'TEST-U03-SETTLEMENT-OUT',
+    '테스트삼 미래 적립금 정산',
+    '025202-91-100003', '국민', '테스트삼 개인연금',
+    '2026-07-29 09:02:00'
+),
+(
+    'kb-test-pension-03', @test_gu03, @test_round_id,
+    'DEPOSIT', 'SETTLEMENT', 20000.00, 3020000.00,
+    'TEST-U03-SETTLEMENT-IN',
+    '챌린지 미래 적립금 입금',
+    '025202-92-200001', '국민', '테스트 공동 저축 챌린지',
+    '2026-07-29 09:02:01'
+),
+
+-- test_user04: 10,000원 정산
+(
+    'kb-test-moim-01', @test_gu04, @test_round_id,
+    'WITHDRAW', 'SETTLEMENT', 10000.00, 400000.00,
+    'TEST-U04-SETTLEMENT-OUT',
+    '테스트사 미래 적립금 정산',
+    '025202-91-100004', '국민', '테스트사 개인연금',
+    '2026-07-29 09:03:00'
+),
+(
+    'kb-test-pension-04', @test_gu04, @test_round_id,
+    'DEPOSIT', 'SETTLEMENT', 10000.00, 3010000.00,
+    'TEST-U04-SETTLEMENT-IN',
+    '챌린지 미래 적립금 입금',
+    '025202-92-200001', '국민', '테스트 공동 저축 챌린지',
+    '2026-07-29 09:03:01'
+);
+
+COMMIT;
