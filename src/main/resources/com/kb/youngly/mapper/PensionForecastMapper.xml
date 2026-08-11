@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kb.youngly.mapper.PensionForecastMapper">
+
+    <!--
+      임시 순위는 RoundMapper.updateRoundRanks()와 동일하게
+      RANK() OVER (ORDER BY success_count DESC) 로 계산한다.
+      group_users.streak_count 는 사용하지 않는다.
+      SETTLED 라운드는 제외하고, 이번 달 종료 예정인 ONGOING/WAITING_SETTLEMENT만 포함한다.
+      completed_week_count 는 created_at &lt;= NOW() 인 weekly_settlements 만 집계한다.
+    -->
+    <select id="findOngoingForecastSources"
+            resultType="com.kb.youngly.dto.recommendation.PensionForecastSource">
+        SELECT
+            g.group_id,
+            g.group_name,
+            g.challenge_type,
+            g.base_deposit_amount,
+            g.future_deposit_ratio_rule,
+            g.min_count,
+            ranked.success_count,
+            ranked.rank_no,
+            (
+                SELECT COUNT(DISTINCT ws.week_no)
+                FROM weekly_settlements ws
+                WHERE ws.round_id = r.round_id
+                  AND ws.created_at &lt;= NOW()
+            ) AS completed_week_count,
+            r.end_date AS round_end_date
+        FROM group_users gu
+        INNER JOIN `groups` g ON g.group_id = gu.group_id
+        INNER JOIN rounds r ON r.group_id = g.group_id
+        INNER JOIN (
+            SELECT
+                rh2.round_id,
+                rh2.user_id,
+                rh2.success_count,
+                RANK() OVER (
+                    PARTITION BY rh2.round_id
+                    ORDER BY rh2.success_count DESC
+                ) AS rank_no
+            FROM round_history rh2
+        ) ranked
+               ON ranked.round_id = r.round_id
+              AND ranked.user_id = gu.user_id
+        WHERE gu.user_id = #{userId}
+          AND gu.group_user_status = 'ACTIVE'
+          AND g.group_status = 'ONGOING'
+          AND r.round_status IN ('ONGOING', 'WAITING_SETTLEMENT')
+          AND r.end_date &gt;= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
+          AND r.end_date &lt; DATE_ADD(DATE_FORMAT(CURRENT_DATE, '%Y-%m-01'), INTERVAL 1 MONTH)
+        ORDER BY r.end_date ASC, g.group_id ASC
+    </select>
+
+    <select id="sumConfirmedPensionSettlementThisMonth" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(at.amount), 0)
+        FROM account_transactions at
+        WHERE at.transaction_category = 'SETTLEMENT'
+          AND at.created_at &gt;= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
+          AND at.created_at &lt; DATE_ADD(DATE_FORMAT(CURRENT_DATE, '%Y-%m-01'), INTERVAL 1 MONTH)
+          AND (
+              at.kb_account_id IN (
+                  SELECT a.kb_account_id
+                  FROM accounts a
+                  INNER JOIN kb_accounts k ON k.kb_account_id = a.kb_account_id
+                  WHERE a.user_id = #{userId}
+                    AND k.account_type = 'PENSION'
+              )
+              OR at.another_account_number IN (
+                  SELECT k.account_number
+                  FROM accounts a
+                  INNER JOIN kb_accounts k ON k.kb_account_id = a.kb_account_id
+                  WHERE a.user_id = #{userId}
+                    AND k.account_type = 'PENSION'
+              )
+          )
+    </select>
+
+    <select id="findPensionBalance" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(k.balance), 0)
+        FROM accounts a
+        INNER JOIN kb_accounts k ON k.kb_account_id = a.kb_account_id
+        WHERE a.user_id = #{userId}
+          AND k.account_type = 'PENSION'
+    </select>
+</mapper>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kb.youngly.mapper.RecommendationMapper">
+
+    <insert id="insert"
+            parameterType="com.kb.youngly.vo.user.RecommendationVO"
+            useGeneratedKeys="true"
+            keyProperty="recommendationId">
+        INSERT INTO recommendations (
+            user_id,
+            baseline,
+            period_start_date,
+            period_end_date,
+            settled_amount_this_month,
+            expected_additional_amount_current_rank,
+            expected_additional_amount_best_case,
+            expected_total_amount_this_month,
+            expected_max_total_amount_this_month,
+            current_pension_balance,
+            has_ongoing_round_this_month,
+            next_deposit_date,
+            forecast_basis_json,
+            market_highlights_json,
+            market_detail,
+            pension_insight_intro,
+            pension_insight_strategy,
+            guardrail_status,
+            generation_mode
+        ) VALUES (
+            #{userId},
+            #{baseline},
+            #{periodStartDate},
+            #{periodEndDate},
+            #{settledAmountThisMonth},
+            #{expectedAdditionalAmountCurrentRank},
+            #{expectedAdditionalAmountBestCase},
+            #{expectedTotalAmountThisMonth},
+            #{expectedMaxTotalAmountThisMonth},
+            #{currentPensionBalance},
+            #{hasOngoingRoundThisMonth},
+            #{nextDepositDate},
+            #{forecastBasisJson},
+            #{marketHighlightsJson},
+            #{marketDetail},
+            #{pensionInsightIntro},
+            #{pensionInsightStrategy},
+            #{guardrailStatus},
+            #{generationMode}
+        )
+    </insert>
+
+    <select id="selectLatestByUserId"
+            resultType="com.kb.youngly.vo.user.RecommendationVO">
+        SELECT
+            recommendation_id,
+            user_id,
+            baseline,
+            period_start_date,
+            period_end_date,
+            settled_amount_this_month,
+            expected_additional_amount_current_rank,
+            expected_additional_amount_best_case,
+            expected_total_amount_this_month,
+            expected_max_total_amount_this_month,
+            current_pension_balance,
+            has_ongoing_round_this_month,
+            next_deposit_date,
+            forecast_basis_json,
+            market_highlights_json,
+            market_detail,
+            pension_insight_intro,
+            pension_insight_strategy,
+            guardrail_status,
+            generation_mode,
+            created_at
+        FROM recommendations
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC, recommendation_id DESC
+        LIMIT 1
+    </select>
+</mapper>

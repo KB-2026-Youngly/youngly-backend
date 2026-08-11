@@ -38,7 +38,10 @@ import javax.sql.DataSource;
         "com.kb.youngly"
 }, excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Configuration.class))
 @MapperScan(basePackages = {"com.kb.youngly.mapper"})
-@PropertySource(value = {"classpath:/application.properties"})
+@PropertySource(value = {
+        "classpath:/application.properties",
+        "classpath:/application-${spring.profiles.active:demo}.properties"
+}, ignoreResourceNotFound = true)
 public class RootConfig {
 
     @Value("${jdbc.driver}")
