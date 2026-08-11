@@ -119,4 +119,11 @@
           AND is_equipped = FALSE
     </update>
 
+    <!-- 장착한 캐릭터의 이미지 경로를 기존 사용자 프로필 이미지 컬럼에 반영한다. -->
+    <update id="updateUserProfileImage">
+        UPDATE users
+        SET profile_image_url = #{imageUrl}
+        WHERE user_id = #{userId}
+    </update>
+
 </mapper>

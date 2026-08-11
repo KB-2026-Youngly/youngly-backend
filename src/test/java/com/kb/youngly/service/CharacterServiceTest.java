@@ -177,12 +177,14 @@ class CharacterServiceTest {
         assertEquals("/characters/1.png", response.getImageUrl());
         assertTrue(response.isEquipped());
         assertTrue(userItem(USER_ID, 1L).getIsEquipped());
+        assertEquals("/characters/1.png", characterMapper.getProfileImage(USER_ID));
         assertEquals(
                 List.of(
                         "lockUserForUpdate",
                         "findOwnedCharacterForEquip",
                         "unequipOtherCharacters",
-                        "equipCharacter"
+                        "equipCharacter",
+                        "updateUserProfileImage"
                 ),
                 characterMapper.getCallLog()
         );
@@ -209,6 +211,7 @@ class CharacterServiceTest {
         assertTrue(userItem(USER_ID, 2L).getIsEquipped());
         assertTrue(userItem(USER_ID, 3L).getIsEquipped());
         assertFalse(userItem(USER_ID, 4L).getIsEquipped());
+        assertEquals("/characters/2.png", characterMapper.getProfileImage(USER_ID));
     }
 
     @Test
@@ -224,6 +227,23 @@ class CharacterServiceTest {
         assertTrue(response.isEquipped());
         assertTrue(userItem(USER_ID, 1L).getIsEquipped());
         assertFalse(characterMapper.getCallLog().contains("equipCharacter"));
+        assertEquals("/characters/1.png", characterMapper.getProfileImage(USER_ID));
+        assertTrue(characterMapper.getCallLog().contains("updateUserProfileImage"));
+    }
+
+    @Test
+    @DisplayName("프로필 이미지 변경 실패는 장착 트랜잭션의 예외가 된다")
+    void equipCharacter_profileImageUpdateFailureThrows() {
+        characterMapper.addItem(character(1L, "키키"));
+        characterMapper.addOwnedItem(USER_ID, 1L, LocalDateTime.now());
+        characterMapper.setProfileImageUpdateResult(0);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> serviceWithFixedIndex(0).equipCharacter(USER_ID, 1L)
+        );
+
+        assertEquals("프로필 이미지 변경에 실패했습니다.", exception.getMessage());
     }
 
     @Test

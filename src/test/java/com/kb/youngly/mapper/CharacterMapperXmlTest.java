@@ -32,6 +32,7 @@ class CharacterMapperXmlTest {
         assertTrue(configuration.hasStatement(NAMESPACE + "findOwnedCharacterForEquip"));
         assertTrue(configuration.hasStatement(NAMESPACE + "unequipOtherCharacters"));
         assertTrue(configuration.hasStatement(NAMESPACE + "equipCharacter"));
+        assertTrue(configuration.hasStatement(NAMESPACE + "updateUserProfileImage"));
     }
 
     @Test
@@ -45,6 +46,7 @@ class CharacterMapperXmlTest {
         String ownedForEquipSql = sql(configuration, "findOwnedCharacterForEquip");
         String unequipSql = sql(configuration, "unequipOtherCharacters");
         String equipSql = sql(configuration, "equipCharacter");
+        String profileImageSql = sql(configuration, "updateUserProfileImage");
 
         assertTrue(lockSql.contains("FOR UPDATE"));
         assertTrue(candidatesSql.contains("ITEM_CATEGORY = 'CHARACTER'"));
@@ -57,6 +59,8 @@ class CharacterMapperXmlTest {
         assertTrue(unequipSql.contains("CI.ITEM_CATEGORY IN"));
         assertTrue(unequipSql.contains("'ACC'"));
         assertTrue(equipSql.contains("SET IS_EQUIPPED = TRUE"));
+        assertTrue(profileImageSql.contains("SET PROFILE_IMAGE_URL = ?"));
+        assertTrue(profileImageSql.contains("WHERE USER_ID = ?"));
     }
 
     private Configuration loadConfiguration() throws Exception {
@@ -78,7 +82,8 @@ class CharacterMapperXmlTest {
         MappedStatement statement = configuration.getMappedStatement(NAMESPACE + statementId);
         return statement.getBoundSql(Map.of(
                         "userId", "test-user",
-                        "characterId", 1L
+                        "characterId", 1L,
+                        "imageUrl", "/characters/1.png"
                 ))
                 .getSql()
                 .replaceAll("\\s+", " ")

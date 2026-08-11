@@ -139,6 +139,13 @@ public class CharacterService {
             throw new IllegalStateException("캐릭터 장착에 실패했습니다.");
         }
 
+        if (characterMapper.updateUserProfileImage(
+                validUserId,
+                character.getImageUrl()
+        ) != 1) {
+            throw new IllegalStateException("프로필 이미지 변경에 실패했습니다.");
+        }
+
         return CharacterEquipResponse.fromEquipped(character);
     }
 

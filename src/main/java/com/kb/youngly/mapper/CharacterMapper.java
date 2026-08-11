@@ -38,4 +38,8 @@ public interface CharacterMapper {
     /** 사용자가 보유한 대상 캐릭터를 장착 상태로 변경한다. */
     int equipCharacter(@Param("userId") String userId,
                        @Param("characterId") Long characterId);
+
+    /** 장착한 캐릭터 이미지를 사용자의 프로필 이미지로 변경한다. */
+    int updateUserProfileImage(@Param("userId") String userId,
+                               @Param("imageUrl") String imageUrl);
 }
