@@ -4,6 +4,7 @@ import com.kb.youngly.dto.account.AccountSearchDTO;
 import com.kb.youngly.dto.account.KbAccountDTO;
 import com.kb.youngly.dto.moimaccount.MoimAccountDTO;
 import com.kb.youngly.dto.moimaccount.MoimAccountBalanceSyncResponseDTO;
+import com.kb.youngly.dto.moimaccount.MoimAccountNameUpdateRequest;
 import com.kb.youngly.dto.moimaccount.MoimAccountRegisterDTO;
 import com.kb.youngly.enums.AccountType;
 import com.kb.youngly.enums.MoimAccountStatus;
@@ -171,6 +172,57 @@ public class MoimAccountServiceImpl implements MoimAccountService {
         }
 
         return account;
+    }
+    @Override
+    @Transactional
+    public void updateAccountName(
+            String userId,
+            String moimAccountId,
+            MoimAccountNameUpdateRequest request
+    ) {
+        if (request == null
+                || request.getAccountName() == null
+                || request.getAccountName().trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "모임통장 이름을 입력해 주세요."
+            );
+        }
+
+        String accountName = request.getAccountName().trim();
+
+        if (accountName.length() > 50) {
+            throw new IllegalArgumentException(
+                    "모임통장 이름은 50자 이하여야 합니다."
+            );
+        }
+
+        MoimAccountVO account =
+                moimAccountMapper.findById(moimAccountId);
+
+        if (account == null
+                || account.getAccountStatus() != MoimAccountStatus.ACTIVE) {
+            throw new IllegalArgumentException(
+                    "사용 중인 모임통장을 찾을 수 없습니다."
+            );
+        }
+
+        if (!userId.equals(account.getUserId())) {
+            throw new IllegalArgumentException(
+                    "모임통장 소유주만 변경할 수 있습니다."
+            );
+        }
+
+        int updatedCount = moimAccountMapper.updateAccountName(
+                moimAccountId,
+                userId,
+                accountName
+        );
+
+        if (updatedCount != 1) {
+            throw new IllegalStateException(
+                    "모임통장 이름 변경에 실패했습니다."
+            );
+        }
     }
 
 }

@@ -116,6 +116,7 @@ public class InMemoryCharacterMapper implements CharacterMapper {
                             .name(item.getItemName())
                             .imageUrl(item.getImageUrl())
                             .acquiredAt(userItem.getCreatedAt())
+                            .equipped(Boolean.TRUE.equals(userItem.getIsEquipped()))
                             .build();
                 })
                 .toList();

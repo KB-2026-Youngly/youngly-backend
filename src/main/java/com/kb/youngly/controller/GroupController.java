@@ -2,6 +2,7 @@ package com.kb.youngly.controller;
 
 import com.kb.youngly.dto.common.MessageResponse;
 import com.kb.youngly.dto.group.*;
+import com.kb.youngly.dto.round.RoundResponse;
 import com.kb.youngly.service.GroupService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +54,20 @@ public class GroupController {
 
         return ResponseEntity.ok(
                 groupService.getGroupDetail(
+                        authentication.getName(),
+                        groupId
+                )
+        );
+    }
+
+    // 그룹 라운드 목록 조회
+    @GetMapping("/{groupId}/rounds")
+    public ResponseEntity<List<RoundResponse>> getGroupRounds(
+            Authentication authentication,
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                groupService.getGroupRounds(
                         authentication.getName(),
                         groupId
                 )

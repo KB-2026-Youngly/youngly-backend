@@ -48,6 +48,19 @@
         LIMIT 1
     </select>
 
+    <!-- 그룹이 진행한 전체 라운드를 최신 회차부터 조회한다. -->
+    <select id="findRoundsByGroupId"
+            resultType="com.kb.youngly.dto.round.RoundResponse">
+        SELECT round_id,
+               round_no,
+               start_date,
+               end_date,
+               round_status
+        FROM rounds
+        WHERE group_id = #{groupId}
+        ORDER BY round_no DESC
+    </select>
+
     <!-- 대상 조회 후 상태가 바뀌었는지 그룹 잠금 안에서 다시 확인한다. -->
     <select id="findOngoingRoundEndingOn"
             resultType="com.kb.youngly.vo.round.RoundVO">
