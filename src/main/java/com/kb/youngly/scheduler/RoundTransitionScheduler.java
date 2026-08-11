@@ -14,13 +14,13 @@ import java.util.List;
 /**
  * 종료된 라운드의 정산과 다음 라운드 전환을 자동 실행하는 스케줄러.
  *
- * <p>한국시간 기준 매일 23시 59분에 실행되며 다음 조건을 모두 만족하는
- * 라운드 전환 및 정산 작업을 처리한다.</p>
+ * <p>라운드 전환은 한국시간 기준 매일 00시에 전날 종료된 라운드를 대상으로
+ * 실행하고, 라운드 정산은 매일 23시 59분에 처리한다.</p>
  *
  * <ul>
  *     <li>그룹 상태가 {@code ONGOING}일 것</li>
  *     <li>라운드 상태가 {@code ONGOING}일 것</li>
- *     <li>라운드 종료일이 실행 당일과 같을 것</li>
+ *     <li>라운드 종료일이 전환 작업 실행일의 전날과 같을 것</li>
  * </ul>
  *
  * <p>실제 상태 변경과 다음 라운드 생성은 서비스 계층에서 하나의 트랜잭션으로
@@ -42,15 +42,15 @@ public class RoundTransitionScheduler {
     private final RoundSettlementService roundSettlementService;
 
     /**
-     * 매일 한국시간 23시 59분에 전날 종료된 정산 대기 라운드를 정산한다.
+     * 매일 한국시간 00시에 이틀전 종료된 정산 대기 라운드를 정산한다.
      *
      * <p>공동 순위를 포함한 참여자별 적립금 이체는 그룹별 독립 트랜잭션으로
      * 실행한다. 한 그룹의 계좌 잔액이나 규칙에 문제가 있어도 다른 그룹은 계속
      * 처리하며, 실패한 그룹은 WAITING_SETTLEMENT 상태로 남아 재처리할 수 있다.</p>
      */
-    @Scheduled(cron = "0 59 23 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
     public void settleWaitingRounds() {
-        LocalDate settlementDate = LocalDate.now(SERVICE_ZONE);
+        LocalDate settlementDate = LocalDate.now(SERVICE_ZONE).minusDays(1);
         List<String> groupIds = roundSettlementService.findDueGroupIds(settlementDate);
         int settledCount = 0;
         int failedCount = 0;
@@ -75,18 +75,18 @@ public class RoundTransitionScheduler {
     }
 
     /**
-     * 매일 한국시간 23시 59분에 당일 종료 라운드를 전환한다.
+     * 매일 한국시간 00시에 전날 종료된 라운드를 전환한다.
      *
      * <p>각 그룹을 별도로 처리하여 특정 그룹에서 데이터 오류가 발생하더라도
      * 나머지 그룹의 자동 전환은 계속 진행한다. 처리 결과는 운영 확인을 위해
      * 성공 및 실패 건수와 함께 로그로 남긴다.</p>
      */
-    @Scheduled(cron = "0 59 23 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
     public void transitionEndedRounds() {
-        // 조회 조건과 새 라운드 날짜 계산에 사용할 한국 기준 실행일을 확정한다.
-        LocalDate transitionDate = LocalDate.now(SERVICE_ZONE);
+        // 00시 실행 시점에는 날짜가 바뀌었으므로 라운드 종료일과 비교할 전날을 사용한다.
+        LocalDate transitionDate = LocalDate.now(SERVICE_ZONE).minusDays(1);
 
-        // 진행 중 그룹이면서 종료일이 오늘인 진행 중 라운드만 대상으로 조회한다.
+        // 진행 중 그룹이면서 종료일이 전날인 진행 중 라운드만 대상으로 조회한다.
         List<String> groupIds = roundTransitionService.findDueGroupIds(transitionDate);
         // 실제 전환 완료 그룹 수와 예외 발생 그룹 수를 실행 결과 로그에 집계한다.
         int transitionedCount = 0;
