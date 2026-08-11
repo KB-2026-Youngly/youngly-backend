@@ -477,7 +477,7 @@ INSERT INTO account_transactions (
 
 -- ==========================================================================
 -- 주간 결산 테스트 데이터 시작
--- POST /api/dev/weekly-settlements?date=2026-08-02
+-- POST /api/dev/weekly-settlements?date=2026-08-03
 -- group-exercise-01의 2라운드 1주차(2026-07-26~2026-08-01)를 결산한다.
 -- user01: 승인 3개, 패스 2개 -> 정상 성공, 패스 유지
 -- user02: 승인 2개, 패스 1개 -> 부족분 1개를 패스로 충당하여 성공, 패스 0
@@ -617,7 +617,7 @@ WHERE p.photo_url LIKE '/test/weekly-settlement/%';
 
 -- ==========================================================================
 -- round_id=3 주간 결산 게시물 테스트 데이터 시작
--- POST /api/dev/weekly-settlements?date=2026-08-02
+-- POST /api/dev/weekly-settlements?date=2026-08-03
 -- 4주차(2026-07-26~2026-08-01) 승인 수: user04=5, user05=4, user06=5
 -- group-study-01의 min_count가 5이므로 user04와 user06만 성공한다.
 -- ==========================================================================
