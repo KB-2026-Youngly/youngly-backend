@@ -383,7 +383,8 @@ CREATE TABLE `users` (
                          `password`	VARCHAR(255)	NOT NULL,
                          `user_status`	ENUM('ACTIVE', 'DEACTIVATED')	NOT NULL DEFAULT 'ACTIVE',
                          `point`	BIGINT	NOT NULL DEFAULT 0,
-                         `birthday`	DATE	NOT NULL
+                         `birthday`	DATE	NOT NULL,
+                         `is_notification_agreement`  BOOLEAN NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `post_comments` (
