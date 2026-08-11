@@ -36,6 +36,7 @@ public class UserServiceImpl implements UserService {
                 .profileImageUrl(user.getProfileImageUrl())
                 .point(user.getPoint())
                 .birthday(user.getBirthday())
+                .isNotificationAgreement(user.getIsNotificationAgreement())
                 .build();
     }
 

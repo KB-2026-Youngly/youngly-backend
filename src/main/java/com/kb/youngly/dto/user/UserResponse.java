@@ -21,4 +21,5 @@ public class UserResponse {
     private String profileImageUrl;
     private Long point;
     private LocalDate birthday;
+    private Boolean isNotificationAgreement;
 }

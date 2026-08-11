@@ -26,4 +26,8 @@ public interface UserMapper {
     void deactivateUser(String userId);
     void updatePassword(UserVO user);
     void updateUser(UserVO userVO);
+    void deleteUserInterests(@Param("userId") String userId);
+
+    void updateNotificationAgreement(@Param("userId") String userId,@Param("isNotificationAgreement") Boolean isNotificationAgreement);
+    int countExistingInterestIds(@Param("interestIds") List<Long> interestIds);
 }

@@ -27,4 +27,5 @@ public class UserVO {
     private UserStatus userStatus;
     private Long point;
     private LocalDate birthday;
+    private Boolean isNotificationAgreement;
 }
