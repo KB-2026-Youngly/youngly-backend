@@ -1,11 +1,15 @@
 package com.kb.youngly.service;
 
-import com.kb.youngly.dto.recommendation.YounglyRecommendationResponse;
+import com.kb.youngly.dto.recommendation.RecommendationResponse;
+import com.kb.youngly.enums.GenerationMode;
+import com.kb.youngly.enums.GuardrailStatus;
 import com.kb.youngly.mapper.RecommendationMapper;
 import com.kb.youngly.vo.user.RecommendationVO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
 
 @Component
 public class CachedRecommendationProvider implements RecommendationProvider {
@@ -25,7 +29,7 @@ public class CachedRecommendationProvider implements RecommendationProvider {
     }
 
     @Override
-    public YounglyRecommendationResponse provide(String userId) {
+    public RecommendationResponse provide(String userId) {
         RecommendationVO cached =
                 recommendationMapper.selectLatestByUserId(userId);
 
@@ -35,7 +39,9 @@ public class CachedRecommendationProvider implements RecommendationProvider {
                     userId
             );
 
-            return RecommendationMapper.toResponse(cached);
+            // DB 원본 generationMode(LIVE)는 유지하고, API 응답만 CACHED로 표기한다.
+            return RecommendationMapper.toResponse(cached)
+                    .withGenerationMode(GenerationMode.CACHED);
         }
 
         if (cached != null) {
@@ -57,12 +63,19 @@ public class CachedRecommendationProvider implements RecommendationProvider {
     }
 
     private boolean isUsableLiveRecommendation(RecommendationVO recommendation) {
-        if (recommendation == null) return false;
-        boolean liveAndPassed = "LIVE".equals(String.valueOf(recommendation.getGenerationMode()))
-                && "PASSED".equals(String.valueOf(recommendation.getGuardrailStatus()));
-        if (!liveAndPassed) return false;
+        if (recommendation == null) {
+            return false;
+        }
+
+        boolean liveAndPassed =
+                recommendation.getGenerationMode() == GenerationMode.LIVE
+                        && recommendation.getGuardrailStatus() == GuardrailStatus.PASSED;
+
+        if (!liveAndPassed) {
+            return false;
+        }
 
         return recommendation.getCreatedAt() != null
-                && recommendation.getCreatedAt().toLocalDate().isEqual(java.time.LocalDate.now());
+                && recommendation.getCreatedAt().toLocalDate().isEqual(LocalDate.now());
     }
 }

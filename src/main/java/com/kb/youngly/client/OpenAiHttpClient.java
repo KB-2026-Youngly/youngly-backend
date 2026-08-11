@@ -3,7 +3,7 @@ package com.kb.youngly.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kb.youngly.dto.recommendation.RecommendationPrompt;
-import com.kb.youngly.dto.recommendation.YounglyRecommendationResponse;
+import com.kb.youngly.dto.recommendation.RecommendationResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -66,7 +66,7 @@ public class OpenAiHttpClient implements OpenAiClient {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public YounglyRecommendationResponse generateRecommendation(RecommendationPrompt prompt) {
+    public RecommendationResponse generateRecommendation(RecommendationPrompt prompt) {
         if (!StringUtils.hasText(apiKey)) {
             throw new IllegalStateException("openai.api-key가 설정되어 있지 않습니다.");
         }
@@ -107,8 +107,8 @@ public class OpenAiHttpClient implements OpenAiClient {
                 }
 
                 String outputText = extractOutputText(responseBody);
-                YounglyRecommendationResponse recommendation =
-                        objectMapper.readValue(outputText, YounglyRecommendationResponse.class);
+                RecommendationResponse recommendation =
+                        objectMapper.readValue(outputText, RecommendationResponse.class);
 
                 validateResponse(recommendation);
                 return recommendation;
@@ -225,7 +225,7 @@ public class OpenAiHttpClient implements OpenAiClient {
         );
     }
 
-    private void validateResponse(YounglyRecommendationResponse response) {
+    private void validateResponse(RecommendationResponse response) {
         if (response == null) {
             throw new IllegalStateException("OpenAI 추천 응답이 비어 있습니다.");
         }

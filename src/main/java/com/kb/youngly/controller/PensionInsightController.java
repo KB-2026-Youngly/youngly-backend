@@ -1,6 +1,6 @@
 package com.kb.youngly.controller;
 
-import com.kb.youngly.dto.recommendation.YounglyRecommendationResponse;
+import com.kb.youngly.dto.recommendation.RecommendationResponse;
 import com.kb.youngly.service.RecommendationProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,7 +17,7 @@ public class PensionInsightController {
     }
 
     @GetMapping("/{userId}")
-    public YounglyRecommendationResponse getInsight(@PathVariable String userId) {
+    public RecommendationResponse getInsight(@PathVariable String userId) {
         return recommendationProvider.provide(userId);
     }
 }

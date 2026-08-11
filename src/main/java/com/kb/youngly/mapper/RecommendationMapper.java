@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kb.youngly.dto.recommendation.PensionForecastFacts;
-import com.kb.youngly.dto.recommendation.YounglyRecommendationResponse;
+import com.kb.youngly.dto.recommendation.RecommendationResponse;
 import com.kb.youngly.enums.Baseline;
 import com.kb.youngly.vo.user.RecommendationVO;
 import org.apache.ibatis.annotations.Param;
@@ -19,7 +19,7 @@ public interface RecommendationMapper {
 
     ObjectMapper JSON_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    static RecommendationVO toVO(String userId, String baseline, YounglyRecommendationResponse response) {
+    static RecommendationVO toVO(String userId, String baseline, RecommendationResponse response) {
         try {
             return RecommendationVO.builder()
                     .userId(userId)
@@ -47,7 +47,7 @@ public interface RecommendationMapper {
         }
     }
 
-    static YounglyRecommendationResponse toResponse(RecommendationVO vo) {
+    static RecommendationResponse toResponse(RecommendationVO vo) {
         try {
             List<PensionForecastFacts.GroupContribution> forecastBasis = vo.getForecastBasisJson() == null
                     ? List.of()
@@ -56,7 +56,7 @@ public interface RecommendationMapper {
                     ? List.of()
                     : JSON_MAPPER.readValue(vo.getMarketHighlightsJson(), new TypeReference<>() {});
 
-            return new YounglyRecommendationResponse(
+            return new RecommendationResponse(
                     vo.getUserId(),
                     vo.getPeriodStartDate(),
                     vo.getPeriodEndDate(),

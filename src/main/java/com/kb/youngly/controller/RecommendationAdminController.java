@@ -1,6 +1,6 @@
 package com.kb.youngly.controller;
 
-import com.kb.youngly.dto.recommendation.YounglyRecommendationResponse;
+import com.kb.youngly.dto.recommendation.RecommendationResponse;
 import com.kb.youngly.service.RecommendationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -21,9 +21,9 @@ public class RecommendationAdminController {
     private final RecommendationService recommendationService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<YounglyRecommendationResponse> generateRecommendation(@PathVariable String userId) {
+    public ResponseEntity<RecommendationResponse> generateRecommendation(@PathVariable String userId) {
         log.info("[INFO] AI 연금 코치 리포트 생성 요청. userId={}", userId);
-        YounglyRecommendationResponse response = recommendationService.generateRecommendation(userId);
+        RecommendationResponse response = recommendationService.generateRecommendation(userId);
         return ResponseEntity.ok(response);
     }
 }

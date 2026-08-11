@@ -1,9 +1,9 @@
 package com.kb.youngly.client;
 
 import com.kb.youngly.dto.recommendation.RecommendationPrompt;
-import com.kb.youngly.dto.recommendation.YounglyRecommendationResponse;
+import com.kb.youngly.dto.recommendation.RecommendationResponse;
 
 public interface OpenAiClient {
 
-    YounglyRecommendationResponse generateRecommendation(RecommendationPrompt prompt);
+    RecommendationResponse generateRecommendation(RecommendationPrompt prompt);
 }
