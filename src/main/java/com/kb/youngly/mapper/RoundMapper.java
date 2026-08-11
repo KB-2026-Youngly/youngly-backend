@@ -21,6 +21,9 @@ public interface RoundMapper {
     /** 회차 번호가 가장 큰 직전 라운드를 조회한다. 첫 라운드라면 null을 반환한다. */
     RoundVO findLatestRound(String groupId);
 
+    /** 그룹이 진행한 전체 라운드를 최신 회차부터 조회한다. */
+    List<RoundResponse> findRoundsByGroupId(String groupId);
+
     /** 그룹 잠금 이후 기준일에 종료되는 진행 중 라운드를 다시 조회한다. */
     RoundVO findOngoingRoundEndingOn(@Param("groupId") String groupId,
                                      @Param("endDate") LocalDate endDate);
