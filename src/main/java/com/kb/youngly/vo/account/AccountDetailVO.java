@@ -29,5 +29,7 @@ public class AccountDetailVO {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime syncedAt;
+
     private LocalDateTime updatedAt;
 }

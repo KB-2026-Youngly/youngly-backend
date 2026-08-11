@@ -10,7 +10,9 @@ import com.kb.youngly.util.IdGenerator;
 import com.kb.youngly.vo.account.AccountDetailVO;
 import com.kb.youngly.vo.account.AccountVO;
 import com.kb.youngly.vo.account.KbAccountVO;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -243,6 +245,35 @@ public class AccountServiceImpl implements AccountService {
 
         syncDepositAccountStatus(account.getUserId());
     }
+
+    @Override
+    @Transactional
+    public AccountBalanceSyncResponseDTO syncBalance(String accountId,
+                                                     String userId) {
+
+        // 계좌 존재 여부와 등록 소유자를 먼저 확인한다.
+        AccountDetailVO account = getCurrentAccount(accountId);
+
+        if (!account.getUserId().equals(userId)) {
+            throw new AccessDeniedException(
+                    "본인이 등록한 계좌만 갱신할 수 있습니다."
+            );
+        }
+
+        // 소유자 조건을 UPDATE에도 포함해 synced_at을 현재 시각으로 갱신한다.
+        accountMapper.updateSyncedAt(accountId, userId);
+
+        // 동일 트랜잭션에서 KB 원장의 최신 잔액과 갱신 시각을 조회한다.
+        AccountBalanceSyncResponseDTO result =
+                accountMapper.findBalanceSyncResult(accountId, userId);
+
+        if (result == null) {
+            throw new IllegalArgumentException("등록된 계좌가 없습니다.");
+        }
+
+        return result;
+    }
+
     private void validatePensionAccount(AccountType accountType) {
 
         if (accountType != AccountType.PENSION) {

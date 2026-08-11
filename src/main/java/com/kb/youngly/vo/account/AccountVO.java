@@ -19,5 +19,6 @@ public class AccountVO {
     private AccountStatus accountStatus;
     private String accountName;
     private LocalDateTime createdAt;
+    private LocalDateTime syncedAt;
     private LocalDateTime updatedAt;
 }

@@ -24,4 +24,7 @@ public interface AccountService {
 
     // 계좌 삭제
     void delete(String accountId);
+
+    // KB 원장 최신 잔액 조회 및 동기화 시각 갱신
+    AccountBalanceSyncResponseDTO syncBalance(String accountId, String userId);
 }

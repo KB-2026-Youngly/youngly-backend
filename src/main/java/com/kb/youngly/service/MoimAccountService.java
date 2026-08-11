@@ -3,6 +3,7 @@ package com.kb.youngly.service;
 import com.kb.youngly.dto.account.AccountSearchDTO;
 import com.kb.youngly.dto.account.KbAccountDTO;
 import com.kb.youngly.dto.moimaccount.MoimAccountDTO;
+import com.kb.youngly.dto.moimaccount.MoimAccountBalanceSyncResponseDTO;
 import com.kb.youngly.dto.moimaccount.MoimAccountNameUpdateRequest;
 import com.kb.youngly.dto.moimaccount.MoimAccountRegisterDTO;
 
@@ -21,6 +22,12 @@ public interface MoimAccountService {
 
     // 내 연동된 모임통장 비활성화
     void updateStatus(String moimAccountId);
+
+    // KB 원장 최신 잔액 조회 및 동기화 시각 갱신
+    MoimAccountBalanceSyncResponseDTO syncBalance(String moimAccountId,
+                                                  String userId);
+
+}
     // 모임통장 이름 변경
     void updateAccountName(String userId, String moimAccountId, MoimAccountNameUpdateRequest request);
 }

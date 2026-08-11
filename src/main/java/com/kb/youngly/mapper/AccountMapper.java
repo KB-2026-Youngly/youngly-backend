@@ -1,6 +1,7 @@
 package com.kb.youngly.mapper;
 
 import com.kb.youngly.dto.account.AccountDTO;
+import com.kb.youngly.dto.account.AccountBalanceSyncResponseDTO;
 import com.kb.youngly.enums.AccountType;
 import com.kb.youngly.vo.account.AccountDetailVO;
 import com.kb.youngly.vo.account.AccountVO;
@@ -26,5 +27,14 @@ public interface AccountMapper {
     int updateAccountStatus(AccountVO account);
 
     AccountDetailVO findById(String accountId);
+
+    // 소유자 조건으로 마지막 잔액 동기화 시각 갱신
+    int updateSyncedAt(@Param("accountId") String accountId,
+                       @Param("userId") String userId);
+
+    // 갱신된 시각과 KB 원장 최신 잔액 조회
+    AccountBalanceSyncResponseDTO findBalanceSyncResult(
+            @Param("accountId") String accountId,
+            @Param("userId") String userId);
 
 }

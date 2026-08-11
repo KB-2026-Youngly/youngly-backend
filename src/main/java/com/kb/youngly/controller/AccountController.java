@@ -82,4 +82,18 @@ public class AccountController {
                 Map.of("message", "Success")
         );
     }
+
+    @PatchMapping("/{accountId}/sync")
+    public ResponseEntity<AccountBalanceSyncResponseDTO> syncBalance(
+            @PathVariable String accountId,
+            Authentication authentication) {
+
+        // 인증 주체를 서비스에 전달해 본인 소유 계좌만 동기화한다.
+        String userId = authentication.getName();
+
+        // KB 원장의 최신 잔액과 이번 동기화 시각을 응답한다.
+        return ResponseEntity.ok(
+                accountService.syncBalance(accountId, userId)
+        );
+    }
 }

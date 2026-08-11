@@ -12,22 +12,11 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MoimAccountDTO {
+public class MoimAccountBalanceSyncResponseDTO {
 
     private String moimAccountId;
 
-    private String accountNumber;
-
-    private String bankName;
-
     private BigDecimal balance;
 
-    private String accountName;
-
-    private Boolean owner;
-
-    private String ownerName;
-
     private LocalDateTime syncedAt;
-
 }
