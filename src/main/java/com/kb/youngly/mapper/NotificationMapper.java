@@ -15,4 +15,6 @@ public interface NotificationMapper {
 
     void deleteNotification(Long notificationId);
 
+    void insertNotification(NotificationVO notification);
+
 }

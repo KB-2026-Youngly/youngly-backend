@@ -20,6 +20,9 @@ import java.util.Properties;
  * Servlet 3.0+ 스펙의 ServletContainerInitializer 가 자동으로 인식한다.
  */
 public class WebConfig extends AbstractAnnotationConfigDispatcherServletInitializer {
+    public WebConfig() {
+        System.out.println("★★★★★ WebConfig Loaded ★★★★★");
+    }
 
     /** 업로드 파일 하나의 최대 크기 (10MB) */
     private static final long MAX_FILE_SIZE = 1024L * 1024L * 10L;
@@ -35,7 +38,9 @@ public class WebConfig extends AbstractAnnotationConfigDispatcherServletInitiali
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        return new Class[]{ServletConfig.class};
+        return new Class[]{
+                ServletConfig.class
+        };
     }
 
     @Override
