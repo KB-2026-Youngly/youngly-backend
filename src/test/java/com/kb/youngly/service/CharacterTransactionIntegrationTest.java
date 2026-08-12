@@ -1,8 +1,15 @@
 package com.kb.youngly.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.kb.youngly.controller.UserController;
 import com.kb.youngly.dto.character.CharacterDrawResponse;
 import com.kb.youngly.mapper.CharacterMapper;
 import com.kb.youngly.mapper.PointMapper;
+import com.kb.youngly.mapper.UserMapper;
+import com.kb.youngly.service.impl.UserServiceImpl;
 import com.kb.youngly.vo.character.CharacterEquipVO;
 import com.kb.youngly.vo.character.OwnedCharacterVO;
 import com.kb.youngly.vo.point.CollectibleItemVO;
@@ -19,13 +26,20 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +54,12 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = CharacterTransactionIntegrationTest.TestConfig.class)
@@ -74,11 +94,15 @@ class CharacterTransactionIntegrationTest {
     private CharacterService characterService;
 
     @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
     private PlatformTransactionManager transactionManager;
 
     private JdbcTemplate jdbcTemplate;
     private String userId;
     private Long testCharacterId;
+    private Long existingCharacterId;
     private int initiallyOwnedCharacterCount;
 
     @BeforeEach
@@ -105,6 +129,7 @@ class CharacterTransactionIntegrationTest {
                 "SELECT item_id FROM collectible_items WHERE item_category = 'CHARACTER'",
                 Long.class
         );
+        existingCharacterId = existingCharacterIds.get(0);
         for (Long itemId : existingCharacterIds) {
             jdbcTemplate.update(
                     "INSERT INTO user_items (item_id, user_id, is_equipped) VALUES (?, ?, false)",
@@ -132,6 +157,149 @@ class CharacterTransactionIntegrationTest {
                 .usingGeneratedKeyColumns("item_id")
                 .executeAndReturnKey(values)
                 .longValue();
+    }
+
+    @Test
+    @DisplayName("캐릭터 장착은 기존 장착을 해제하고 사용자 프로필 이미지와 내 정보 응답을 변경한다")
+    void equipCharacter_updatesProfileImageAndMyInfoResponse() throws Exception {
+        String originalProfileImage = "/profiles/original.png";
+        String characterImage = jdbcTemplate.queryForObject(
+                "SELECT image_url FROM collectible_items WHERE item_id = ?",
+                String.class,
+                testCharacterId
+        );
+        jdbcTemplate.update(
+                "UPDATE users SET profile_image_url = ? WHERE user_id = ?",
+                originalProfileImage,
+                userId
+        );
+        jdbcTemplate.update(
+                "UPDATE user_items SET is_equipped = true WHERE user_id = ? AND item_id = ?",
+                userId,
+                existingCharacterId
+        );
+        jdbcTemplate.update(
+                "INSERT INTO user_items (item_id, user_id, is_equipped) VALUES (?, ?, false)",
+                testCharacterId,
+                userId
+        );
+
+        characterService.equipCharacter(userId, testCharacterId);
+
+        assertEquals(
+                false,
+                jdbcTemplate.queryForObject(
+                        "SELECT is_equipped FROM user_items WHERE user_id = ? AND item_id = ?",
+                        Boolean.class,
+                        userId,
+                        existingCharacterId
+                )
+        );
+        assertEquals(
+                true,
+                jdbcTemplate.queryForObject(
+                        "SELECT is_equipped FROM user_items WHERE user_id = ? AND item_id = ?",
+                        Boolean.class,
+                        userId,
+                        testCharacterId
+                )
+        );
+        assertEquals(
+                characterImage,
+                jdbcTemplate.queryForObject(
+                        "SELECT profile_image_url FROM users WHERE user_id = ?",
+                        String.class,
+                        userId
+                )
+        );
+
+        ObjectMapper objectMapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        MockMvc mockMvc = standaloneSetup(new UserController(
+                new UserServiceImpl(userMapper, mock(PasswordEncoder.class))
+        )).setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper)).build();
+        MvcResult result = mockMvc.perform(get("/api/users/me")
+                        .principal(new UsernamePasswordAuthenticationToken(
+                                userId,
+                                null,
+                                Collections.emptyList()
+                        )))
+                .andReturn();
+        JsonNode body = objectMapper.readTree(
+                result.getResponse().getContentAsString(StandardCharsets.UTF_8)
+        );
+
+        assertEquals(200, result.getResponse().getStatus());
+        assertEquals(characterImage, body.get("profileImageUrl").asText());
+    }
+
+    @Test
+    @DisplayName("프로필 이미지 변경 실패 시 장착 해제와 새 장착도 함께 롤백한다")
+    void profileImageUpdateFailure_rollsBackAllEquipChanges() {
+        String originalProfileImage = "/profiles/original.png";
+        jdbcTemplate.update(
+                "UPDATE users SET profile_image_url = ? WHERE user_id = ?",
+                originalProfileImage,
+                userId
+        );
+        jdbcTemplate.update(
+                "UPDATE user_items SET is_equipped = true WHERE user_id = ? AND item_id = ?",
+                userId,
+                existingCharacterId
+        );
+        jdbcTemplate.update(
+                "INSERT INTO user_items (item_id, user_id, is_equipped) VALUES (?, ?, false)",
+                testCharacterId,
+                userId
+        );
+        CharacterMapper failingMapper = mock(
+                CharacterMapper.class,
+                delegatesTo(characterMapper)
+        );
+        when(failingMapper.updateUserProfileImage(anyString(), anyString()))
+                .thenReturn(0);
+        CharacterService failingService = new CharacterService(
+                failingMapper,
+                pointService,
+                bound -> 0
+        );
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> transactionTemplate.executeWithoutResult(
+                        status -> failingService.equipCharacter(userId, testCharacterId)
+                )
+        );
+
+        assertEquals("프로필 이미지 변경에 실패했습니다.", exception.getMessage());
+        assertEquals(
+                true,
+                jdbcTemplate.queryForObject(
+                        "SELECT is_equipped FROM user_items WHERE user_id = ? AND item_id = ?",
+                        Boolean.class,
+                        userId,
+                        existingCharacterId
+                )
+        );
+        assertEquals(
+                false,
+                jdbcTemplate.queryForObject(
+                        "SELECT is_equipped FROM user_items WHERE user_id = ? AND item_id = ?",
+                        Boolean.class,
+                        userId,
+                        testCharacterId
+                )
+        );
+        assertEquals(
+                originalProfileImage,
+                jdbcTemplate.queryForObject(
+                        "SELECT profile_image_url FROM users WHERE user_id = ?",
+                        String.class,
+                        userId
+                )
+        );
     }
 
     @AfterEach
@@ -320,5 +488,11 @@ class CharacterTransactionIntegrationTest {
         public int equipCharacter(String userId, Long characterId) {
             return delegate.equipCharacter(userId, characterId);
         }
+
+        @Override
+        public int updateUserProfileImage(String userId, String imageUrl) {
+            return delegate.updateUserProfileImage(userId, imageUrl);
+        }
     }
+
 }

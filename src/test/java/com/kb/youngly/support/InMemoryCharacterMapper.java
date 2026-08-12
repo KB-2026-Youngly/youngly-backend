@@ -20,10 +20,12 @@ public class InMemoryCharacterMapper implements CharacterMapper {
 
     private final Set<String> users = new HashSet<>();
     private final Map<Long, CollectibleItemVO> items = new LinkedHashMap<>();
+    private final Map<String, String> profileImages = new LinkedHashMap<>();
     private final List<UserItemVO> userItems = new ArrayList<>();
     private final List<String> callLog = new ArrayList<>();
     private long nextUserItemId = 1L;
     private int insertResult = 1;
+    private int profileImageUpdateResult = 1;
 
     public void addUser(String userId) {
         users.add(userId);
@@ -60,6 +62,14 @@ public class InMemoryCharacterMapper implements CharacterMapper {
 
     public void setInsertResult(int insertResult) {
         this.insertResult = insertResult;
+    }
+
+    public String getProfileImage(String userId) {
+        return profileImages.get(userId);
+    }
+
+    public void setProfileImageUpdateResult(int profileImageUpdateResult) {
+        this.profileImageUpdateResult = profileImageUpdateResult;
     }
 
     @Override
@@ -175,5 +185,15 @@ public class InMemoryCharacterMapper implements CharacterMapper {
             }
         }
         return 0;
+    }
+
+    @Override
+    public int updateUserProfileImage(String userId, String imageUrl) {
+        callLog.add("updateUserProfileImage");
+        if (profileImageUpdateResult != 1 || !users.contains(userId)) {
+            return 0;
+        }
+        profileImages.put(userId, imageUrl);
+        return 1;
     }
 }

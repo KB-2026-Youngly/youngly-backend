@@ -173,6 +173,7 @@ class CharacterControllerTest {
         assertFalse(body.has("userId"));
         assertFalse(body.has("userItemId"));
         assertTrue(characterMapper.getUserItems().get(0).getIsEquipped());
+        assertEquals("/characters/1.png", characterMapper.getProfileImage(USER_ID));
     }
 
     @Test
