@@ -73,7 +73,8 @@
             updated_at,
             password,
             user_status,
-            point
+            point,
+            is_notification_agreement
         FROM users
         WHERE login_id = #{loginId}
           AND user_status = 'ACTIVE'
@@ -96,7 +97,8 @@
             updated_at,
             password,
             user_status,
-            point
+            point,
+            is_notification_agreement
         FROM users
         WHERE user_id = #{userId}
 
@@ -161,5 +163,29 @@
         ORDER BY i.interest_id ASC
     </select>
 
-
+    <delete id="deleteUserInterests">
+        DELETE FROM interest_users
+        WHERE user_id = #{userId}
+    </delete>
+    <update id="updateNotificationAgreement">
+        UPDATE users
+        SET
+            is_notification_agreement = #{isNotificationAgreement},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+    <select id="countExistingInterestIds" resultType="int">
+        SELECT COUNT(DISTINCT interest_id)
+        FROM interests
+        WHERE interest_id IN
+        <foreach
+                collection="interestIds"
+                item="interestId"
+                open="("
+                separator=","
+                close=")"
+        >
+            #{interestId}
+        </foreach>
+    </select>
 </mapper>

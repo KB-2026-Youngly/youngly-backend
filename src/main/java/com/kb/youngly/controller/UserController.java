@@ -3,7 +3,9 @@ package com.kb.youngly.controller;
 import com.kb.youngly.dto.common.MessageResponse;
 import com.kb.youngly.dto.user.UpdatePasswordRequest;
 import com.kb.youngly.dto.user.UpdateUserRequest;
+import com.kb.youngly.dto.user.UserOnboardingRequest;
 import com.kb.youngly.dto.user.UserResponse;
+import com.kb.youngly.service.UserOnboardingService;
 import com.kb.youngly.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,9 +16,14 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final UserOnboardingService userOnboardingService;
 
-    public UserController(UserService userService) {
+    public UserController(
+            UserService userService,
+            UserOnboardingService userOnboardingService
+    ) {
         this.userService = userService;
+        this.userOnboardingService = userOnboardingService;
     }
 
     /**
@@ -65,6 +72,18 @@ public class UserController {
 
         return ResponseEntity.ok(
                 userService.deleteUser(authentication.getName())
+        );
+    }
+    @PostMapping("/me/onboarding")
+    public ResponseEntity<MessageResponse> completeOnboarding(
+            Authentication authentication,
+            @RequestBody UserOnboardingRequest request
+    ) {
+        return ResponseEntity.ok(
+                userOnboardingService.completeOnboarding(
+                        authentication.getName(),
+                        request
+                )
         );
     }
 }
