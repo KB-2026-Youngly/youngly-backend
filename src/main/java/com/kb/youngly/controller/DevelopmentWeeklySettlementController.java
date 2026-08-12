@@ -28,7 +28,7 @@ public class DevelopmentWeeklySettlementController {
 
     /**
      * 전달받은 날짜를 기준으로 자동 스케줄러와 동일한 주간 결산을 실행한다.
-     * 예: POST /api/dev/weekly-settlements?date=2026-08-08
+     * 예: POST /api/dev/weekly-settlements?date=2026-08-03
      */
     @PostMapping
     public ResponseEntity<WeeklySettlementExecutionResponse> settle(
