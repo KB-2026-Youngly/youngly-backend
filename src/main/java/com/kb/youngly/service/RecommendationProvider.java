@@ -1,7 +1,7 @@
 package com.kb.youngly.service;
 
-import com.kb.youngly.dto.recommendation.YounglyRecommendationResponse;
+import com.kb.youngly.dto.recommendation.RecommendationResponse;
 
 public interface RecommendationProvider {
-    YounglyRecommendationResponse provide(String userId);
+    RecommendationResponse provide(String userId);
 }

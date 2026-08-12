@@ -1,11 +1,15 @@
 package com.kb.youngly.service;
 
-import com.kb.youngly.dto.recommendation.YounglyRecommendationResponse;
+import com.kb.youngly.dto.recommendation.RecommendationResponse;
+import com.kb.youngly.enums.GenerationMode;
+import com.kb.youngly.enums.GuardrailStatus;
 import com.kb.youngly.mapper.RecommendationMapper;
 import com.kb.youngly.vo.user.RecommendationVO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
 
 @Component
 public class CachedRecommendationProvider implements RecommendationProvider {
@@ -25,44 +29,41 @@ public class CachedRecommendationProvider implements RecommendationProvider {
     }
 
     @Override
-    public YounglyRecommendationResponse provide(String userId) {
+    public RecommendationResponse provide(String userId) {
         RecommendationVO cached =
                 recommendationMapper.selectLatestByUserId(userId);
 
         if (isUsableLiveRecommendation(cached)) {
             log.info(
-                    "[INFO] 검증된 AI 개인연금 인사이트를 캐시에서 반환합니다. userId={}",
-                    userId
-            );
-
-            return RecommendationMapper.toResponse(cached);
-        }
-
-        if (cached != null) {
-            log.info(
-                    "[INFO] 기존 추천 결과가 LIVE/PASSED가 아니므로 새로 생성합니다. "
-                            + "userId={}, generationMode={}, guardrailStatus={}",
+                    "[PENSION_INSIGHT_CACHE_HIT] userId={}, recommendationId={}",
                     userId,
-                    cached.getGenerationMode(),
-                    cached.getGuardrailStatus()
+                    cached.getRecommendationId()
             );
-        } else {
-            log.info(
-                    "[INFO] 저장된 인사이트가 없어 새로 생성합니다. userId={}",
-                    userId
-            );
+
+            // DB 원본 generationMode(LIVE)는 유지하고, API 응답만 CACHED로 표기한다.
+            return RecommendationMapper.toResponse(cached)
+                    .withGenerationMode(GenerationMode.CACHED);
         }
+
+        log.info("[PENSION_INSIGHT_CACHE_MISS] userId={}", userId);
 
         return recommendationService.generateRecommendation(userId);
     }
 
     private boolean isUsableLiveRecommendation(RecommendationVO recommendation) {
-        if (recommendation == null) return false;
-        boolean liveAndPassed = "LIVE".equals(String.valueOf(recommendation.getGenerationMode()))
-                && "PASSED".equals(String.valueOf(recommendation.getGuardrailStatus()));
-        if (!liveAndPassed) return false;
+        if (recommendation == null) {
+            return false;
+        }
+
+        boolean liveAndPassed =
+                recommendation.getGenerationMode() == GenerationMode.LIVE
+                        && recommendation.getGuardrailStatus() == GuardrailStatus.PASSED;
+
+        if (!liveAndPassed) {
+            return false;
+        }
 
         return recommendation.getCreatedAt() != null
-                && recommendation.getCreatedAt().toLocalDate().isEqual(java.time.LocalDate.now());
+                && recommendation.getCreatedAt().toLocalDate().isEqual(LocalDate.now());
     }
 }

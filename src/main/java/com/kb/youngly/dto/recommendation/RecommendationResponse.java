@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-public record YounglyRecommendationResponse(
+public record RecommendationResponse(
         String userId,
         LocalDate periodStartDate,
         LocalDate periodEndDate,
@@ -28,13 +28,13 @@ public record YounglyRecommendationResponse(
         @JsonIgnore GenerationMode generationMode,
         @JsonIgnore GuardrailStatus guardrailStatus
 ) {
-    public static YounglyRecommendationResponse llmTextOnly(
+    public static RecommendationResponse llmTextOnly(
             List<String> marketHighlights,
             String marketDetail,
             String pensionInsightIntro,
             String pensionInsightStrategy
     ) {
-        return new YounglyRecommendationResponse(
+        return new RecommendationResponse(
                 null,
                 null,
                 null,
@@ -56,12 +56,12 @@ public record YounglyRecommendationResponse(
         );
     }
 
-    public YounglyRecommendationResponse withFacts(
+    public RecommendationResponse withFacts(
             PensionForecastFacts facts,
             GenerationMode generationMode,
             GuardrailStatus guardrailStatus
     ) {
-        return new YounglyRecommendationResponse(
+        return new RecommendationResponse(
                 facts.userId(),
                 facts.periodStartDate(),
                 facts.periodEndDate(),
@@ -74,6 +74,30 @@ public record YounglyRecommendationResponse(
                 facts.hasOngoingRoundThisMonth(),
                 facts.nextDepositDate(),
                 facts.groupContributions(),
+                marketHighlights,
+                marketDetail,
+                pensionInsightIntro,
+                pensionInsightStrategy,
+                generationMode,
+                guardrailStatus
+        );
+    }
+
+    /** API 응답 전용. DB에 저장된 generationMode는 변경하지 않는다. */
+    public RecommendationResponse withGenerationMode(GenerationMode generationMode) {
+        return new RecommendationResponse(
+                userId,
+                periodStartDate,
+                periodEndDate,
+                settledAmountThisMonth,
+                expectedAdditionalAmountCurrentRank,
+                expectedAdditionalAmountBestCase,
+                expectedTotalAmountThisMonth,
+                expectedMaxTotalAmountThisMonth,
+                currentPensionBalance,
+                hasOngoingRoundThisMonth,
+                nextDepositDate,
+                forecastBasis,
                 marketHighlights,
                 marketDetail,
                 pensionInsightIntro,

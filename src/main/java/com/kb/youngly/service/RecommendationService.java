@@ -5,7 +5,7 @@ import com.kb.youngly.dto.recommendation.GuardrailResult;
 import com.kb.youngly.dto.recommendation.PensionForecastFacts;
 import com.kb.youngly.dto.recommendation.RecommendationPrompt;
 import com.kb.youngly.dto.recommendation.RecommendationPromptContext;
-import com.kb.youngly.dto.recommendation.YounglyRecommendationResponse;
+import com.kb.youngly.dto.recommendation.RecommendationResponse;
 import com.kb.youngly.enums.GenerationMode;
 import com.kb.youngly.enums.GuardrailStatus;
 import com.kb.youngly.enums.Baseline;
@@ -77,7 +77,7 @@ public class RecommendationService {
         this.environment = environment;
     }
 
-    public YounglyRecommendationResponse generateRecommendation(String userId) {
+    public RecommendationResponse generateRecommendation(String userId) {
         UserVO user = userMapper.findByUserId(userId);
 
         if (user == null) {
@@ -125,12 +125,12 @@ public class RecommendationService {
 
         RecommendationPrompt prompt = promptBuilder.build(context);
 
-        YounglyRecommendationResponse response = null;
+        RecommendationResponse response = null;
         GuardrailResult lastResult = null;
 
         for (int attempt = 1; attempt <= MAX_LLM_ATTEMPTS; attempt++) {
             try {
-                YounglyRecommendationResponse candidate =
+                RecommendationResponse candidate =
                         openAiClientProvider.getObject()
                                 .generateRecommendation(prompt);
 
@@ -181,9 +181,23 @@ public class RecommendationService {
                     );
         }
 
-        recommendationMapper.insert(
-                RecommendationMapper.toVO(userId, baseline, response)
-        );
+        try {
+            recommendationMapper.insert(
+                    RecommendationMapper.toVO(userId, baseline, response)
+            );
+        } catch (Exception e) {
+            log.warn(
+                    "[WARN] 추천 결과 저장 실패. SAFE_DEFAULT로 반환합니다. userId={}",
+                    userId,
+                    e
+            );
+            return createSafeDefaultReport()
+                    .withFacts(
+                            facts,
+                            GenerationMode.SAFE_DEFAULT,
+                            GuardrailStatus.FAILED_FALLBACK
+                    );
+        }
 
         return response;
     }
@@ -313,8 +327,8 @@ public class RecommendationService {
         return false;
     }
 
-    private YounglyRecommendationResponse createSafeDefaultReport() {
-        return YounglyRecommendationResponse.llmTextOnly(
+    private RecommendationResponse createSafeDefaultReport() {
+        return RecommendationResponse.llmTextOnly(
                 List.of(),
                 null,
                 null,
