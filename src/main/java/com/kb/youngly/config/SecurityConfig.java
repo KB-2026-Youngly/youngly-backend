@@ -61,7 +61,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/groups/**",
                         "/api/accounts/search",
                         "/api/admin/market-snapshots/ingest", // 시장 동향 - 개발용
-                        "/api/pension/insight/**"       // AI 개인연금 인사이트 조회 - 개발용
+                        "/api/pension/insight/**",       // AI 개인연금 인사이트 조회 - 개발용
+                        "/ws/**"    // 웹소켓
                 ).permitAll()
 
                 .anyRequest().authenticated()

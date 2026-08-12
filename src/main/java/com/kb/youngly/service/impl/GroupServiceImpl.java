@@ -5,10 +5,13 @@ import com.kb.youngly.dto.group.*;
 import com.kb.youngly.dto.round.RoundResponse;
 import com.kb.youngly.enums.GroupStatus;
 import com.kb.youngly.enums.GroupUserStatus;
+import com.kb.youngly.enums.NotificationType;
 import com.kb.youngly.mapper.GroupMapper;
 import com.kb.youngly.mapper.GroupUserMapper;
 import com.kb.youngly.mapper.RoundMapper;
+import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.service.GroupService;
+import com.kb.youngly.service.NotificationService;
 import com.kb.youngly.vo.group.GroupUserVO;
 import com.kb.youngly.vo.group.GroupVO;
 import org.springframework.stereotype.Service;
@@ -27,14 +30,17 @@ public class GroupServiceImpl implements GroupService {
     private final GroupMapper groupMapper;
     private final GroupUserMapper groupUserMapper;
     private final RoundMapper roundMapper;
+    private final NotificationService notificationService;
 
     public GroupServiceImpl(GroupMapper groupMapper,
                             GroupUserMapper groupUserMapper,
-                            RoundMapper roundMapper) {
+                            RoundMapper roundMapper,
+                            NotificationService notificationService) {
 
         this.groupMapper = groupMapper;
         this.groupUserMapper = groupUserMapper;
         this.roundMapper = roundMapper;
+        this.notificationService = notificationService;
     }
 
     // 그룹 생성
@@ -229,6 +235,12 @@ public class GroupServiceImpl implements GroupService {
 
         groupUserMapper.insertGroupUser(newGroupUser);
 
+        notificationService.createNotification(
+                group.getUserId(),  // 그룹장
+                NotificationType.APPROVAL_REQUEST,
+                "새로운 그룹 참여 신청이 있습니다."
+        );
+
         return MessageResponse.builder()
                 .message("Success")
                 .build();
@@ -267,6 +279,12 @@ public class GroupServiceImpl implements GroupService {
                 GroupUserStatus.PENDING_DEPOSIT
         );
 
+        notificationService.createNotification(
+                groupUser.getUserId(),
+                NotificationType.APPROVED,
+                "그룹 참여가 승인되었습니다."
+        );
+
         return MessageResponse.builder()
                 .message("Success")
                 .build();
@@ -292,6 +310,12 @@ public class GroupServiceImpl implements GroupService {
         groupUserMapper.updateGroupUserStatus(
                 groupUserId,
                 GroupUserStatus.REJECTED
+        );
+
+        notificationService.createNotification(
+                groupUser.getUserId(),
+                NotificationType.REJECTED,
+                "그룹 참여가 거절되었습니다."
         );
 
         return MessageResponse.builder()

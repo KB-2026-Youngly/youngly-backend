@@ -29,7 +29,10 @@ import javax.sql.DataSource;
  * 이 파일은 .gitignore 로 제외되어 있다.
  */
 
-@Import({SecurityConfig.class})
+@Import({
+        SecurityConfig.class,
+        WebSocketConfig.class
+})
 
 @Configuration
 @EnableTransactionManagement

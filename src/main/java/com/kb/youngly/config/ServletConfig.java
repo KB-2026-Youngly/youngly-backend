@@ -25,7 +25,9 @@ import java.util.List;
  */
 @Configuration
 @EnableWebMvc
-@Import(SwaggerConfig.class)
+@Import({
+        SwaggerConfig.class
+})
 @ComponentScan(basePackages = {
         "com.kb.youngly.controller",
         "com.kb.youngly.exception"
@@ -35,6 +37,10 @@ import java.util.List;
         "classpath:/application-${spring.profiles.active:demo}.properties"
 }, ignoreResourceNotFound = true)
 public class ServletConfig implements WebMvcConfigurer {
+
+    public ServletConfig() {
+        System.out.println("★★★★★ ServletConfig Loaded ★★★★★");
+    }
 
     /** Vite 개발 서버 주소. 운영 배포 시 실제 도메인으로 교체한다. */
     @Value("${cors.allowed-origins}")

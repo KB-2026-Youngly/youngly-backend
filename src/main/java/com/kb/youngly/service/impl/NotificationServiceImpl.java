@@ -2,9 +2,11 @@ package com.kb.youngly.service.impl;
 
 import com.kb.youngly.dto.common.MessageResponse;
 import com.kb.youngly.dto.notification.NotificationResponse;
+import com.kb.youngly.enums.NotificationType;
 import com.kb.youngly.mapper.NotificationMapper;
 import com.kb.youngly.service.NotificationService;
 import com.kb.youngly.vo.user.NotificationVO;
+import com.kb.youngly.websocket.NotificationPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +17,14 @@ import java.util.List;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationMapper notificationMapper;
+    private final NotificationPublisher notificationPublisher;
 
-    public NotificationServiceImpl(NotificationMapper notificationMapper) {
+    public NotificationServiceImpl(
+            NotificationMapper notificationMapper,
+            NotificationPublisher notificationPublisher) {
+
         this.notificationMapper = notificationMapper;
+        this.notificationPublisher = notificationPublisher;
     }
 
     /**
@@ -85,5 +92,39 @@ public class NotificationServiceImpl implements NotificationService {
         if (!notification.getUserId().equals(userId)) {
             throw new IllegalArgumentException("해당 알림에 접근 권한이 없습니다.");
         }
+    }
+
+    /**
+     * 알림 생성
+     */
+    @Override
+    @Transactional
+    public void createNotification(
+            String userId,
+            NotificationType type,
+            String content) {
+
+        NotificationVO notification =
+                NotificationVO.builder()
+                        .userId(userId)
+                        .notificationType(type)
+                        .content(content)
+                        .isRead(false)
+                        .build();
+
+        notificationMapper.insertNotification(notification);
+
+        NotificationResponse response =
+                NotificationResponse.builder()
+                        .notificationId(notification.getNotificationId())
+                        .notificationType(notification.getNotificationType())
+                        .content(notification.getContent())
+                        .isRead(notification.getIsRead())
+                        .build();
+
+        notificationPublisher.send(
+                userId,
+                response
+        );
     }
 }
