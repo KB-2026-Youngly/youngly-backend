@@ -9,6 +9,7 @@ import com.kb.youngly.dto.recommendation.RecommendationResponse;
 import com.kb.youngly.enums.GenerationMode;
 import com.kb.youngly.enums.GuardrailStatus;
 import com.kb.youngly.enums.Baseline;
+import com.kb.youngly.exception.SurveyNotCompletedException;
 import com.kb.youngly.mapper.InterestMapper;
 import com.kb.youngly.mapper.MarketDailySnapshotMapper;
 import com.kb.youngly.mapper.RecommendationMapper;
@@ -29,6 +30,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class RecommendationService {
@@ -81,7 +83,7 @@ public class RecommendationService {
         UserVO user = userMapper.findByUserId(userId);
 
         if (user == null) {
-            throw new IllegalArgumentException(
+            throw new NoSuchElementException(
                     "사용자를 찾을 수 없습니다. userId=" + userId
             );
         }
@@ -90,7 +92,7 @@ public class RecommendationService {
                 surveyMapper.selectLatestResultByUserId(userId);
 
         if (surveyResult == null || !StringUtils.hasText(surveyResult.getBaseline())) {
-            throw new IllegalStateException(
+            throw new SurveyNotCompletedException(
                     "사용자의 최신 투자성향 설문 결과가 없습니다. userId=" + userId
             );
         }

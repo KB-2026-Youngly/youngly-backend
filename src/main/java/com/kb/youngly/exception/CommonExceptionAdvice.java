@@ -53,6 +53,13 @@ public class CommonExceptionAdvice {
         return build(HttpStatus.NOT_FOUND, e.getMessage(), request);
     }
 
+    @ExceptionHandler(SurveyNotCompletedException.class)
+    public ResponseEntity<Map<String, Object>> handleSurveyNotCompleted(SurveyNotCompletedException e,
+                                                                        HttpServletRequest request) {
+        log.warn("[WARN] 설문 미완료. message={}", e.getMessage());
+        return build(HttpStatus.CONFLICT, e.getMessage(), request);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleAll(Exception e, HttpServletRequest request) {
         log.error("[ERROR] 처리되지 않은 예외 발생. uri={}", request.getRequestURI(), e);

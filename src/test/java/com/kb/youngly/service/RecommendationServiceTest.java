@@ -5,6 +5,7 @@ import com.kb.youngly.dto.recommendation.PensionForecastFacts;
 import com.kb.youngly.dto.recommendation.RecommendationResponse;
 import com.kb.youngly.enums.GenerationMode;
 import com.kb.youngly.enums.GuardrailStatus;
+import com.kb.youngly.exception.SurveyNotCompletedException;
 import com.kb.youngly.mapper.InterestMapper;
 import com.kb.youngly.mapper.MarketDailySnapshotMapper;
 import com.kb.youngly.mapper.RecommendationMapper;
@@ -23,6 +24,7 @@ import org.springframework.core.env.Environment;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -145,6 +147,55 @@ class RecommendationServiceTest {
         assertEquals(GenerationMode.SAFE_DEFAULT, response.generationMode());
         assertEquals(GuardrailStatus.FAILED_FALLBACK, response.guardrailStatus());
         assertEquals(new BigDecimal("180000.00"), response.expectedTotalAmountThisMonth());
+    }
+
+    @Test
+    void throwsSurveyNotCompletedWhenSurveyResultMissing() {
+        when(surveyMapper.selectLatestResultByUserId("user01")).thenReturn(null);
+
+        SurveyNotCompletedException exception = assertThrows(
+                SurveyNotCompletedException.class,
+                () -> service.generateRecommendation("user01")
+        );
+
+        assertEquals(
+                "사용자의 최신 투자성향 설문 결과가 없습니다. userId=user01",
+                exception.getMessage()
+        );
+
+        verifyNoInteractions(
+                interestMapper,
+                marketDailySnapshotMapper,
+                recommendationMapper,
+                openAiClient,
+                pensionForecastService
+        );
+    }
+
+    @Test
+    void throwsNotFoundWhenUserDoesNotExist() {
+        String unknownUserId = "unknown-user";
+
+        when(userMapper.findByUserId(unknownUserId)).thenReturn(null);
+
+        NoSuchElementException exception = assertThrows(
+                NoSuchElementException.class,
+                () -> service.generateRecommendation(unknownUserId)
+        );
+
+        assertEquals(
+                "사용자를 찾을 수 없습니다. userId=" + unknownUserId,
+                exception.getMessage()
+        );
+
+        verifyNoInteractions(
+                surveyMapper,
+                interestMapper,
+                marketDailySnapshotMapper,
+                recommendationMapper,
+                openAiClient,
+                pensionForecastService
+        );
     }
 
     private void stubUserAndSurvey(String userId) {
