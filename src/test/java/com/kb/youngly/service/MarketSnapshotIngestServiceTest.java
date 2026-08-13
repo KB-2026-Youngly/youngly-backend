@@ -14,6 +14,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class MarketSnapshotIngestServiceTest {
@@ -50,5 +51,24 @@ class MarketSnapshotIngestServiceTest {
 
         verify(mapper, times(1)).upsertMarketDailySnapshot(any(MarketDailySnapshotVO.class));
         assertTrue(result.savedCount() == 1);
+    }
+
+    @Test
+    @DisplayName("ingestRecentTwoWeeks는 전날부터 14일 전까지 총 14일 범위를 재수집한다")
+    void ingestRecentTwoWeeks_reingestsYesterdayToFourteenDaysAgo() {
+        FssMarketApiClient apiClient = mock(FssMarketApiClient.class);
+        FssMarketPdfDownloadService downloadService = mock(FssMarketPdfDownloadService.class);
+        PdfParseService parseService = mock(PdfParseService.class);
+        MarketDailySnapshotMapper mapper = mock(MarketDailySnapshotMapper.class);
+
+        when(apiClient.fetchMarketItems(any(LocalDate.class), any(LocalDate.class))).thenReturn(List.of());
+
+        MarketSnapshotIngestService service = new MarketSnapshotIngestService(
+                apiClient, downloadService, parseService, mapper);
+
+        service.ingestRecentTwoWeeks();
+
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Seoul"));
+        verify(apiClient).fetchMarketItems(eq(today.minusDays(14)), eq(today.minusDays(1)));
     }
 }

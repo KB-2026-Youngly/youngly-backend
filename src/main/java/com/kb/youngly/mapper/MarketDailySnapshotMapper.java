@@ -12,9 +12,15 @@ public interface MarketDailySnapshotMapper {
 
     MarketDailySnapshotVO findByPdfFileName(@Param("pdfFileName") String pdfFileName);
 
+    MarketDailySnapshotVO findByMarketDateAndSourceSubject(@Param("marketDate") LocalDate marketDate,
+                                                           @Param("sourceSubject") String sourceSubject);
+
     List<MarketDailySnapshotVO> findRecentSnapshots(@Param("from") LocalDate from,
                                                     @Param("to") LocalDate to,
                                                     @Param("limit") int limit);
 
     int deleteByPdfFileName(@Param("pdfFileName") String pdfFileName);
+
+    int deleteByMarketDateAndSourceSubject(@Param("marketDate") LocalDate marketDate,
+                                           @Param("sourceSubject") String sourceSubject);
 }

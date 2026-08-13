@@ -29,11 +29,13 @@ class MarketDailySnapshotMapperTest {
 
     private final String f1 = "260604 오후동향_F.pdf";
     private final String f2 = "260605 오후동향_F.pdf";
+    private final String dateSubject = "일일 금융시장 동향[8.4일]";
 
     @AfterEach
     void tearDown() {
         mapper.deleteByPdfFileName(f1);
         mapper.deleteByPdfFileName(f2);
+        mapper.deleteByMarketDateAndSourceSubject(LocalDate.of(2026, 8, 4), dateSubject);
     }
 
     @Test
@@ -91,6 +93,41 @@ class MarketDailySnapshotMapperTest {
 
         MarketDailySnapshotVO found = mapper.findByPdfFileName(f1);
         assertNotNull(found);
+        assertEquals("https://example.com/260804-v2.pdf", found.getPdfUrl());
+        assertEquals("RAW-2", found.getRawText());
+        assertEquals("SUMMARY-2", found.getSummaryText());
+    }
+
+    @Test
+    @DisplayName("같은 marketDate/sourceSubject로 upsert하면 기존 레코드가 갱신된다")
+    void upsertDuplicateMarketDateAndSourceSubject_updatesRow() {
+        MarketDailySnapshotVO first = createSnapshot(
+                "2026-08-04",
+                dateSubject,
+                f1,
+                "https://example.com/260804-v1.pdf",
+                "RAW-1",
+                "SUMMARY-1"
+        );
+        mapper.upsertMarketDailySnapshot(first);
+
+        MarketDailySnapshotVO second = createSnapshot(
+                "2026-08-04",
+                dateSubject,
+                f2,
+                "https://example.com/260804-v2.pdf",
+                "RAW-2",
+                "SUMMARY-2"
+        );
+        mapper.upsertMarketDailySnapshot(second);
+
+        MarketDailySnapshotVO found = mapper.findByMarketDateAndSourceSubject(
+                LocalDate.of(2026, 8, 4),
+                dateSubject
+        );
+
+        assertNotNull(found);
+        assertEquals(f2, found.getPdfFileName());
         assertEquals("https://example.com/260804-v2.pdf", found.getPdfUrl());
         assertEquals("RAW-2", found.getRawText());
         assertEquals("SUMMARY-2", found.getSummaryText());

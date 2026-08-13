@@ -36,6 +36,7 @@
         ON DUPLICATE KEY UPDATE
             market_date = VALUES(market_date),
             source_subject = VALUES(source_subject),
+            pdf_file_name = VALUES(pdf_file_name),
             pdf_url = VALUES(pdf_url),
             raw_text = VALUES(raw_text),
             summary_text = VALUES(summary_text),
@@ -67,6 +68,27 @@
         WHERE pdf_file_name = #{pdfFileName}
     </select>
 
+    <select id="findByMarketDateAndSourceSubject" resultType="com.kb.youngly.vo.market.MarketDailySnapshotVO">
+        SELECT
+            id,
+            market_date,
+            source_subject,
+            pdf_file_name,
+            pdf_url,
+            raw_text,
+            summary_text,
+            kospi,
+            kosdaq,
+            nasdaq,
+            usdkrw,
+            treasury_3y,
+            created_at,
+            updated_at
+        FROM market_daily_snapshot
+        WHERE market_date = #{marketDate}
+          AND source_subject = #{sourceSubject}
+    </select>
+
     <select id="findRecentSnapshots" resultType="com.kb.youngly.vo.market.MarketDailySnapshotVO">
         SELECT
             id,
@@ -92,5 +114,11 @@
     <delete id="deleteByPdfFileName" parameterType="string">
         DELETE FROM market_daily_snapshot
         WHERE pdf_file_name = #{pdfFileName}
+    </delete>
+
+    <delete id="deleteByMarketDateAndSourceSubject">
+        DELETE FROM market_daily_snapshot
+        WHERE market_date = #{marketDate}
+          AND source_subject = #{sourceSubject}
     </delete>
 </mapper>

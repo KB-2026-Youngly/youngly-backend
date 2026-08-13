@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class MarketSnapshotIngestService {
     private static final int SUMMARY_MAX_LENGTH = 4_000;
     private static final Pattern DATE_PATTERN = Pattern.compile("(\\d{4})[-./](\\d{1,2})[-./](\\d{1,2})");
     private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final ZoneId DEFAULT_MARKET_ZONE = ZoneId.of("Asia/Seoul");
 
     private final FssMarketApiClient fssMarketApiClient;
     private final FssMarketPdfDownloadService pdfDownloadService;
@@ -47,8 +49,8 @@ public class MarketSnapshotIngestService {
     }
 
     public MarketSnapshotIngestResult ingestRecentTwoWeeks() {
-        LocalDate endDate = LocalDate.now();
-        return ingest(endDate.minusDays(14), endDate);
+        LocalDate today = LocalDate.now(DEFAULT_MARKET_ZONE);
+        return ingest(today.minusDays(14), today.minusDays(1));
     }
 
     public MarketSnapshotIngestResult ingest(LocalDate startDate, LocalDate endDate) {
