@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
+import java.security.SecureRandom;
 
 @Service
 public class GroupServiceImpl implements GroupService {
@@ -31,6 +32,35 @@ public class GroupServiceImpl implements GroupService {
     private final GroupUserMapper groupUserMapper;
     private final RoundMapper roundMapper;
     private final NotificationService notificationService;
+
+    private static final String INVITE_CODE_CHARS =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    private static final int INVITE_CODE_LENGTH = 6;
+
+    private final SecureRandom secureRandom = new SecureRandom();
+
+    private String generateInviteCode() {
+
+        String inviteCode;
+
+        do {
+            StringBuilder code = new StringBuilder(INVITE_CODE_LENGTH);
+
+            for (int i = 0; i < INVITE_CODE_LENGTH; i++) {
+                code.append(
+                        INVITE_CODE_CHARS.charAt(
+                                secureRandom.nextInt(INVITE_CODE_CHARS.length())
+                        )
+                );
+            }
+
+            inviteCode = code.toString();
+
+        } while (groupMapper.existsInviteCode(inviteCode));
+
+        return inviteCode;
+    }
 
     public GroupServiceImpl(GroupMapper groupMapper,
                             GroupUserMapper groupUserMapper,
@@ -52,7 +82,7 @@ public class GroupServiceImpl implements GroupService {
                 .groupId(UUID.randomUUID().toString())
                 .moimAccountId(request.getMoimAccountId())
                 .userId(userId)
-                .inviteCode(UUID.randomUUID().toString())
+                .inviteCode(generateInviteCode())
                 .groupName(request.getGroupName())
                 .groupCount(request.getGroupCount())
                 .customRule(request.getCustomRule())
@@ -478,14 +508,8 @@ public class GroupServiceImpl implements GroupService {
         // 총무 권한 검증
         validateLeader(userId, groupId);
 
-        // 새 초대코드 생성
-        String inviteCode;
-
-        do {
-            inviteCode = generateInviteCode();
-        } while (groupMapper.existsInviteCode(inviteCode));
-
-        groupMapper.updateInviteCode(groupId, inviteCode);
+        // 중복되지 않는 6자리 초대코드 생성
+        String inviteCode = generateInviteCode();
 
         // DB 업데이트
         groupMapper.updateInviteCode(groupId, inviteCode);
@@ -494,21 +518,6 @@ public class GroupServiceImpl implements GroupService {
         return RegenerateInviteCodeResponse.builder()
                 .inviteCode(inviteCode)
                 .build();
-    }
-
-    private String generateInviteCode() {
-
-        String uuid = UUID.randomUUID()
-                .toString()
-                .replace("-", "")
-                .substring(0, 6)
-                .toUpperCase();
-
-        //String timestamp = LocalDateTime.now()
-        //        .format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
-
-        //return uuid + timestamp;
-        return uuid;
     }
 
     // 챌린지 생성/수정
