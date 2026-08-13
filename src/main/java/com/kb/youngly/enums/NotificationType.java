@@ -5,6 +5,7 @@ public enum NotificationType {
     APPROVAL_REQUEST,
     APPROVED,
     REJECTED,
+    LEFT,
     ROUND_START,
     ROUND_END,
     SETTLEMENT_COMPLETED,

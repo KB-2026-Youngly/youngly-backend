@@ -493,6 +493,13 @@ public class GroupServiceImpl implements GroupService {
                 GroupUserStatus.WITHDRAWN
         );
 
+        // 그룹 총무에게 탈퇴 알림
+        notificationService.createNotification(
+                group.getUserId(),
+                NotificationType.LEFT,
+                userId + "님이 그룹에서 탈퇴했습니다."
+        );
+
         return MessageResponse.builder()
                 .message("Success")
                 .build();
