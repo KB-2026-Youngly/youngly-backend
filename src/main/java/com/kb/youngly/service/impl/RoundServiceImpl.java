@@ -2,7 +2,9 @@ package com.kb.youngly.service.impl;
 
 import com.kb.youngly.dto.round.*;
 import com.kb.youngly.enums.RoundStatus;
+import com.kb.youngly.enums.NotificationType;
 import com.kb.youngly.mapper.RoundMapper;
+import com.kb.youngly.service.NotificationService;
 import com.kb.youngly.service.RoundService;
 import com.kb.youngly.vo.group.GroupVO;
 import com.kb.youngly.vo.round.RoundHistoryVO;
@@ -25,6 +27,7 @@ import java.util.List;
 public class RoundServiceImpl implements RoundService {
 
     private final RoundMapper roundMapper;
+    private final NotificationService notificationService;
 
     /**
      * 첫 라운드는 그룹장이 지정한 시작일로 생성하고, 이후 라운드는
@@ -103,6 +106,14 @@ public class RoundServiceImpl implements RoundService {
             if (roundMapper.insertRoundHistory(history) != 1) {
                 throw new IllegalStateException("라운드 참여 이력 생성에 실패했습니다.");
             }
+        }
+
+        for (RoundParticipantDTO participant : participants) {
+            notificationService.createNotification(
+                    participant.getUserId(),
+                    NotificationType.ROUND_START,
+                    round.getRoundNo() + "라운드가 시작되었습니다."
+            );
         }
 
         return CreateRoundResponse.builder()
