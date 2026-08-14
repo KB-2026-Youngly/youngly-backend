@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kb.youngly.dto.market.FssMarketApiResponse;
 import com.kb.youngly.dto.market.FssMarketItem;
 import com.kb.youngly.exception.FssMarketApiException;
+import com.kb.youngly.exception.FssMarketRateLimitException;
 import com.kb.youngly.properties.FssMarketProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,6 +84,13 @@ public class FssMarketApiClient {
                 throw new FssMarketApiException("금감원 금융시장동향 API 응답에 reponse 바디가 없습니다.");
             }
             if (!apiResponse.isSuccessful()) {
+                if (FssMarketRateLimitException.RESULT_CODE.equals(apiResponse.getResultCode())) {
+                    throw new FssMarketRateLimitException(
+                            "금감원 금융시장동향 API 일일 조회 한도에 도달했습니다. resultCode="
+                                    + apiResponse.getResultCode()
+                                    + ", resultMsg="
+                                    + apiResponse.getResultMsg());
+                }
                 throw new FssMarketApiException(
                         "금감원 금융시장동향 API가 실패 응답을 반환했습니다. resultCode="
                                 + apiResponse.getResultCode()

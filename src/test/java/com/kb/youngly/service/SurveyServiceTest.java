@@ -3,9 +3,11 @@ package com.kb.youngly.service;
 import com.kb.youngly.dto.survey.SurveyAnswerDTO;
 import com.kb.youngly.dto.survey.SurveySubmitRequestDTO;
 import com.kb.youngly.dto.survey.SurveySubmitResponseDTO;
+import com.kb.youngly.event.SurveyResultSavedEvent;
 import com.kb.youngly.mapper.SurveyMapper;
 import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.vo.survey.SurveyResultVO;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +41,9 @@ class SurveyServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private SurveyService surveyService;
 
@@ -56,6 +61,10 @@ class SurveyServiceTest {
 
         ArgumentCaptor<SurveyResultVO> resultCaptor = ArgumentCaptor.forClass(SurveyResultVO.class);
         verify(surveyMapper).insertSurveyResult(resultCaptor.capture());
+        ArgumentCaptor<SurveyResultSavedEvent> eventCaptor = ArgumentCaptor.forClass(SurveyResultSavedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertEquals(USER_ID, eventCaptor.getValue().userId());
+        assertEquals(1L, eventCaptor.getValue().surveyResultId());
         assertEquals(9, resultCaptor.getValue().getTotalScore());
         assertEquals("신중한 저축형", resultCaptor.getValue().getBaseline());
     }
@@ -74,6 +83,10 @@ class SurveyServiceTest {
 
         ArgumentCaptor<SurveyResultVO> resultCaptor = ArgumentCaptor.forClass(SurveyResultVO.class);
         verify(surveyMapper).insertSurveyResult(resultCaptor.capture());
+        ArgumentCaptor<SurveyResultSavedEvent> eventCaptor = ArgumentCaptor.forClass(SurveyResultSavedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertEquals(USER_ID, eventCaptor.getValue().userId());
+        assertEquals(1L, eventCaptor.getValue().surveyResultId());
         assertEquals(26, resultCaptor.getValue().getTotalScore());
         assertEquals("과감한 도전형", resultCaptor.getValue().getBaseline());
     }

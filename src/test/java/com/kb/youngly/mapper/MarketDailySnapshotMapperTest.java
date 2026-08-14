@@ -2,14 +2,17 @@ package com.kb.youngly.mapper;
 
 import com.kb.youngly.vo.market.MarketDailySnapshotVO;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,15 +30,42 @@ class MarketDailySnapshotMapperTest {
     @Autowired
     private MarketDailySnapshotMapper mapper;
 
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    void setDataSource(DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
     private final String f1 = "260604 오후동향_F.pdf";
     private final String f2 = "260605 오후동향_F.pdf";
     private final String dateSubject = "일일 금융시장 동향[8.4일]";
+
+    @BeforeAll
+    void ensureMarketSummaryColumns() {
+        addColumnIfMissing("market_headline_text", "TEXT NULL");
+        addColumnIfMissing("market_detail_text", "TEXT NULL");
+    }
 
     @AfterEach
     void tearDown() {
         mapper.deleteByPdfFileName(f1);
         mapper.deleteByPdfFileName(f2);
         mapper.deleteByMarketDateAndSourceSubject(LocalDate.of(2026, 8, 4), dateSubject);
+    }
+
+    private void addColumnIfMissing(String columnName, String definition) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(1)
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'market_daily_snapshot'
+                  AND column_name = ?
+                """, Integer.class, columnName);
+
+        if (count != null && count == 0) {
+            jdbcTemplate.execute("ALTER TABLE market_daily_snapshot ADD COLUMN " + columnName + " " + definition);
+        }
     }
 
     @Test

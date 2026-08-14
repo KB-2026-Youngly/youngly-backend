@@ -15,6 +15,8 @@
             pdf_url,
             raw_text,
             summary_text,
+            market_headline_text,
+            market_detail_text,
             kospi,
             kosdaq,
             nasdaq,
@@ -27,6 +29,8 @@
             #{pdfUrl},
             #{rawText},
             #{summaryText},
+            #{marketHeadlineText},
+            #{marketDetailText},
             #{kospi},
             #{kosdaq},
             #{nasdaq},
@@ -57,6 +61,8 @@
             pdf_url,
             raw_text,
             summary_text,
+            market_headline_text,
+            market_detail_text,
             kospi,
             kosdaq,
             nasdaq,
@@ -77,6 +83,8 @@
             pdf_url,
             raw_text,
             summary_text,
+            market_headline_text,
+            market_detail_text,
             kospi,
             kosdaq,
             nasdaq,
@@ -98,6 +106,8 @@
             pdf_url,
             raw_text,
             summary_text,
+            market_headline_text,
+            market_detail_text,
             kospi,
             kosdaq,
             nasdaq,
@@ -110,6 +120,75 @@
         ORDER BY market_date DESC, id DESC
         LIMIT #{limit}
     </select>
+
+    <select id="findSnapshotsByMarketDate" resultType="com.kb.youngly.vo.market.MarketDailySnapshotVO">
+        SELECT
+            id,
+            market_date,
+            source_subject,
+            pdf_file_name,
+            pdf_url,
+            raw_text,
+            summary_text,
+            market_headline_text,
+            market_detail_text,
+            kospi,
+            kosdaq,
+            nasdaq,
+            usdkrw,
+            treasury_3y,
+            created_at,
+            updated_at
+        FROM market_daily_snapshot
+        WHERE market_date = #{marketDate}
+        ORDER BY id ASC
+    </select>
+
+    <select id="findLatestSnapshotWithMarketSummary" resultType="com.kb.youngly.vo.market.MarketDailySnapshotVO">
+        SELECT
+            id,
+            market_date,
+            source_subject,
+            pdf_file_name,
+            pdf_url,
+            raw_text,
+            summary_text,
+            market_headline_text,
+            market_detail_text,
+            kospi,
+            kosdaq,
+            nasdaq,
+            usdkrw,
+            treasury_3y,
+            created_at,
+            updated_at
+        FROM market_daily_snapshot
+        WHERE market_date BETWEEN #{from} AND #{to}
+          AND market_headline_text IS NOT NULL
+          AND market_headline_text != ''
+          AND market_detail_text IS NOT NULL
+          AND market_detail_text != ''
+        ORDER BY market_date DESC, updated_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <update id="updateMarketSummary">
+        UPDATE market_daily_snapshot
+        SET market_headline_text = #{marketHeadlineText},
+            market_detail_text = #{marketDetailText},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateMarketSummaryIfAbsent">
+        UPDATE market_daily_snapshot
+        SET market_headline_text = #{marketHeadlineText},
+            market_detail_text = #{marketDetailText},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND (market_headline_text IS NULL OR market_headline_text = ''
+               OR market_detail_text IS NULL OR market_detail_text = '')
+    </update>
 
     <delete id="deleteByPdfFileName" parameterType="string">
         DELETE FROM market_daily_snapshot

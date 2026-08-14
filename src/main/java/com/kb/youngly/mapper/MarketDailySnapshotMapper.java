@@ -19,6 +19,19 @@ public interface MarketDailySnapshotMapper {
                                                     @Param("to") LocalDate to,
                                                     @Param("limit") int limit);
 
+    List<MarketDailySnapshotVO> findSnapshotsByMarketDate(@Param("marketDate") LocalDate marketDate);
+
+    MarketDailySnapshotVO findLatestSnapshotWithMarketSummary(@Param("from") LocalDate from,
+                                                              @Param("to") LocalDate to);
+
+    int updateMarketSummary(@Param("id") Long id,
+                            @Param("marketHeadlineText") String marketHeadlineText,
+                            @Param("marketDetailText") String marketDetailText);
+
+    int updateMarketSummaryIfAbsent(@Param("id") Long id,
+                                    @Param("marketHeadlineText") String marketHeadlineText,
+                                    @Param("marketDetailText") String marketDetailText);
+
     int deleteByPdfFileName(@Param("pdfFileName") String pdfFileName);
 
     int deleteByMarketDateAndSourceSubject(@Param("marketDate") LocalDate marketDate,

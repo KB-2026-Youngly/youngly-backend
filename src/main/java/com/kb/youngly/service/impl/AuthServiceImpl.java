@@ -8,10 +8,7 @@ import com.kb.youngly.dto.auth.*;
 import com.kb.youngly.jwt.JwtTokenProvider;
 import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.service.AuthService;
-import com.kb.youngly.service.PensionInsightLoginWarmupService;
 import com.kb.youngly.vo.user.UserVO;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,22 +17,17 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    private static final Logger log = LogManager.getLogger(AuthServiceImpl.class);
-
     private final UserMapper userMapper;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-    private final PensionInsightLoginWarmupService pensionInsightLoginWarmupService;
 
     public AuthServiceImpl(UserMapper userMapper,
                            BCryptPasswordEncoder passwordEncoder,
-                           JwtTokenProvider jwtTokenProvider,
-                           PensionInsightLoginWarmupService pensionInsightLoginWarmupService) {
+                           JwtTokenProvider jwtTokenProvider) {
 
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.pensionInsightLoginWarmupService = pensionInsightLoginWarmupService;
     }
 
     @Override
@@ -105,17 +97,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String accessToken = jwtTokenProvider.createToken(user.getUserId());
-
-        try {
-            pensionInsightLoginWarmupService.warmUpAfterLogin(user.getUserId());
-        } catch (Exception e) {
-            // 비동기 제출 실패도 로그인 응답에는 영향을 주지 않는다.
-            log.warn(
-                    "[PENSION_INSIGHT_LOGIN_WARMUP_FAILED] userId={}",
-                    user.getUserId(),
-                    e
-            );
-        }
 
         return new LoginResponse(
                 accessToken,

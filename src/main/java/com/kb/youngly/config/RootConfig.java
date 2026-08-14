@@ -14,10 +14,12 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.client.RestTemplate;
 
 import javax.sql.DataSource;
+import java.util.concurrent.Executor;
 
 /**
  * 루트 애플리케이션 컨텍스트 설정.
@@ -120,5 +122,16 @@ public class RootConfig {
         factory.setConnectTimeout(10_000);
         factory.setReadTimeout(30_000);
         return new RestTemplate(factory);
+    }
+
+    @Bean(name = "recommendationTaskExecutor")
+    public Executor recommendationTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("recommendation-");
+        executor.initialize();
+        return executor;
     }
 }

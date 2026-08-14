@@ -10,10 +10,12 @@ import com.kb.youngly.dto.survey.SurveyResultDTO;
 import com.kb.youngly.dto.survey.SurveySubmitRequestDTO;
 import com.kb.youngly.dto.survey.SurveySubmitResponseDTO;
 import com.kb.youngly.enums.Baseline;
+import com.kb.youngly.event.SurveyResultSavedEvent;
 import com.kb.youngly.mapper.SurveyMapper;
 import com.kb.youngly.mapper.UserMapper;
 import com.kb.youngly.vo.survey.SurveyResultVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -34,6 +36,7 @@ public class SurveyService {
 
     private final SurveyMapper surveyMapper;
     private final UserMapper userMapper;
+    private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional(readOnly = true)
@@ -70,6 +73,7 @@ public class SurveyService {
         result.setCalculatedAt(now);
 
         surveyMapper.insertSurveyResult(result);
+        eventPublisher.publishEvent(new SurveyResultSavedEvent(userId, result.getSurveyResultId()));
 
         return new SurveySubmitResponseDTO(result.getSurveyResultId(), baseline, totalScore);
     }
