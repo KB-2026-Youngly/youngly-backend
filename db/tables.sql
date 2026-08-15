@@ -679,6 +679,16 @@ CREATE INDEX `IDX_KB_TRANSFER_REQUESTS_MANAGER_SETTLEMENT_STATUS`
         `updated_at`
     );
 
+-- 로그인 사용자의 group_user_id와 round_id로 정산 요청 내역을 조회하는 API용 인덱스다.
+-- transaction_category까지 인덱스에 포함해 예치(CHARGE) 요청과 정산 요청을 빠르게 분리한다.
+CREATE INDEX `IDX_KB_TRANSFER_REQUESTS_MANAGER_ROUND_CATEGORY`
+    ON `kb_transfer_requests` (
+        `group_user_id`,
+        `round_id`,
+        `transaction_category`,
+        `requested_at`
+    );
+
 -- 하나의 KB 거래번호가 서로 다른 내부 송금 요청에 중복 연결되지 않도록 한다.
 -- MySQL UNIQUE 제약은 NULL을 여러 건 허용하므로 거래번호가 발급되기 전 PENDING 요청도 저장할 수 있다.
 ALTER TABLE `kb_transfer_requests` ADD CONSTRAINT `UK_KB_TRANSFER_REQUESTS_KB_TRANSACTION_ID` UNIQUE (

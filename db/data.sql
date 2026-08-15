@@ -1723,6 +1723,69 @@ INSERT INTO account_transactions (
     '2026-07-29 09:03:01'
 );
 
+-- =========================================================
+-- 10. 라운드별 KB 정산 요청 조회 API 테스트 데이터
+--
+-- Postman 조회 순서:
+--   1) test_user01 / test 로 로그인하여 JWT를 발급받는다.
+--   2) GET /api/groups/group-test-savings-01/rounds 로 @test_round_id를 확인한다.
+--   3) GET /api/rounds/{roundId}/transfer-requests 를 호출한다.
+--
+-- kb_transfer_requests.group_user_id는 실제 정산 수령자의 참여 ID가 아니라 정산 요청을
+-- 관리하는 그룹장의 참여 ID를 뜻한다. 따라서 네 요청 모두 그룹장 test_user01의
+-- @test_gu01을 저장하고, 실제 수령자는 settlement_receiver_id로 각각 구분한다.
+-- test_user02로 같은 API를 호출하면 group_user_id가 일치하지 않아 빈 배열이 반환된다.
+-- =========================================================
+INSERT INTO kb_transfer_requests (
+    idempotency_key,
+    source_kb_account_id,
+    destination_kb_account_id,
+    amount,
+    source_balance_after,
+    destination_balance_after,
+    transaction_category,
+    transfer_status,
+    kb_transaction_id,
+    group_user_id,
+    settlement_receiver_id,
+    round_id,
+    requested_at,
+    completed_at,
+    updated_at
+) VALUES
+(
+    'TEST-KB-U01-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-01',
+    40000.00, 460000.00, 3040000.00,
+    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U01-SETTLEMENT',
+    @test_gu01, 'test_user01', @test_round_id,
+    '2026-07-29 08:59:59', '2026-07-29 09:00:01', '2026-07-29 09:00:01'
+),
+(
+    'TEST-KB-U02-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-02',
+    30000.00, 430000.00, 3030000.00,
+    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U02-SETTLEMENT',
+    @test_gu01, 'test_user02', @test_round_id,
+    '2026-07-29 09:00:59', '2026-07-29 09:01:01', '2026-07-29 09:01:01'
+),
+(
+    'TEST-KB-U03-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-03',
+    20000.00, 410000.00, 3020000.00,
+    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U03-SETTLEMENT',
+    @test_gu01, 'test_user03', @test_round_id,
+    '2026-07-29 09:01:59', '2026-07-29 09:02:01', '2026-07-29 09:02:01'
+),
+(
+    'TEST-KB-U04-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-04',
+    10000.00, 400000.00, 3010000.00,
+    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U04-SETTLEMENT',
+    @test_gu01, 'test_user04', @test_round_id,
+    '2026-07-29 09:02:59', '2026-07-29 09:03:01', '2026-07-29 09:03:01'
+);
+
 COMMIT;
 
 

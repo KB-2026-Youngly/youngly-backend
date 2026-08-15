@@ -4,6 +4,7 @@ import com.kb.youngly.vo.transfer.KbTransferRequestVO;
 import org.apache.ibatis.annotations.Param;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Mock KB 계좌 이체와 송금 요청 상태 저장을 담당하는 Mapper.
@@ -12,6 +13,15 @@ import java.math.BigDecimal;
  * 정산 비즈니스 쿼리와 외부 금융 연동 경계가 섞이지 않게 한다.</p>
  */
 public interface KbTransferMapper {
+
+    /**
+     * 로그인 사용자가 관리 주체로 기록된 특정 라운드의 정산 송금 요청을 조회한다.
+     * 사용자 ID를 직접 요청 테이블과 비교하지 않고, 라운드가 속한 그룹의
+     * {@code group_users.group_user_id}를 거쳐 요청 소유권을 확인한다.
+     */
+    List<KbTransferRequestVO> findSettlementRequestsByRoundAndUser(
+            @Param("roundId") Long roundId,
+            @Param("userId") String userId);
 
     /** 멱등성 키에 해당하는 기존 요청을 잠그고 중복 송금을 방지한다. */
     KbTransferRequestVO findByIdempotencyKeyForUpdate(

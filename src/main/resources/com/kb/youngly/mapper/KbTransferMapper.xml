@@ -6,6 +6,43 @@
 <mapper namespace="com.kb.youngly.mapper.KbTransferMapper">
 
     <!--
+        정산 요청의 group_user_id는 현재 구현상 정산금을 받는 사용자가 아니라 해당 요청을
+        관리하는 그룹장의 참여 ID다. 따라서 클라이언트가 group_user_id를 전달하게 하지 않고,
+        인증 토큰의 user_id와 round_id로 group_users 행을 찾아 요청 테이블과 비교한다.
+
+        rounds를 함께 조인하는 이유는 로그인 사용자의 다른 그룹 참여 ID가 우연히 전달된
+        round_id의 요청과 섞이지 않도록 "해당 라운드가 속한 그룹" 범위까지 고정하기 위해서다.
+        정산 업무 이력만 반환하고, 동일 시각에 생성된 요청도 순서가 안정적이도록 PK를 보조
+        정렬 기준으로 사용한다.
+    -->
+    <select id="findSettlementRequestsByRoundAndUser"
+            resultType="com.kb.youngly.vo.transfer.KbTransferRequestVO">
+        SELECT ktr.kb_transfer_request_id,
+               ktr.amount,
+               ktr.transaction_category,
+               ktr.transfer_status,
+               ktr.kb_transaction_id,
+               ktr.failure_code,
+               ktr.failure_message,
+               ktr.settlement_receiver_id,
+               ktr.round_id,
+               ktr.requested_at,
+               ktr.completed_at,
+               ktr.updated_at
+        FROM kb_transfer_requests ktr
+        INNER JOIN rounds r
+                ON r.round_id = ktr.round_id
+        INNER JOIN group_users gu
+                ON gu.group_id = r.group_id
+               AND gu.user_id = #{userId}
+               AND gu.group_user_id = ktr.group_user_id
+        WHERE ktr.round_id = #{roundId}
+          AND ktr.transaction_category = 'SETTLEMENT'
+        ORDER BY ktr.requested_at DESC,
+                 ktr.kb_transfer_request_id DESC
+    </select>
+
+    <!--
         같은 멱등성 키의 송금이 동시에 실행되지 않도록 기존 요청 행을 잠근다.
         SUCCESS 요청이면 저장된 최초 성공 결과를 반환하고 실제 잔액 UPDATE는 반복하지 않는다.
     -->
