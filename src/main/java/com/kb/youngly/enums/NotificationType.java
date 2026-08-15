@@ -7,7 +7,8 @@ public enum NotificationType {
     REJECTED,
     LEFT,
     ROUND_START,
+    POST_UPLOAD,
     ROUND_END,
     SETTLEMENT_COMPLETED,
-    REMINDER
+    REMINDER,
 }

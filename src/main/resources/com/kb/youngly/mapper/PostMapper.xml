@@ -203,4 +203,24 @@
     AND posted_at &lt; DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY) <!--  오늘 기준 하루 전(어제 자정)보다 과거인 글만 타겟팅!-->
 </update>
 
+    <!-- 인증 게시물 업로드 알림 대상자 조회 -->
+    <!-- 같은 라운드의 ACTIVE 참여자 중 게시물 작성자는 제외 -->
+    <select id="findNotificationUserIds" resultType="string">
+        SELECT gu.user_id
+        FROM rounds r
+                 INNER JOIN group_users gu
+                            ON gu.group_id = r.group_id
+        WHERE r.round_id = #{roundId}
+          AND gu.group_user_status = 'ACTIVE'
+          AND gu.user_id != #{userId}
+        ORDER BY gu.group_user_id
+    </select>
+
+    <!-- 인증 게시물 작성자의 닉네임 조회 -->
+    <select id="findUserNickname" resultType="string">
+        SELECT nickname
+        FROM users
+        WHERE user_id = #{userId}
+    </select>
+
 </mapper>

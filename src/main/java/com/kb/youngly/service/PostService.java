@@ -11,15 +11,19 @@ import org.springframework.web.multipart.MultipartFile;
 import com.kb.youngly.dto.posts.CreatePostRequestDTO;
 import com.kb.youngly.dto.posts.CreatePostResponseDTO;
 import com.kb.youngly.enums.PostStatus;
+import com.kb.youngly.enums.NotificationType;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor // final이 붙은 변수들을 알아서 조립해 주는 어노테이션
 public class PostService {
 
     private final PostMapper postMapper;
     private final FileUploadUtil fileUploadUtil;
+    private final NotificationService notificationService;
 
     @Transactional
     public CreatePostResponseDTO createPost(
@@ -95,6 +99,44 @@ public class PostService {
             // DB 저장 실패 시 먼저 저장한 파일 제거
             fileUploadUtil.deleteFile(savedFileName);
             throw exception;
+        }
+
+        try {
+            String nickname = postMapper.findUserNickname(userId);
+
+            List<String> notificationUserIds =
+                    postMapper.findNotificationUserIds(roundId, userId);
+
+            String notificationContent =
+                    nickname + "님이 인증 게시물을 업로드했습니다.";
+
+            for (String notificationUserId : notificationUserIds) {
+                try {
+                    notificationService.createNotification(
+                            notificationUserId,
+                            NotificationType.POST_UPLOAD,
+                            notificationContent
+                    );
+                } catch (Exception exception) {
+                    log.warn(
+                            "인증 게시물 업로드 알림 생성 실패. " +
+                                    "postId={}, roundId={}, targetUserId={}",
+                            post.getPostId(),
+                            roundId,
+                            notificationUserId,
+                            exception
+                    );
+                }
+            }
+        } catch (Exception exception) {
+            log.warn(
+                    "인증 게시물 업로드 알림 대상 조회 실패. " +
+                            "postId={}, roundId={}, userId={}",
+                    post.getPostId(),
+                    roundId,
+                    userId,
+                    exception
+            );
         }
 
         return CreatePostResponseDTO.builder()

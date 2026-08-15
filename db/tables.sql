@@ -246,7 +246,7 @@ CREATE TABLE `post_approvals` (
 CREATE TABLE `notifications` (
                                  `notification_id`	BIGINT	NOT NULL,
                                  `user_id`	VARCHAR(50)	NOT NULL,
-                                 `notification_type`	ENUM( 'GROUP_INVITE', 'APPROVAL_REQUEST', 'APPROVED', 'REJECTED', 'LEFT', 'ROUND_START', 'ROUND_END', 'SETTLEMENT_COMPLETED', 'REMINDER' )	NOT NULL,
+                                 `notification_type`	ENUM( 'GROUP_INVITE', 'APPROVAL_REQUEST', 'APPROVED', 'REJECTED', 'LEFT', 'ROUND_START', 'ROUND_END', 'SETTLEMENT_COMPLETED', 'REMINDER', 'POST_UPLOAD' )	NOT NULL,
                                  `content`	VARCHAR(255)	NOT NULL,
                                  `is_read`	BOOLEAN	NOT NULL	DEFAULT FALSE,
                                  `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
