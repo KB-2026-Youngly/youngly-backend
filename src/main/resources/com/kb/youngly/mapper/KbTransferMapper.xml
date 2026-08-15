@@ -6,6 +6,94 @@
 <mapper namespace="com.kb.youngly.mapper.KbTransferMapper">
 
     <!--
+        재정산 권한 검증과 상태 확인 사이에 다른 요청이 끼어들지 않도록 대상 요청을 잠근다.
+        단순히 kb_transfer_requests.group_user_id만 비교하지 않고 다음 세 조건을 모두 확인한다.
+          1. 요청의 group_user_id가 현재 라운드 그룹의 group_users 행과 일치한다.
+          2. 그 참여 행의 user_id가 로그인 사용자와 일치한다.
+          3. groups.user_id도 로그인 사용자와 일치하여 현재 실제 그룹장임을 보장한다.
+        권한이 없거나 요청 ID와 roundId 조합이 틀리면 행을 반환하지 않아 요청 존재 여부를 숨긴다.
+    -->
+    <select id="findOwnedSettlementRequestForUpdate"
+            resultType="com.kb.youngly.vo.transfer.KbTransferRequestVO">
+        SELECT ktr.kb_transfer_request_id,
+               ktr.idempotency_key,
+               ktr.source_kb_account_id,
+               ktr.destination_kb_account_id,
+               ktr.amount,
+               ktr.source_balance_after,
+               ktr.destination_balance_after,
+               ktr.transaction_category,
+               ktr.transfer_status,
+               ktr.kb_transaction_id,
+               ktr.failure_code,
+               ktr.failure_message,
+               ktr.group_user_id,
+               ktr.settlement_receiver_id,
+               ktr.round_id,
+               ktr.requested_at,
+               ktr.completed_at,
+               ktr.updated_at
+        FROM kb_transfer_requests ktr
+        INNER JOIN rounds r
+                ON r.round_id = ktr.round_id
+        INNER JOIN `groups` g
+                ON g.group_id = r.group_id
+        INNER JOIN group_users gu
+                ON gu.group_user_id = ktr.group_user_id
+               AND gu.group_id = g.group_id
+               AND gu.user_id = #{userId}
+        WHERE ktr.kb_transfer_request_id = #{kbTransferRequestId}
+          AND ktr.round_id = #{roundId}
+          AND ktr.transaction_category = 'SETTLEMENT'
+          AND g.user_id = #{userId}
+        FOR UPDATE
+    </select>
+
+    <!--
+        INSERT가 아니라 기존 행 UPDATE만 허용한다. WHERE의 FAILED 조건은 동시에 들어온 두 번째
+        재시도가 첫 번째 요청을 다시 PENDING으로 덮어쓰지 못하게 하는 최종 방어선이다.
+        이전 실패 정보와 완료 결과는 새 시도의 결과와 혼동되지 않도록 초기화한다.
+    -->
+    <update id="markFailedRequestPending">
+        UPDATE kb_transfer_requests
+        SET transfer_status = 'PENDING',
+            source_balance_after = NULL,
+            destination_balance_after = NULL,
+            kb_transaction_id = NULL,
+            failure_code = NULL,
+            failure_message = NULL,
+            completed_at = NULL
+        WHERE kb_transfer_request_id = #{kbTransferRequestId}
+          AND transaction_category = 'SETTLEMENT'
+          AND transfer_status = 'FAILED'
+    </update>
+
+    <!-- 성공 처리 직후 같은 트랜잭션에서 API 응답에 사용할 최신 행을 다시 읽는다. -->
+    <select id="findById"
+            resultType="com.kb.youngly.vo.transfer.KbTransferRequestVO">
+        SELECT kb_transfer_request_id,
+               idempotency_key,
+               source_kb_account_id,
+               destination_kb_account_id,
+               amount,
+               source_balance_after,
+               destination_balance_after,
+               transaction_category,
+               transfer_status,
+               kb_transaction_id,
+               failure_code,
+               failure_message,
+               group_user_id,
+               settlement_receiver_id,
+               round_id,
+               requested_at,
+               completed_at,
+               updated_at
+        FROM kb_transfer_requests
+        WHERE kb_transfer_request_id = #{kbTransferRequestId}
+    </select>
+
+    <!--
         정산 요청의 group_user_id는 현재 구현상 정산금을 받는 사용자가 아니라 해당 요청을
         관리하는 그룹장의 참여 ID다. 따라서 클라이언트가 group_user_id를 전달하게 하지 않고,
         인증 토큰의 user_id와 round_id로 group_users 행을 찾아 요청 테이블과 비교한다.

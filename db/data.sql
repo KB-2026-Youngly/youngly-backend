@@ -1246,14 +1246,14 @@ INSERT INTO kb_accounts (
 ),
 (
     'kb-test-pension-04', 'PENSION', '025202-91-100004',
-    '국민', 3010000.00, 2.50, '테스트사', '1998-04-04',
+    '국민', 3000000.00, 2.50, '테스트사', '1998-04-04',
     '2026-07-01 09:17:00', '2026-08-01 09:00:00'
 ),
 
 -- 공용 모임통장
 (
     'kb-test-moim-01', 'MOIM', '025202-92-200001',
-    '국민', 400000.00, 2.50, '테스트일', '1998-01-01',
+    '국민', 410000.00, 2.50, '테스트일', '1998-01-01',
     '2026-07-01 10:00:00', '2026-08-01 09:00:00'
 );
 
@@ -1438,7 +1438,7 @@ INSERT INTO rounds (
     1,
     '2026-07-01',
     '2026-07-28',
-    'SETTLED',
+    'WAITING_SETTLEMENT',
     '2026-07-01 12:00:00'
 );
 
@@ -1634,7 +1634,8 @@ INSERT INTO account_transactions (
 
 -- =========================================================
 -- 9. 모임통장 → 개인연금 정산
--- 모임통장 500,000원 → 정산 후 400,000원
+-- test_user01~03 정산만 성공하여 모임통장 500,000원 → 410,000원
+-- test_user04의 10,000원 정산은 실패했으며 아래 kb_transfer_requests에 FAILED로 남긴다.
 -- =========================================================
 INSERT INTO account_transactions (
     kb_account_id,
@@ -1703,24 +1704,6 @@ INSERT INTO account_transactions (
     '챌린지 미래 적립금 입금',
     '025202-92-200001', '국민', '테스트 공동 저축 챌린지',
     '2026-07-29 09:02:01'
-),
-
--- test_user04: 10,000원 정산
-(
-    'kb-test-moim-01', @test_gu04, @test_round_id,
-    'WITHDRAW', 'SETTLEMENT', 10000.00, 400000.00,
-    'TEST-U04-SETTLEMENT-OUT',
-    '테스트사 미래 적립금 정산',
-    '025202-91-100004', '국민', '테스트사 개인연금',
-    '2026-07-29 09:03:00'
-),
-(
-    'kb-test-pension-04', @test_gu04, @test_round_id,
-    'DEPOSIT', 'SETTLEMENT', 10000.00, 3010000.00,
-    'TEST-U04-SETTLEMENT-IN',
-    '챌린지 미래 적립금 입금',
-    '025202-92-200001', '국민', '테스트 공동 저축 챌린지',
-    '2026-07-29 09:03:01'
 );
 
 -- =========================================================
@@ -1730,6 +1713,8 @@ INSERT INTO account_transactions (
 --   1) test_user01 / test 로 로그인하여 JWT를 발급받는다.
 --   2) GET /api/groups/group-test-savings-01/rounds 로 @test_round_id를 확인한다.
 --   3) GET /api/rounds/{roundId}/transfer-requests 를 호출한다.
+--   4) FAILED 요청 ID를 골라 POST
+--      /api/rounds/{roundId}/transfer-requests/{transferRequestId}/retry 를 호출한다.
 --
 -- kb_transfer_requests.group_user_id는 실제 정산 수령자의 참여 ID가 아니라 정산 요청을
 -- 관리하는 그룹장의 참여 ID를 뜻한다. 따라서 네 요청 모두 그룹장 test_user01의
@@ -1776,12 +1761,29 @@ INSERT INTO kb_transfer_requests (
     'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U03-SETTLEMENT',
     @test_gu01, 'test_user03', @test_round_id,
     '2026-07-29 09:01:59', '2026-07-29 09:02:01', '2026-07-29 09:02:01'
-),
-(
+);
+
+-- 재정산 API가 새 요청을 INSERT하지 않고 이 FAILED 행 자체를 SUCCESS로 바꾸는지 확인한다.
+INSERT INTO kb_transfer_requests (
+    idempotency_key,
+    source_kb_account_id,
+    destination_kb_account_id,
+    amount,
+    transaction_category,
+    transfer_status,
+    failure_code,
+    failure_message,
+    group_user_id,
+    settlement_receiver_id,
+    round_id,
+    requested_at,
+    completed_at,
+    updated_at
+) VALUES (
     'TEST-KB-U04-SETTLEMENT',
-    'kb-test-moim-01', 'kb-test-pension-04',
-    10000.00, 400000.00, 3010000.00,
-    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U04-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-04', 10000.00,
+    'SETTLEMENT', 'FAILED', 'INSUFFICIENT_BALANCE',
+    '테스트용 최초 정산 이체 실패',
     @test_gu01, 'test_user04', @test_round_id,
     '2026-07-29 09:02:59', '2026-07-29 09:03:01', '2026-07-29 09:03:01'
 );
