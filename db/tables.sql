@@ -38,6 +38,7 @@ DROP TABLE IF EXISTS `weekly_settlements`;
 DROP TABLE IF EXISTS `round_history`;
 DROP TABLE IF EXISTS `group_history`;
 DROP TABLE IF EXISTS `account_transactions`;
+DROP TABLE IF EXISTS `kb_transfer_requests`;
 DROP TABLE IF EXISTS `rounds`;
 DROP TABLE IF EXISTS `group_users`;
 DROP TABLE IF EXISTS `accounts`;
@@ -86,6 +87,70 @@ CREATE TABLE `account_transactions` (
                                         `another_bank_name` VARCHAR(50) NULL DEFAULT '국민',
                                         `another_name` VARCHAR(50) NULL,
                                         `created_at`	DATETIME	NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================================================
+-- KB 송금 요청
+--
+-- account_transactions가 성공이 확정된 계좌별 입·출금 원장이라면,
+-- 이 테이블은 외부 KB 서비스에 전달하는 하나의 송금 요청과 처리 상태를 관리한다.
+-- 특히 타임아웃처럼 실제 송금 여부를 즉시 확정할 수 없는 경우 UNKNOWN으로 보관한 뒤
+-- idempotency_key 또는 kb_transaction_id를 이용해 결과를 재조회할 수 있게 한다.
+-- ============================================================================
+CREATE TABLE `kb_transfer_requests` (
+    `kb_transfer_request_id` BIGINT NOT NULL,
+
+    -- 같은 업무 요청이 재실행돼도 실제 송금은 한 번만 수행되도록 하는 서비스 측 고유 키다.
+    `idempotency_key` VARCHAR(100) NOT NULL,
+
+    -- 하나의 송금 요청은 출금 계좌와 입금 계좌를 각각 한 개씩 가진다.
+    -- 외부 호출 전 REQUIRES_NEW로 먼저 커밋하는 요청 테이블이므로 FK 대신 식별자만 보관한다.
+    -- FK가 있으면 바깥 정산 트랜잭션이 잠근 계좌·참여자 행과 자기 잠금 충돌이 발생할 수 있다.
+    `source_kb_account_id` VARCHAR(50) NOT NULL,
+    `destination_kb_account_id` VARCHAR(50) NOT NULL,
+    `amount` DECIMAL(19,2) NOT NULL,
+
+    -- 성공 당시의 양쪽 잔액을 보관한다. 동일한 멱등성 키가 재요청됐을 때 현재 잔액이 아니라
+    -- 최초 송금 직후 잔액을 반환해야 account_transactions의 balance_after가 변하지 않는다.
+    `source_balance_after` DECIMAL(19,2) NULL,
+    `destination_balance_after` DECIMAL(19,2) NULL,
+
+    -- 송금이 예치, 정산, 환불 중 어떤 Youngly 업무에서 발생했는지 구분한다.
+    `transaction_category` ENUM(
+        'CHARGE',
+        'SETTLEMENT',
+        'REFUND'
+    ) NOT NULL,
+
+    -- PENDING: 요청 생성, SUCCESS: 성공 확정, FAILED: 거절 확정,
+    -- UNKNOWN: 통신 장애 등으로 KB 측 처리 결과를 아직 확정할 수 없는 상태다.
+    `transfer_status` ENUM(
+        'PENDING',
+        'SUCCESS',
+        'FAILED',
+        'UNKNOWN'
+    ) NOT NULL DEFAULT 'PENDING',
+
+    -- KB가 송금 요청을 접수하거나 완료했을 때 반환하는 거래 식별자다.
+    -- Mock 이체 단계에서는 NULL일 수 있고, 실제 API 연동 후 결과 재조회에 사용한다.
+    `kb_transaction_id` VARCHAR(100) NULL,
+
+    -- 명확한 거절 또는 기술 오류가 발생했을 때 원인 분석과 사용자 안내에 사용한다.
+    `failure_code` VARCHAR(50) NULL,
+    `failure_message` VARCHAR(255) NULL,
+
+    -- CHARGE에서는 예치금을 보낸 참여자, SETTLEMENT에서는 실패 목록을 관리할 그룹장의
+    -- group_user_id를 저장한다. 거래 유형별 의미가 다르므로 송·수신 계좌 판별에는 사용하지 않는다.
+    `group_user_id` BIGINT NULL,
+
+    -- 정산금을 실제로 받는 사용자의 user_id다. RoundSettlementService가 round_history.user_id를
+    -- 전달하며, CHARGE처럼 정산과 무관한 송금에는 NULL을 저장한다.
+    `settlement_receiver_id` VARCHAR(50) NULL,
+    `round_id` BIGINT NULL,
+
+    `requested_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `completed_at` DATETIME NULL,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `recommendations` (
@@ -435,6 +500,10 @@ ALTER TABLE `account_transactions` ADD CONSTRAINT `PK_ACCOUNT_TRANSACTIONS` PRIM
                                                                                          `account_transaction_id`
     );
 
+ALTER TABLE `kb_transfer_requests` ADD CONSTRAINT `PK_KB_TRANSFER_REQUESTS` PRIMARY KEY (
+                                                                                          `kb_transfer_request_id`
+    );
+
 ALTER TABLE `recommendations` ADD CONSTRAINT `PK_RECOMMENDATIONS` PRIMARY KEY (
                                                                                `recommendation_id`
     );
@@ -592,6 +661,30 @@ ALTER TABLE `account_transactions` ADD CONSTRAINT `UK_ACCOUNT_TRANSACTIONS_IDEMP
                                                                                                     `idempotency_key`
     );
 
+-- 멱등성 키 하나가 송금 요청 하나만 가리키도록 DB에서도 중복 요청을 차단한다.
+ALTER TABLE `kb_transfer_requests` ADD CONSTRAINT `UK_KB_TRANSFER_REQUESTS_IDEMPOTENCY_KEY` UNIQUE (
+                                                                                                      `idempotency_key`
+    );
+
+-- 처리 결과가 확정되지 않은 요청을 배치에서 빠르게 조회하기 위한 인덱스다.
+CREATE INDEX `IDX_KB_TRANSFER_REQUESTS_STATUS_UPDATED_AT`
+    ON `kb_transfer_requests` (`transfer_status`, `updated_at`);
+
+-- 그룹장이 자신의 정산 실패/미확정 목록을 최신순으로 조회할 때 사용하는 복합 인덱스다.
+CREATE INDEX `IDX_KB_TRANSFER_REQUESTS_MANAGER_SETTLEMENT_STATUS`
+    ON `kb_transfer_requests` (
+        `group_user_id`,
+        `transaction_category`,
+        `transfer_status`,
+        `updated_at`
+    );
+
+-- 하나의 KB 거래번호가 서로 다른 내부 송금 요청에 중복 연결되지 않도록 한다.
+-- MySQL UNIQUE 제약은 NULL을 여러 건 허용하므로 거래번호가 발급되기 전 PENDING 요청도 저장할 수 있다.
+ALTER TABLE `kb_transfer_requests` ADD CONSTRAINT `UK_KB_TRANSFER_REQUESTS_KB_TRANSACTION_ID` UNIQUE (
+                                                                                                       `kb_transaction_id`
+    );
+
 ALTER TABLE `point_history` ADD CONSTRAINT `UK_POINT_HISTORY_IDEMPOTENCY_KEY` UNIQUE (
                                                                                       `idempotency_key`
     );
@@ -609,6 +702,9 @@ ALTER TABLE `user_items`
 
 ALTER TABLE `account_transactions`
     MODIFY `account_transaction_id` BIGINT NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `kb_transfer_requests`
+    MODIFY `kb_transfer_request_id` BIGINT NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `recommendations`
     MODIFY `recommendation_id` BIGINT NOT NULL AUTO_INCREMENT;
@@ -668,6 +764,18 @@ ALTER TABLE `post_comments`
 ALTER TABLE `account_transactions`
     ADD CONSTRAINT `CK_ACCOUNT_TRANSACTIONS_AMOUNT`
         CHECK (`amount` >= 0);
+
+ALTER TABLE `kb_transfer_requests`
+    ADD CONSTRAINT `CK_KB_TRANSFER_REQUESTS_AMOUNT`
+        CHECK (`amount` > 0),
+    ADD CONSTRAINT `CK_KB_TRANSFER_REQUESTS_DIFFERENT_ACCOUNTS`
+        CHECK (`source_kb_account_id` <> `destination_kb_account_id`),
+    -- 정산 요청은 실패 목록 관리자(그룹장), 실제 수령자 및 라운드가 모두 있어야 한다.
+    ADD CONSTRAINT `CK_KB_TRANSFER_REQUESTS_SETTLEMENT_REFERENCES`
+        CHECK (`transaction_category` <> 'SETTLEMENT'
+            OR (`group_user_id` IS NOT NULL
+                AND `settlement_receiver_id` IS NOT NULL
+                AND `round_id` IS NOT NULL));
 
 ALTER TABLE `group_users`
     ADD CONSTRAINT `CK_GROUP_USERS_CURRENT_DEPOSIT_AMOUNT`
@@ -747,6 +855,12 @@ ALTER TABLE `account_transactions`
     ADD CONSTRAINT `FK_account_transactions_kb_account_id` FOREIGN KEY (`kb_account_id`) REFERENCES `kb_accounts` (`kb_account_id`),
     ADD CONSTRAINT `FK_account_transactions_group_user_id` FOREIGN KEY (`group_user_id`) REFERENCES `group_users` (`group_user_id`),
     ADD CONSTRAINT `FK_account_transactions_round_id` FOREIGN KEY (`round_id`) REFERENCES `rounds` (`round_id`);
+
+-- kb_transfer_requests의 계좌·참여자·수령자·라운드 식별자는 의도적으로 FK를 두지 않는다.
+-- 이 행은 바깥 업무 트랜잭션과 분리된 REQUIRES_NEW에서 외부 송금 전에 먼저 커밋된다.
+-- 바깥 트랜잭션이 이미 group_users, rounds, kb_accounts 행을 FOR UPDATE로 잠근 상태에서
+-- 자식 FK를 INSERT하면 별도 커넥션이 부모 행의 공유 잠금을 기다려 자기 교착이 발생할 수 있다.
+-- 대신 요청 생성 서비스가 식별자를 검증하고, 실패 목록 조회 시 업무 테이블과 명시적으로 JOIN한다.
 
 -- 3. recommendations
 ALTER TABLE `recommendations`

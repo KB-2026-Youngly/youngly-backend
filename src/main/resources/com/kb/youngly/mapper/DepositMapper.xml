@@ -24,33 +24,44 @@
     </select>
 
     <select id="findAccountByIdAndUserId" resultType="com.kb.youngly.vo.account.AccountVO">
-        SELECT account_id, user_id, kb_account_id, account_status, account_name, created_at, updated_at
-        FROM accounts WHERE account_id = #{accountId} AND user_id = #{userId}
+        SELECT a.account_id,
+               a.user_id,
+               a.kb_account_id,
+               a.account_status,
+               a.account_name,
+               kb.account_number,
+               kb.bank_name,
+               kb.name AS owner_name,
+               a.created_at,
+               a.synced_at,
+               a.updated_at
+        FROM accounts a
+        INNER JOIN kb_accounts kb ON kb.kb_account_id = a.kb_account_id
+        WHERE a.account_id = #{accountId}
+          AND a.user_id = #{userId}
     </select>
 
     <select id="findMoimAccountById" parameterType="string" resultType="com.kb.youngly.vo.moimaccount.MoimAccountVO">
-        SELECT moim_account_id, user_id, kb_account_id, created_at, updated_at, account_name
-        FROM moim_accounts WHERE moim_account_id = #{moimAccountId}
-    </select>
-
-    <!-- 잔액과 이후 balance_after 계산값을 일관되게 읽는다. -->
-    <select id="findKbAccountBalanceForUpdate" parameterType="string" resultType="java.math.BigDecimal">
-        SELECT balance FROM kb_accounts WHERE kb_account_id = #{kbAccountId} FOR UPDATE
+        SELECT ma.moim_account_id,
+               ma.user_id,
+               ma.kb_account_id,
+               ma.account_status,
+               ma.account_name,
+               kb.account_number,
+               kb.bank_name,
+               kb.name AS owner_name,
+               ma.created_at,
+               ma.synced_at,
+               ma.updated_at
+        FROM moim_accounts ma
+        INNER JOIN kb_accounts kb ON kb.kb_account_id = ma.kb_account_id
+        WHERE ma.moim_account_id = #{moimAccountId}
     </select>
 
     <select id="countDepositKbAccount" parameterType="string" resultType="int">
         SELECT COUNT(*) FROM kb_accounts
         WHERE kb_account_id = #{kbAccountId} AND account_type = 'DEPOSIT'
     </select>
-
-    <update id="withdrawFromKbAccount">
-        UPDATE kb_accounts SET balance = balance - #{amount}
-        WHERE kb_account_id = #{kbAccountId} AND balance &gt;= #{amount}
-    </update>
-
-    <update id="increaseKbAccountBalance">
-        UPDATE kb_accounts SET balance = balance + #{amount} WHERE kb_account_id = #{kbAccountId}
-    </update>
 
     <update id="increaseCurrentDeposit">
         UPDATE group_users SET current_deposit_amount = current_deposit_amount + #{amount}
@@ -75,6 +86,7 @@
         )
     </insert>
 
+    <!-- 예치 완료 확인 시 원본 요청 키가 아니라 :in 접미사가 붙은 입금 원장 키를 전달한다. -->
     <select id="findAccountTransactionByIdempotencyKey" parameterType="string"
             resultType="com.kb.youngly.vo.account.AccountTransactionVO">
         SELECT account_transaction_id, kb_account_id, group_user_id, round_id, transaction_type,

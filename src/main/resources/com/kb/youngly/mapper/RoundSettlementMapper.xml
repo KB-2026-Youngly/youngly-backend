@@ -36,13 +36,31 @@
     </select>
 
     <!--
+        참가자별 송금은 REQUIRES_NEW 트랜잭션에서 KB 계좌를 잠근다. 바깥 정산 트랜잭션이
+        KB 계좌까지 먼저 잠그면 안쪽 송금이 같은 행을 기다리는 교착 상태가 생기므로,
+        이 쿼리에서는 미정산 round_history와 group_users만 먼저 잠근다.
+    -->
+    <select id="lockUnsettledParticipantsForUpdate" resultType="long">
+        SELECT rh.round_history_id
+        FROM round_history rh
+        INNER JOIN rounds r ON r.round_id = rh.round_id
+        INNER JOIN group_users gu
+                ON gu.group_id = r.group_id
+               AND gu.user_id = rh.user_id
+        WHERE rh.round_id = #{roundId}
+          AND rh.settlement_at IS NULL
+        ORDER BY gu.group_user_id, rh.round_history_id
+        FOR UPDATE
+    </select>
+
+    <!--
         라운드 시작 때 고정한 수령 계좌와 모임통장을 실제 KB 계좌에 연결한다.
         LEFT JOIN 결과를 서비스에서 검증하므로 연결 데이터가 누락된 참여자를
         조용히 제외하지 않고 그룹 정산 전체를 실패시킬 수 있다.
 
-        FOR UPDATE는 round_history와 group_users를 잠가 정산 중 순위나 개인별
-        현재 예치금이 바뀌지 않게 한다. group_user_id 순서는 동시 작업의 잠금
-        획득 순서를 일정하게 유지한다.
+        이미 settlement_at이 기록된 참여자는 이전 시도에서 성공한 사람이므로 제외한다.
+        이를 통해 일부 실패 후 재실행하더라도 성공한 사람의 예치금을 다시 차감하지 않는다.
+        필요한 행 잠금은 바로 앞의 lockUnsettledParticipantsForUpdate에서 획득한다.
     -->
     <select id="findParticipantsForUpdate"
             resultType="com.kb.youngly.dto.round.RoundSettlementParticipant">
@@ -74,32 +92,34 @@
         LEFT JOIN kb_accounts source_kb
                ON source_kb.kb_account_id = source.kb_account_id
         WHERE rh.round_id = #{roundId}
+          AND rh.settlement_at IS NULL
         ORDER BY gu.group_user_id, rh.round_history_id
-        FOR UPDATE
     </select>
 
-    <!-- 잔액 변경 전 계좌 행을 잠가 각 원장의 balance_after가 실제 잔액과 일치하게 한다. -->
-    <select id="findKbAccountBalanceForUpdate"
-            parameterType="string" resultType="java.math.BigDecimal">
-        SELECT balance
-        FROM kb_accounts
-        WHERE kb_account_id = #{kbAccountId}
+    <!--
+        prior_failure_response는 직전 라운드 실패에 대해 사용자가 선택한 대응값이다.
+        최종 정산을 시도한 시점부터 다음 라운드에는 이전 선택을 이월하지 않으므로,
+        개별 송금의 성공 여부와 관계없이 현재 라운드 참여자 전체에서 NULL로 초기화한다.
+    -->
+    <update id="clearPriorFailureResponses">
+        UPDATE round_history
+        SET prior_failure_response = NULL
+        WHERE round_id = #{roundId}
+          AND prior_failure_response IS NOT NULL
+    </update>
+
+    <!--
+        groups.user_id로 식별한 그룹장의 group_user_id를 조회한다.
+        kb_transfer_requests.group_user_id에 이 값을 저장하면 이후 그룹장이 자신의 책임 아래
+        실행된 정산 송금 중 FAILED/UNKNOWN 요청만 조회할 수 있다.
+    -->
+    <select id="findGroupLeaderGroupUserId" resultType="long">
+        SELECT group_user_id
+        FROM group_users
+        WHERE group_id = #{groupId}
+          AND user_id = #{leaderUserId}
         FOR UPDATE
     </select>
-
-    <!-- 조건부 차감으로 동시 변경이나 잔액 부족 시 음수 잔액이 만들어지는 것을 막는다. -->
-    <update id="withdrawFromKbAccount">
-        UPDATE kb_accounts
-        SET balance = balance - #{amount}
-        WHERE kb_account_id = #{kbAccountId}
-          AND balance &gt;= #{amount}
-    </update>
-
-    <update id="increaseKbAccountBalance">
-        UPDATE kb_accounts
-        SET balance = balance + #{amount}
-        WHERE kb_account_id = #{kbAccountId}
-    </update>
 
     <!--
         정산액을 참여자의 현재 예치금에서도 차감한다.

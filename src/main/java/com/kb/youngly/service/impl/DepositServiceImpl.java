@@ -3,11 +3,15 @@ package com.kb.youngly.service.impl;
 import com.kb.youngly.dto.deposit.DepositRequest;
 import com.kb.youngly.dto.deposit.DepositResponse;
 import com.kb.youngly.dto.deposit.MemberDepositStatusResponse;
+import com.kb.youngly.dto.transfer.KbTransferCommand;
+import com.kb.youngly.dto.transfer.KbTransferResult;
 import com.kb.youngly.enums.GroupUserStatus;
 import com.kb.youngly.enums.TransactionCategory;
 import com.kb.youngly.enums.TransactionType;
 import com.kb.youngly.mapper.DepositMapper;
 import com.kb.youngly.service.DepositService;
+import com.kb.youngly.service.KbTransferService;
+import com.kb.youngly.service.KbTransferRequestService;
 import com.kb.youngly.vo.account.AccountTransactionVO;
 import com.kb.youngly.vo.account.AccountVO;
 import com.kb.youngly.vo.moimaccount.MoimAccountVO;
@@ -30,13 +34,20 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DepositServiceImpl implements DepositService {
 
-    private static final String BANK_NAME = "국민";
+    /** 한 송금에서 개인계좌 출금 원장을 구분하는 멱등성 키 접미사. */
+    private static final String OUT_IDEMPOTENCY_SUFFIX = ":out";
+    /** 한 송금에서 모임통장 입금 원장을 구분하는 멱등성 키 접미사. */
+    private static final String IN_IDEMPOTENCY_SUFFIX = ":in";
     /**
      * 개발 중 예치금 흐름을 빠르게 확인하기 위한 임시 사용자 ID.
      * 인증 연동 전용이므로 운영 배포 전에는 요청 인증 정보로 반드시 교체해야 한다.
      */
 
     private final DepositMapper depositMapper;
+    /** 외부 송금보다 먼저 PENDING 요청을 독립 트랜잭션으로 생성한다. */
+    private final KbTransferRequestService kbTransferRequestService;
+    /** 예치 과정의 실제 개인계좌→모임통장 송금과 멱등성 상태 관리를 담당한다. */
+    private final KbTransferService kbTransferService;
 
     /**
      * 예치금을 납부한다. 같은 멱등성 키가 이미 처리되었다면 잔액을 다시 변경하지 않는다.
@@ -53,11 +64,19 @@ public class DepositServiceImpl implements DepositService {
 
         String sourceAccountId = requireText(request.getSourceAccountId(), "출금 계좌 ID는 필수입니다.");
         String idempotencyKey = requireText(request.getIdempotencyKey(), "멱등성 키는 필수입니다.");
+        validateIdempotencyKeyLength(idempotencyKey);
+        String withdrawLedgerKey = idempotencyKey + OUT_IDEMPOTENCY_SUFFIX;
+        String depositLedgerKey = idempotencyKey + IN_IDEMPOTENCY_SUFFIX;
         GroupVO group = getGroup(normalizedGroupId);
         GroupUserVO member = getGroupUser(normalizedGroupId, normalizedUserId);
 
-        // 이미 완료된 요청은 현재 상태만 돌려주며 이체를 반복하지 않는다.
-        AccountTransactionVO existing = depositMapper.findAccountTransactionByIdempotencyKey(idempotencyKey);
+        /*
+         * 예치 완료 여부는 요청을 대표하는 모임통장 입금 원장의 :in 키로 확인한다.
+         * 원본 키는 kb_transfer_requests에서 송금 한 건의 멱등성을 보장하고,
+         * :out/:in 파생 키는 account_transactions의 양쪽 원장을 각각 고유하게 식별한다.
+         */
+        AccountTransactionVO existing =
+                depositMapper.findAccountTransactionByIdempotencyKey(depositLedgerKey);
 
         if (existing != null) {
             if (!member.getGroupUserId().equals(existing.getGroupUserId())) {
@@ -90,17 +109,40 @@ public class DepositServiceImpl implements DepositService {
             throw new IllegalStateException("그룹에 연결된 모임통장을 찾을 수 없습니다.");
         }
 
-        // 두 KB 계좌를 잠가 balance_after를 정확히 기록한다.
-        BigDecimal sourceBalance = requireBalance(sourceAccount.getKbAccountId());
-        if (sourceBalance.compareTo(depositAmount) < 0) {
-            throw new IllegalArgumentException("출금 계좌의 잔액이 부족합니다.");
-        }
-        BigDecimal moimBalance = requireBalance(moimAccount.getKbAccountId());
+        KbTransferCommand transferCommand = KbTransferCommand.builder()
+                .idempotencyKey(idempotencyKey)
+                .sourceKbAccountId(sourceAccount.getKbAccountId())
+                .destinationKbAccountId(moimAccount.getKbAccountId())
+                .amount(depositAmount)
+                .transactionCategory(TransactionCategory.CHARGE)
+                .groupUserId(member.getGroupUserId())
+                // 예치는 정산이 아니므로 별도의 정산 수령자가 존재하지 않는다.
+                .settlementReceiverId(null)
+                .roundId(null)
+                .build();
 
-        if (depositMapper.withdrawFromKbAccount(sourceAccount.getKbAccountId(), depositAmount) != 1
-                || depositMapper.increaseKbAccountBalance(moimAccount.getKbAccountId(), depositAmount) != 1
-                || depositMapper.increaseCurrentDeposit(member.getGroupUserId(), depositAmount) != 1) {
-            throw new IllegalStateException("예치금 처리에 실패했습니다.");
+        /*
+         * 실제 KB 송금을 호출하기 전에 PENDING 요청을 REQUIRES_NEW 트랜잭션으로 생성·커밋한다.
+         * 이후 송금 과정에서 타임아웃이나 서버 종료가 발생하더라도 요청 행이 남기 때문에
+         * 멱등성 키로 처리 결과를 조회하거나 재처리 여부를 판단할 수 있다.
+         */
+        kbTransferRequestService.createPending(transferCommand);
+
+        /*
+         * 계좌 존재·잔액 부족·동시 이체·중복 요청 검사는 KbTransferService에 위임한다.
+         * 정상 결과가 반환됐다는 것은 개인계좌 출금과 모임통장 입금이 모두 성공했고
+         * 앞에서 만든 PENDING 요청도 SUCCESS로 변경됐다는 의미다.
+         */
+        KbTransferResult transferResult = kbTransferService.transfer(transferCommand);
+
+        /*
+         * 송금 성공 후에만 Youngly가 관리하는 참여자 누적 예치금을 변경한다.
+         * 이 UPDATE가 실패하면 deposit의 @Transactional 경계에 의해 Mock 송금의 계좌 변경과
+         * SUCCESS 전환은 함께 롤백된다. 외부 호출 전에 별도로 커밋한 요청 행은 삭제되지 않고
+         * PENDING으로 남아 후속 거래조회 또는 복구 대상이 된다.
+         */
+        if (depositMapper.increaseCurrentDeposit(member.getGroupUserId(), depositAmount) != 1) {
+            throw new IllegalStateException("참여자 예치금 반영에 실패했습니다.");
         }
 
         BigDecimal depositedAmount = currentAmount.add(depositAmount);
@@ -111,11 +153,26 @@ public class DepositServiceImpl implements DepositService {
             throw new IllegalStateException("참여 상태 변경에 실패했습니다.");
         }
 
-        // 출금 원장에는 멱등성 키를 저장하지 않는다. 한 요청의 입금 원장만 고유해야 한다.
+        /*
+         * 동일한 원본 키를 두 행에 그대로 저장하면 account_transactions의 UNIQUE 제약에
+         * 위배된다. 따라서 출금에는 :out, 입금에는 :in을 붙여 양쪽 원장을 모두 멱등하게
+         * 식별하면서도 하나의 원본 송금 요청에서 파생된 거래라는 관계를 유지한다.
+         */
+        /*
+         * 개인계좌 출금 원장에서는 돈을 받은 모임통장이 상대 계좌다. 따라서 모임통장의
+         * 실제 KB 계좌번호·은행명과 서비스에 표시되는 모임통장 이름을 함께 저장한다.
+         */
         insertTransaction(sourceAccount.getKbAccountId(), member.getGroupUserId(), TransactionType.WITHDRAW,
-                depositAmount, sourceBalance.subtract(depositAmount), null, "그룹 예치금 출금");
+                depositAmount, transferResult.getSourceBalanceAfter(), withdrawLedgerKey, "그룹 예치금 출금",
+                moimAccount.getAccountNumber(), moimAccount.getBankName(), moimAccount.getAccountName());
+
+        /*
+         * 모임통장 입금 원장에서는 돈을 보낸 개인 입출금계좌가 상대 계좌다. 출금 원장과
+         * 반대 방향의 계좌번호·은행명·예금주명을 넣어 어느 계좌에서 들어온 돈인지 남긴다.
+         */
         insertTransaction(moimAccount.getKbAccountId(), member.getGroupUserId(), TransactionType.DEPOSIT,
-                depositAmount, moimBalance.add(depositAmount), idempotencyKey, "그룹 예치금 납부");
+                depositAmount, transferResult.getDestinationBalanceAfter(), depositLedgerKey, "그룹 예치금 납부",
+                sourceAccount.getAccountNumber(), sourceAccount.getBankName(), sourceAccount.getOwnerName());
 
         return response(normalizedGroupId, normalizedUserId, group.getBaseDepositAmount(), depositedAmount,
                 newRemainingAmount, newStatus, TransactionCategory.CHARGE);
@@ -146,7 +203,8 @@ public class DepositServiceImpl implements DepositService {
 
     private void insertTransaction(String kbAccountId, Long groupUserId, TransactionType type,
                                    BigDecimal amount, BigDecimal balanceAfter, String idempotencyKey,
-                                   String description) {
+                                   String description, String anotherAccountNumber,
+                                   String anotherBankName, String anotherName) {
         AccountTransactionVO transaction = new AccountTransactionVO();
         transaction.setKbAccountId(kbAccountId);
         transaction.setGroupUserId(groupUserId);
@@ -156,7 +214,10 @@ public class DepositServiceImpl implements DepositService {
         transaction.setBalanceAfter(balanceAfter);
         transaction.setIdempotencyKey(idempotencyKey);
         transaction.setDescription(description);
-        transaction.setAnotherBankName(BANK_NAME);
+        // 거래 방향에 따라 호출부가 전달한 실제 상대 계좌 정보를 세 컬럼에 함께 저장한다.
+        transaction.setAnotherAccountNumber(anotherAccountNumber);
+        transaction.setAnotherBankName(anotherBankName);
+        transaction.setAnotherName(anotherName);
         depositMapper.insertAccountTransaction(transaction);
     }
 
@@ -199,15 +260,20 @@ public class DepositServiceImpl implements DepositService {
         }
     }
 
-    private BigDecimal requireBalance(String kbAccountId) {
-        BigDecimal balance = depositMapper.findKbAccountBalanceForUpdate(kbAccountId);
-        if (balance == null) throw new IllegalStateException("연결된 KB 계좌를 찾을 수 없습니다.");
-        return balance;
-    }
-
     /** 기준 예치금을 초과하는 추가 납부는 허용하되, 0원 이하 납부는 막는다. */
     private void validateDepositAmount(BigDecimal amount) {
         if (amount == null || amount.signum() <= 0) throw new IllegalArgumentException("납부 금액은 0보다 커야 합니다.");
+    }
+
+    /**
+     * 원장 키 컬럼은 VARCHAR(100)이고 가장 긴 접미사도 4자이므로 원본 키를 96자로 제한한다.
+     * 애플리케이션에서 먼저 검증하여 원장 INSERT 시 문자열 잘림이나 DB 오류가 발생하지 않게 한다.
+     */
+    private void validateIdempotencyKeyLength(String idempotencyKey) {
+        int maxOriginalKeyLength = 100 - OUT_IDEMPOTENCY_SUFFIX.length();
+        if (idempotencyKey.length() > maxOriginalKeyLength) {
+            throw new IllegalArgumentException("멱등성 키는 " + maxOriginalKeyLength + "자 이하여야 합니다.");
+        }
     }
 
     private BigDecimal zeroIfNull(BigDecimal value) { return value == null ? BigDecimal.ZERO : value; }

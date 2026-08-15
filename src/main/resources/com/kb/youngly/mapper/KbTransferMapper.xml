@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kb.youngly.mapper.KbTransferMapper">
+
+    <!--
+        같은 멱등성 키의 송금이 동시에 실행되지 않도록 기존 요청 행을 잠근다.
+        SUCCESS 요청이면 저장된 최초 성공 결과를 반환하고 실제 잔액 UPDATE는 반복하지 않는다.
+    -->
+    <select id="findByIdempotencyKeyForUpdate"
+            resultType="com.kb.youngly.vo.transfer.KbTransferRequestVO">
+        SELECT kb_transfer_request_id,
+               idempotency_key,
+               source_kb_account_id,
+               destination_kb_account_id,
+               amount,
+               source_balance_after,
+               destination_balance_after,
+               transaction_category,
+               transfer_status,
+               kb_transaction_id,
+               failure_code,
+               failure_message,
+               group_user_id,
+               settlement_receiver_id,
+               round_id,
+               requested_at,
+               completed_at,
+               updated_at
+        FROM kb_transfer_requests
+        WHERE idempotency_key = #{idempotencyKey}
+        FOR UPDATE
+    </select>
+
+    <!-- 실제 계좌 변경보다 먼저 요청 의도를 PENDING으로 저장한다. -->
+    <insert id="insertPending"
+            parameterType="com.kb.youngly.vo.transfer.KbTransferRequestVO"
+            useGeneratedKeys="true"
+            keyProperty="kbTransferRequestId"
+            keyColumn="kb_transfer_request_id">
+        INSERT INTO kb_transfer_requests (
+            idempotency_key,
+            source_kb_account_id,
+            destination_kb_account_id,
+            amount,
+            transaction_category,
+            transfer_status,
+            group_user_id,
+            settlement_receiver_id,
+            round_id
+        ) VALUES (
+            #{idempotencyKey},
+            #{sourceKbAccountId},
+            #{destinationKbAccountId},
+            #{amount},
+            #{transactionCategory},
+            #{transferStatus},
+            #{groupUserId},
+            #{settlementReceiverId},
+            #{roundId}
+        )
+    </insert>
+
+    <!-- 이 SELECT의 행 잠금은 현재 트랜잭션이 커밋되거나 롤백될 때까지 유지된다. -->
+    <select id="findKbAccountBalanceForUpdate"
+            parameterType="string"
+            resultType="java.math.BigDecimal">
+        SELECT balance
+        FROM kb_accounts
+        WHERE kb_account_id = #{kbAccountId}
+        FOR UPDATE
+    </select>
+
+    <!-- 서비스 검증과 별개로 SQL에도 잔액 조건을 두어 음수 잔액 생성을 차단한다. -->
+    <update id="withdraw">
+        UPDATE kb_accounts
+        SET balance = balance - #{amount}
+        WHERE kb_account_id = #{kbAccountId}
+          AND balance &gt;= #{amount}
+    </update>
+
+    <update id="deposit">
+        UPDATE kb_accounts
+        SET balance = balance + #{amount}
+        WHERE kb_account_id = #{kbAccountId}
+    </update>
+
+    <!--
+        성공 상태와 양쪽 잔액을 함께 확정한다. PENDING 조건은 이미 완료되거나 상태가 바뀐
+        요청을 우발적으로 덮어쓰지 않게 하며, 갱신 행 수가 1이 아니면 서비스가 롤백한다.
+    -->
+    <update id="markSuccess">
+        UPDATE kb_transfer_requests
+        SET transfer_status = 'SUCCESS',
+            kb_transaction_id = #{kbTransactionId},
+            source_balance_after = #{sourceBalanceAfter},
+            destination_balance_after = #{destinationBalanceAfter},
+            failure_code = NULL,
+            failure_message = NULL,
+            completed_at = CURRENT_TIMESTAMP
+        WHERE kb_transfer_request_id = #{kbTransferRequestId}
+          AND transfer_status = 'PENDING'
+    </update>
+
+    <!--
+        송금 본 트랜잭션이 롤백된 다음 REQUIRES_NEW 트랜잭션에서 실행된다.
+        롤백으로 기존 PENDING 행이 사라졌으면 FAILED 행을 새로 만들고, 같은 키의 미확정
+        요청이 남아 있으면 실패 정보만 갱신한다. SUCCESS는 최종 상태이므로 절대 덮어쓰지 않는다.
+    -->
+    <insert id="upsertFailure"
+            parameterType="com.kb.youngly.vo.transfer.KbTransferRequestVO">
+        INSERT INTO kb_transfer_requests (
+            idempotency_key,
+            source_kb_account_id,
+            destination_kb_account_id,
+            amount,
+            transaction_category,
+            transfer_status,
+            failure_code,
+            failure_message,
+            group_user_id,
+            settlement_receiver_id,
+            round_id,
+            completed_at
+        ) VALUES (
+            #{idempotencyKey},
+            #{sourceKbAccountId},
+            #{destinationKbAccountId},
+            #{amount},
+            #{transactionCategory},
+            #{transferStatus},
+            #{failureCode},
+            #{failureMessage},
+            #{groupUserId},
+            #{settlementReceiverId},
+            #{roundId},
+            CURRENT_TIMESTAMP
+        )
+        ON DUPLICATE KEY UPDATE
+            transfer_status = CASE
+                WHEN transfer_status = 'SUCCESS' THEN transfer_status
+                ELSE VALUES(transfer_status)
+            END,
+            failure_code = CASE
+                WHEN transfer_status = 'SUCCESS' THEN failure_code
+                ELSE VALUES(failure_code)
+            END,
+            failure_message = CASE
+                WHEN transfer_status = 'SUCCESS' THEN failure_message
+                ELSE VALUES(failure_message)
+            END,
+            completed_at = CASE
+                WHEN transfer_status = 'SUCCESS' THEN completed_at
+                ELSE CURRENT_TIMESTAMP
+            END
+    </insert>
+
+</mapper>

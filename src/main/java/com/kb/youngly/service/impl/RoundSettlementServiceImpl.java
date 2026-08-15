@@ -1,11 +1,16 @@
 package com.kb.youngly.service.impl;
 
 import com.kb.youngly.dto.round.RoundSettlementParticipant;
+import com.kb.youngly.dto.transfer.KbTransferCommand;
+import com.kb.youngly.dto.transfer.KbTransferResult;
 import com.kb.youngly.enums.GroupStatus;
 import com.kb.youngly.enums.TransactionCategory;
 import com.kb.youngly.enums.TransactionType;
+import com.kb.youngly.exception.RoundSettlementIncompleteException;
 import com.kb.youngly.mapper.RoundMapper;
 import com.kb.youngly.mapper.RoundSettlementMapper;
+import com.kb.youngly.service.KbTransferAttemptService;
+import com.kb.youngly.service.KbTransferRequestService;
 import com.kb.youngly.service.RoundSettlementService;
 import com.kb.youngly.vo.account.AccountTransactionVO;
 import com.kb.youngly.vo.group.GroupVO;
@@ -18,15 +23,16 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
  * 순위별 미래 적립금을 모임통장에서 참여자 계좌로 이체하는 서비스.
  *
- * <p>한 그룹의 계좌 잔액, 개인별 예치금, 양쪽 거래 원장, 라운드 이력 및
- * 라운드 상태를 하나의 트랜잭션으로 변경한다. 어느 한 단계라도 실패하면
- * 모든 변경을 롤백하므로 일부 참여자만 정산되는 상태가 남지 않는다.</p>
+ * <p>그룹의 정산 이력과 원장은 그룹 트랜잭션에서 관리하고, 실제 KB 송금은 참여자별
+ * 독립 트랜잭션에서 실행한다. 한 참여자의 송금이 실패해도 다음 참여자를 계속 처리하며,
+ * 모든 참여자가 성공한 경우에만 라운드를 최종 정산 완료 상태로 바꾼다.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -41,8 +47,12 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
 
     /** 그룹 행 잠금과 그룹 설정 조회에는 기존 라운드 Mapper를 재사용한다. */
     private final RoundMapper roundMapper;
-    /** 정산 대상·계좌 잠금 조회와 실제 잔액 및 이력 변경을 담당한다. */
+    /** 정산 대상 조회, 참여자 예치금, 라운드 이력 및 거래원장 변경을 담당한다. */
     private final RoundSettlementMapper roundSettlementMapper;
+    /** 각 참여자 송금 전에 PENDING 요청을 독립 트랜잭션으로 먼저 확정한다. */
+    private final KbTransferRequestService kbTransferRequestService;
+    /** 한 참여자의 송금 실패가 다른 참여자의 시도를 중단하지 않도록 독립 실행한다. */
+    private final KbTransferAttemptService kbTransferAttemptService;
 
 
     /**
@@ -79,16 +89,16 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
      *     <li>모든 참여자가 성공한 경우 라운드를 SETTLED로 변경</li>
      * </ol>
      *
-     * <p>메서드가 정상 종료되면 커밋되면서 {@code FOR UPDATE} 잠금이 해제된다.
-     * 중간에 예외가 발생하면 계좌 잔액을 포함한 모든 변경이 롤백되고 잠금도
-     * 해제되므로 일부 참여자만 정산된 결과는 남지 않는다.</p>
+     * <p>개별 송금 실패는 모아서 마지막에 {@link RoundSettlementIncompleteException}으로
+     * 보고한다. 이 예외는 그룹 트랜잭션의 롤백 대상에서 제외되므로 성공한 참여자의 결과와
+     * 전체 참여자의 {@code prior_failure_response = NULL} 변경은 유지된다.</p>
      *
      * @param groupId 정산 대상 라운드가 속한 그룹 ID
      * @param settlementDate 한국시간 기준 정산 실행일
      * @return 정산을 완료했으면 true, 이미 처리됐거나 대상이 아니면 false
      */
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = RoundSettlementIncompleteException.class)
     public boolean settleRound(String groupId, LocalDate settlementDate) {
         // 잠금 쿼리 실행 전에 필수 식별자와 날짜를 검증한다.
         if (groupId == null || groupId.trim().isEmpty() || settlementDate == null) {
@@ -130,15 +140,41 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
             );
         }
 
+        /*
+         * prior_failure_response는 송금 성공자만이 아니라 이번 정산 대상 전체에서 비운다.
+         * 아래 개별 송금 중 일부가 실패하더라도 불완전 정산 예외는 롤백 대상이 아니므로
+         * 이 초기화가 커밋되어 이전 라운드의 대응 선택이 다음 라운드로 넘어가지 않는다.
+         */
+        roundSettlementMapper.clearPriorFailureResponses(round.getRoundId());
+
+        /*
+         * 참여자 업무 행은 바깥 트랜잭션에서 보호하되 KB 계좌는 잠그지 않는다.
+         * KB 계좌는 참가자별 REQUIRES_NEW 송금 트랜잭션에서 잠가야 바깥 트랜잭션과
+         * 안쪽 트랜잭션이 서로 같은 계좌 잠금을 기다리는 교착 상태를 피할 수 있다.
+         */
+        roundSettlementMapper.lockUnsettledParticipantsForUpdate(round.getRoundId());
+
         List<RoundSettlementParticipant> participants =
                 roundSettlementMapper.findParticipantsForUpdate(round.getRoundId());
         if (participants.isEmpty()) {
             throw new IllegalStateException("정산할 라운드 참여 이력이 없습니다.");
         }
 
-        // 모든 참여자가 공유하는 모임통장을 한 번 잠그고 이후 잔액을 메모리에서 누적한다.
+        /*
+         * 정산 송금 실패 목록은 실제 수령자가 아니라 그룹장이 관리할 예정이다.
+         * groups.user_id는 사용자 식별자이고 kb_transfer_requests.group_user_id는
+         * group_users의 기본키를 참조하므로, 그룹장의 그룹 참여 ID를 한 번 조회해
+         * 현재 라운드의 모든 참여자 송금 요청에 공통으로 저장한다.
+         */
+        Long leaderGroupUserId = requireGroupLeaderGroupUserId(
+                normalizedGroupId, group.getUserId());
+
+        // 모든 참여자가 같은 모임통장을 사용하는지 먼저 확인한다.
+        // 실제 잔액 조회·잠금·부족 여부 검증은 KbTransferService가 이체 건별로 담당한다.
         String sourceKbAccountId = requireCommonSourceAccount(participants);
-        BigDecimal sourceBalance = requireBalance(sourceKbAccountId);
+
+        // 한 참여자의 실패로 반복문을 종료하지 않고 모든 실패를 모아 마지막에 보고한다.
+        List<String> transferFailures = new ArrayList<>();
 
         for (RoundSettlementParticipant participant : participants) {
             // 순위, 참여자, 출발·도착 계좌가 모두 갖춰진 경우에만 금액을 계산한다.
@@ -155,43 +191,77 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
                     throw new IllegalStateException(
                             participant.getUserId() + " 사용자의 현재 예치금이 정산액보다 적습니다.");
                 }
-                if (sourceBalance.compareTo(settlementAmount) < 0) {
-                    throw new IllegalStateException("모임통장 잔액이 라운드 정산액보다 부족합니다.");
-                }
+                /*
+                 * 참여자와 라운드를 조합한 키는 이 정산 건에서 항상 같은 값을 만든다.
+                 * 배치가 재실행돼도 KbTransferService가 기존 SUCCESS 요청을 찾아 실제 계좌
+                 * 잔액을 다시 변경하지 않으므로 동일 정산의 중복 송금을 방지할 수 있다.
+                 *
+                 * 요청 서비스는 PENDING을 먼저 커밋하고, 송금 서비스는 출금·입금 계좌 잠금,
+                 * 잔액 부족 검사, 양쪽 잔액 변경 및 SUCCESS 전환만 담당한다. 실패 시 예외가
+                 * 발생하므로 아래 후속 로직은 성공이 확인된 경우에만 실행된다.
+                 */
+                String transferIdempotencyKey = "settlement:"
+                        + round.getRoundId() + ":" + participant.getRoundHistoryId();
+                KbTransferCommand transferCommand = KbTransferCommand.builder()
+                        .idempotencyKey(transferIdempotencyKey)
+                        .sourceKbAccountId(sourceKbAccountId)
+                        .destinationKbAccountId(
+                                participant.getDestinationKbAccountId())
+                        .amount(settlementAmount)
+                        .transactionCategory(TransactionCategory.SETTLEMENT)
+                        // 정산 실패 내역을 조회하고 관리할 주체는 그룹장이다.
+                        .groupUserId(leaderGroupUserId)
+                        // 실제 돈을 받는 대상은 round_history.user_id에 해당하는 참여자다.
+                        .settlementReceiverId(participant.getUserId())
+                        .roundId(round.getRoundId())
+                        .build();
 
-                // 수령 계좌를 잠가 입금 직후 balance_after를 정확히 원장에 기록한다.
-                // 입금 계좌 잔액 플러스, 출금 계좌 잔액 마이너스, 개인 예치금 현황 마이너스 => 이에 따른 최소 예치금 충족 여부 판정
-                BigDecimal destinationBalance = requireBalance(participant.getDestinationKbAccountId());
-                if (roundSettlementMapper.withdrawFromKbAccount(sourceKbAccountId, settlementAmount) != 1
-                        || roundSettlementMapper.increaseKbAccountBalance(
-                                participant.getDestinationKbAccountId(), settlementAmount) != 1
-                        || roundSettlementMapper.deductCurrentDepositAndUpdateStatus(
-                                participant.getGroupUserId(), settlementAmount,
-                                group.getBaseDepositAmount()) != 1) {
-                    throw new IllegalStateException("참여자 정산 잔액 반영에 실패했습니다.");
-                }
+                /*
+                 * 실제 송금보다 먼저 PENDING을 별도 트랜잭션으로 커밋한다. 따라서 외부 KB가
+                 * 요청을 처리한 직후 애플리케이션이 중단되더라도 송금 의도와 멱등성 키가 남는다.
+                 * 재실행 시 같은 키의 기존 요청을 사용하므로 새 송금 요청 행도 만들지 않는다.
+                 */
+                try {
+                    kbTransferRequestService.createPending(transferCommand);
 
-                BigDecimal sourceBalanceAfter = sourceBalance.subtract(settlementAmount);
-                BigDecimal destinationBalanceAfter = destinationBalance.add(settlementAmount);
+                    /*
+                     * 참가자 한 명의 송금을 별도 트랜잭션에서 실행한다. 실패한 트랜잭션은
+                     * 해당 요청만 롤백한 뒤 FAILED를 기록하며, 여기서는 예외를 수집하고
+                     * continue하여 다음 round_history 참여자의 송금을 계속 시도한다.
+                     */
+                    KbTransferResult transferResult =
+                            kbTransferAttemptService.transfer(transferCommand);
+
+                    if (roundSettlementMapper.deductCurrentDepositAndUpdateStatus(
+                            participant.getGroupUserId(), settlementAmount,
+                            group.getBaseDepositAmount()) != 1) {
+                        throw new IllegalStateException("참여자 예치금 반영에 실패했습니다.");
+                    }
+
+                    // 직접 계산한 예상값 대신, 이체 메서드가 실제 변경에 사용한 잔액 결과를 원장에 기록한다.
+                    BigDecimal sourceBalanceAfter = transferResult.getSourceBalanceAfter();
+                    BigDecimal destinationBalanceAfter = transferResult.getDestinationBalanceAfter();
 
                 // 실제 돈의 흐름과 동일하게 모임통장 출금, 개인계좌 입금 원장을 각각 만든다.
                 // roundId, roundHistoryId, 계좌 방향을 조합한 키로 같은 정산의 중복 원장을 막는다.
-                insertTransaction(participant, round.getRoundId(), sourceKbAccountId,
-                        TransactionType.WITHDRAW, settlementAmount, sourceBalanceAfter,
-                        "settlement:" + round.getRoundId() + ":"
-                                + participant.getRoundHistoryId() + ":moim",
-                        "라운드 미래 적립금 출금", participant.getDestinationAccountNumber(),
-                        participant.getDestinationAccountName());
-                insertTransaction(participant, round.getRoundId(),
-                        participant.getDestinationKbAccountId(), TransactionType.DEPOSIT,
-                        settlementAmount, destinationBalanceAfter,
-                        "settlement:" + round.getRoundId() + ":"
-                                + participant.getRoundHistoryId() + ":account",
-                        "라운드 미래 적립금 입금", participant.getSourceAccountNumber(),
-                        participant.getSourceAccountName());
-
-                // 다음 참여자는 직전 출금이 반영된 잔액을 기준으로 부족 여부와 원장을 계산한다.
-                sourceBalance = sourceBalanceAfter;
+                    insertTransaction(participant, round.getRoundId(), sourceKbAccountId,
+                            TransactionType.WITHDRAW, settlementAmount, sourceBalanceAfter,
+                            "settlement:" + round.getRoundId() + ":"
+                                    + participant.getRoundHistoryId() + ":moim",
+                            "라운드 미래 적립금 출금", participant.getDestinationAccountNumber(),
+                            participant.getDestinationAccountName());
+                    insertTransaction(participant, round.getRoundId(),
+                            participant.getDestinationKbAccountId(), TransactionType.DEPOSIT,
+                            settlementAmount, destinationBalanceAfter,
+                            "settlement:" + round.getRoundId() + ":"
+                                    + participant.getRoundHistoryId() + ":account",
+                            "라운드 미래 적립금 입금", participant.getSourceAccountNumber(),
+                            participant.getSourceAccountName());
+                } catch (RuntimeException exception) {
+                    transferFailures.add("userId=" + participant.getUserId()
+                            + ", message=" + exception.getMessage());
+                    continue;
+                }
             }
 
             // 규칙에 없는 순위도 0원으로 확정하고 이전 실패 대응값을 비운다.
@@ -199,6 +269,16 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
                     participant.getRoundHistoryId(), settlementAmount) != 1) {
                 throw new IllegalStateException("라운드 참여 이력 정산 반영에 실패했습니다.");
             }
+        }
+
+        /*
+         * 실패자가 한 명이라도 있으면 라운드는 WAITING_SETTLEMENT로 유지한다.
+         * 단, 예외를 던지기 전 모든 참가자를 이미 시도했으며 noRollbackFor 설정에 의해
+         * 성공 결과와 prior_failure_response 초기화는 커밋된다.
+         */
+        if (!transferFailures.isEmpty()) {
+            throw new RoundSettlementIncompleteException(
+                    "일부 참여자 정산 송금에 실패했습니다: " + String.join(" | ", transferFailures));
         }
 
         // 모든 참여자의 이체와 원장 저장이 성공한 뒤에만 최종 정산 완료 상태로 전환한다.
@@ -297,15 +377,22 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
     }
 
     /**
-     * KB 계좌 행을 {@code FOR UPDATE}로 잠그고 현재 잔액을 반환한다.
-     * 반환된 잔액은 실제 UPDATE와 거래 원장의 balance_after 계산에 함께 사용된다.
+     * 그룹 생성자인 {@code groups.user_id}에 대응하는 {@code group_users.group_user_id}를 반환한다.
+     *
+     * <p>정산 요청의 {@code group_user_id}는 송금 수령자를 뜻하지 않고, 향후 실패 목록을
+     * 조회하고 재처리할 책임자인 그룹장을 뜻한다. 그룹장이 group_users에 존재하지 않으면
+     * 실패 내역의 소유자를 결정할 수 없으므로 실제 송금 전에 정산 전체를 중단한다.</p>
      */
-    private BigDecimal requireBalance(String kbAccountId) {
-        BigDecimal balance = roundSettlementMapper.findKbAccountBalanceForUpdate(kbAccountId);
-        if (balance == null) {
-            throw new IllegalStateException("정산 계좌의 KB 계좌 정보를 찾을 수 없습니다.");
+    private Long requireGroupLeaderGroupUserId(String groupId, String leaderUserId) {
+        if (isBlank(groupId) || isBlank(leaderUserId)) {
+            throw new IllegalStateException("정산 그룹의 그룹장 정보가 올바르지 않습니다.");
         }
-        return balance;
+        Long leaderGroupUserId = roundSettlementMapper.findGroupLeaderGroupUserId(
+                groupId, leaderUserId);
+        if (leaderGroupUserId == null) {
+            throw new IllegalStateException("그룹장의 그룹 참여 정보를 찾을 수 없습니다.");
+        }
+        return leaderGroupUserId;
     }
 
     /**
