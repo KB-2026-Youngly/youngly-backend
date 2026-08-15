@@ -15,8 +15,8 @@ import java.util.List;
 /**
  * 예치금 납부에 필요한 계좌·참여자·거래 원장 MyBatis Mapper.
  *
- * <p>실제 금액은 {@code kb_accounts.balance}에서 관리한다. 모든 잠금 조회와
- * 잔액 변경은 서비스 트랜잭션 안에서만 호출해야 한다.</p>
+ * <p>참여자 예치 상태와 예치 거래원장을 담당한다. KB 계좌 잠금과 실제 잔액 변경은
+ * 예치·정산에서 공통으로 사용하는 {@link KbTransferMapper}에 위임한다.</p>
  */
 public interface DepositMapper {
 
@@ -31,16 +31,8 @@ public interface DepositMapper {
 
     MoimAccountVO findMoimAccountById(String moimAccountId);
 
-    /** KB 계좌 잔액을 잠근 뒤 반환한다. */
-    BigDecimal findKbAccountBalanceForUpdate(String kbAccountId);
-
     /** 개인 출금 계좌가 입출금(DEPOSIT) 계좌인지 확인한다. */
     int countDepositKbAccount(String kbAccountId);
-
-    /** 잔액이 충분할 때만 KB 계좌에서 출금한다. */
-    int withdrawFromKbAccount(@Param("kbAccountId") String kbAccountId, @Param("amount") BigDecimal amount);
-
-    int increaseKbAccountBalance(@Param("kbAccountId") String kbAccountId, @Param("amount") BigDecimal amount);
 
     int increaseCurrentDeposit(@Param("groupUserId") Long groupUserId, @Param("amount") BigDecimal amount);
 
@@ -48,7 +40,10 @@ public interface DepositMapper {
 
     int insertAccountTransaction(AccountTransactionVO transaction);
 
-    /** 멱등성 키는 모임통장 입금 원장에만 저장해 한 요청의 두 거래를 구분한다. */
+    /**
+     * 계좌별 파생 멱등성 키로 거래원장을 조회한다.
+     * 예치 완료 여부는 원본 요청 키에 {@code :in}을 붙인 모임통장 입금 원장으로 확인한다.
+     */
     AccountTransactionVO findAccountTransactionByIdempotencyKey(String idempotencyKey);
 
     List<MemberDepositStatusResponse> findMemberDepositStatuses(String groupId);

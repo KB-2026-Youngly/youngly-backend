@@ -9,7 +9,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-/** 라운드 정산에 필요한 잠금 조회, 잔액 변경, 원장 저장 MyBatis Mapper. */
+/**
+ * 라운드 정산 대상, 참여자 예치금, 정산 이력 및 거래원장을 담당하는 Mapper.
+ * KB 계좌 잠금과 잔액 변경은 송금 경계를 분명히 하기 위해 {@link KbTransferMapper}로 분리한다.
+ */
 public interface RoundSettlementMapper {
 
     List<String> findDueSettlementGroupIds(@Param("settlementDate") LocalDate settlementDate);
@@ -17,15 +20,17 @@ public interface RoundSettlementMapper {
     RoundVO findWaitingRoundForUpdate(@Param("groupId") String groupId,
                                       @Param("endDate") LocalDate endDate);
 
+    /** 미정산 참여자의 round_history와 group_users 행만 잠그고 KB 계좌는 잠그지 않는다. */
+    List<Long> lockUnsettledParticipantsForUpdate(@Param("roundId") Long roundId);
+
     List<RoundSettlementParticipant> findParticipantsForUpdate(@Param("roundId") Long roundId);
 
-    BigDecimal findKbAccountBalanceForUpdate(@Param("kbAccountId") String kbAccountId);
+    /** 새 라운드 준비를 위해 기존 실패 대응 선택을 전체 참여자에서 제거한다. */
+    int clearPriorFailureResponses(@Param("roundId") Long roundId);
 
-    int withdrawFromKbAccount(@Param("kbAccountId") String kbAccountId,
-                              @Param("amount") BigDecimal amount);
-
-    int increaseKbAccountBalance(@Param("kbAccountId") String kbAccountId,
-                                 @Param("amount") BigDecimal amount);
+    /** 정산 실패 목록의 소유자로 기록할 그룹장의 group_user_id를 조회한다. */
+    Long findGroupLeaderGroupUserId(@Param("groupId") String groupId,
+                                    @Param("leaderUserId") String leaderUserId);
 
     int deductCurrentDepositAndUpdateStatus(@Param("groupUserId") Long groupUserId,
                                             @Param("amount") BigDecimal amount,
