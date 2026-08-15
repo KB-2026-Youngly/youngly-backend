@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import com.kb.youngly.dto.posts.CreatePostRequestDTO;
+import com.kb.youngly.dto.posts.CreatePostResponseDTO;
+import com.kb.youngly.enums.PostStatus;
 
 import java.util.List;
 
@@ -18,29 +21,90 @@ public class PostService {
     private final PostMapper postMapper;
     private final FileUploadUtil fileUploadUtil;
 
-    @Transactional // 파일 저장은 됐는데 DB 저장이 실패하면 둘 다 원상복구.
-    public void createPost(PostDTO postDTO) {
-        // 1. DTO에서 클라이언트가 보낸 사진 파일만 빼오기
-        MultipartFile imageFile = postDTO.getImageFile();
-        String savedFileName = null;
+    @Transactional
+    public CreatePostResponseDTO createPost(
+            String userId,
+            CreatePostRequestDTO request
+    ) {
+        validateCreatePostRequest(request);
 
-        // 2. 파일이 있으면 유틸리티를 통해 로컬에 저장하고 파일명(랜덤이름.jpg) 받아오기
-        if (imageFile != null && !imageFile.isEmpty()) {
-            savedFileName = fileUploadUtil.saveFile(imageFile);
-        } else {
-            // 인증 게시물인데 사진이 없으면 에러
-            throw new RuntimeException("인증용 이미지가 반드시 필요합니다.");
+        Long roundId = request.getRoundId();
+
+        // 해당 라운드의 활성 참여자인지 확인
+        boolean isMember =
+                postMapper.checkGroupMembership(roundId, userId);
+
+        if (!isMember) {
+            throw new IllegalArgumentException(
+                    "해당 챌린지에 인증을 등록할 권한이 없습니다."
+            );
         }
 
-        // 3. DB에 저장할 VO 객체에 담기
-        PostVO postVO = new PostVO();
-        postVO.setRoundId(postDTO.getRoundId());
-        postVO.setUserId(postDTO.getUserId());
-        postVO.setContent(postDTO.getContent());
-        postVO.setPhotoUrl(savedFileName); // 아까 유틸에서 반환받은 파일명 셋팅
+        // 하루에 한 번만 인증 가능
+        int uploadedCount =
+                postMapper.countTodayUploadedPost(roundId, userId);
 
-        // 4. VO를 Mapper에게 넘겨서 DB에 최종 UPDATE
-        postMapper.updatePost(postVO);
+        if (uploadedCount > 0) {
+            throw new IllegalArgumentException(
+                    "오늘 인증 게시글을 이미 등록했습니다."
+            );
+        }
+
+        String content = request.getContent() == null
+                ? ""
+                : request.getContent().trim();
+
+        String savedFileName =
+                fileUploadUtil.saveFile(request.getImageFile());
+
+        PostVO post = PostVO.builder()
+                .roundId(roundId)
+                .userId(userId)
+                .content(content)
+                .photoUrl(savedFileName)
+                .postStatus(PostStatus.PENDING)
+                .build();
+
+        try {
+            // 매일 미리 만들어진 NONE 게시물이 있는지 확인
+            Long emptyPostId =
+                    postMapper.findTodayEmptyPostId(roundId, userId);
+
+            if (emptyPostId != null) {
+                post.setPostId(emptyPostId);
+
+                int updatedCount = postMapper.updatePost(post);
+
+                if (updatedCount != 1) {
+                    throw new IllegalStateException(
+                            "인증 게시글 상태 변경에 실패했습니다."
+                    );
+                }
+            } else {
+                // NONE 게시물을 생성하는 스케줄러가 아직 없는 경우
+                // 새 게시글을 바로 생성
+                int insertedCount = postMapper.insertPost(post);
+
+                if (insertedCount != 1 || post.getPostId() == null) {
+                    throw new IllegalStateException(
+                            "인증 게시글 등록에 실패했습니다."
+                    );
+                }
+            }
+        } catch (RuntimeException exception) {
+            // DB 저장 실패 시 먼저 저장한 파일 제거
+            fileUploadUtil.deleteFile(savedFileName);
+            throw exception;
+        }
+
+        return CreatePostResponseDTO.builder()
+                .postId(post.getPostId())
+                .roundId(post.getRoundId())
+                .userId(post.getUserId())
+                .content(post.getContent())
+                .photoUrl("/uploads/" + savedFileName)
+                .postStatus(PostStatus.PENDING)
+                .build();
     }
 
     // 피드 목록 조회 로직
@@ -144,6 +208,38 @@ public class PostService {
             postMapper.updatePostStatus(postId, "REJECTED");
         }
         // 둘 다 과반수를 못 넘었으면? 아직 투표가 진행 중인 거니까 그냥 종료(PASS)!
+    }
+
+    private void validateCreatePostRequest(
+            CreatePostRequestDTO request
+    ) {
+        if (request == null) {
+            throw new IllegalArgumentException(
+                    "인증 게시글 정보가 없습니다."
+            );
+        }
+
+        if (request.getRoundId() == null) {
+            throw new IllegalArgumentException(
+                    "인증할 그룹을 선택해 주세요."
+            );
+        }
+
+        MultipartFile imageFile = request.getImageFile();
+
+        if (imageFile == null || imageFile.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "인증 사진을 등록해 주세요."
+            );
+        }
+
+        String content = request.getContent();
+
+        if (content != null && content.trim().length() > 500) {
+            throw new IllegalArgumentException(
+                    "인증 소감은 500자 이하로 입력해 주세요."
+            );
+        }
     }
 
 }

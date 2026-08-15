@@ -4,17 +4,83 @@
 <mapper namespace="com.kb.youngly.mapper.PostMapper">
 
 <!-- DB의 빈 인증 게시글(NONE) 상태를 PENDING으로 수정(UPDATE)하는 메서드 -->
-<update id="updatePost" parameterType="com.kb.youngly.vo.post.PostVO">
-    UPDATE posts
-    SET photo_url = #{photoUrl},
-    content = #{content},
-    post_status = 'PENDING',
-    posted_at = NOW()
-    WHERE round_id = #{roundId}
-    AND user_id = #{userId}
-    AND post_status = 'NONE'
-</update>
+    <update id="updatePost"
+            parameterType="com.kb.youngly.vo.post.PostVO">
+        UPDATE posts
+        SET photo_url = #{photoUrl},
+            content = #{content},
+            post_status = 'PENDING',
+            posted_at = NOW(),
+            status_changed_at = NULL,
+            like_count = 0,
+            dislike_count = 0,
+            comment_count = 0,
+            reject_count = 0,
+            approve_count = 0
+        WHERE post_id = #{postId}
+          AND post_status = 'NONE'
+    </update>
 
+
+    <!-- 오늘 미리 생성된 NONE 게시글 조회 -->
+    <select id="findTodayEmptyPostId" resultType="long">
+        SELECT post_id
+        FROM posts
+        WHERE round_id = #{roundId}
+          AND user_id = #{userId}
+          AND post_status = 'NONE'
+          AND DATE(created_at) = CURRENT_DATE
+        ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE
+    </select>
+
+    <!-- 오늘 이미 등록한 인증 게시글이 있는지 확인 -->
+    <select id="countTodayUploadedPost" resultType="int">
+        SELECT COUNT(*)
+        FROM posts
+        WHERE round_id = #{roundId}
+          AND user_id = #{userId}
+          AND post_status != 'NONE'
+      AND DATE(posted_at) = CURRENT_DATE
+    </select>
+
+    <!-- NONE 게시글이 없는 경우 새 게시글 생성 -->
+    <insert id="insertPost"
+            parameterType="com.kb.youngly.vo.post.PostVO"
+            useGeneratedKeys="true"
+            keyProperty="postId">
+        INSERT INTO posts (
+            round_id,
+            user_id,
+            photo_url,
+            content,
+            post_status,
+            created_at,
+            updated_at,
+            posted_at,
+            like_count,
+            dislike_count,
+            comment_count,
+            reject_count,
+            approve_count
+        )
+        VALUES (
+                   #{roundId},
+                   #{userId},
+                   #{photoUrl},
+                   #{content},
+                   'PENDING',
+                   NOW(),
+                   NOW(),
+                   NOW(),
+                   0,
+                   0,
+                   0,
+                   0,
+                   0
+               )
+    </insert>
 <!-- 1. 특정 라운드(그룹)의 날짜별 피드 리스트 조회 (최신 댓글 1개 포함) -->
 <select id="getFeedListByDate" resultType="com.kb.youngly.dto.posts.FeedListResponseDTO">
     SELECT p.post_id, p.photo_url, p.content, p.posted_at,
@@ -56,14 +122,19 @@
 </select>
 
 <!-- 그룹 멤버십 검증 쿼리 -->
-<select id="checkGroupMembership" resultType="boolean">
-    SELECT COUNT(*)
-    FROM round_history rh
-    JOIN group_users gu ON rh.user_id = gu.user_id
-    WHERE rh.round_id = #{roundId}
-    AND rh.user_id = #{userId}
-    AND gu.group_user_status = 'ACTIVE'
-</select>
+    <select id="checkGroupMembership" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM rounds r
+                 JOIN round_history rh
+                      ON rh.round_id = r.round_id
+                          AND rh.user_id = #{userId}
+                 JOIN group_users gu
+                      ON gu.group_id = r.group_id
+                          AND gu.user_id = #{userId}
+        WHERE r.round_id = #{roundId}
+          AND r.round_status = 'ONGOING'
+          AND gu.group_user_status = 'ACTIVE'
+    </select>
 
     <!-- 게시물 승인 및 반려 API - 본인 검증 및 과반수 계산용 -->
     <select id="getPostById" resultType="com.kb.youngly.dto.posts.PostDTO">

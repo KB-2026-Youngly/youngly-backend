@@ -14,6 +14,21 @@ public interface PostMapper {
     // DB의 빈 인증 게시글(NONE) 상태를 PENDING으로 수정(UPDATE)하는 메서드
     int updatePost(PostVO postVO);
 
+    // 오늘 미인증 상태로 만들어진 빈 게시글 ID 조회
+    Long findTodayEmptyPostId(
+            @Param("roundId") Long roundId,
+            @Param("userId") String userId
+    );
+
+    // 오늘 이미 업로드한 인증 게시글 개수
+    int countTodayUploadedPost(
+            @Param("roundId") Long roundId,
+            @Param("userId") String userId
+    );
+
+    // 미리 만들어진 NONE 게시물이 없을 때 새 게시글 생성
+    int insertPost(PostVO postVO);
+
     // 1. 특정 라운드(그룹)의 날짜별 피드 리스트 조회 (최신 댓글 1개 포함)
     List<FeedListResponseDTO> getFeedListByDate(@Param("roundId") Long roundId, @Param("date") String date);
 

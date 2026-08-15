@@ -13,6 +13,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import java.nio.file.Paths;
 
 import java.util.List;
 
@@ -68,6 +69,16 @@ public class ServletConfig implements WebMvcConfigurer {
 
         registry.addResourceHandler("/webjars/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/");
+
+        String uploadResourceLocation =
+                Paths.get(uploadLocation)
+                        .toAbsolutePath()
+                        .normalize()
+                        .toUri()
+                        .toString();
+
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations(uploadResourceLocation);
     }
 
     /**
@@ -105,4 +116,7 @@ public class ServletConfig implements WebMvcConfigurer {
     public MultipartResolver multipartResolver() {
         return new StandardServletMultipartResolver();
     }
+
+    @Value("${upload.location}")
+    private String uploadLocation;
 }
