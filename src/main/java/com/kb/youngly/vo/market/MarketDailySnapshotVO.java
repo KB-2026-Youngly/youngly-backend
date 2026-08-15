@@ -22,6 +22,8 @@ public class MarketDailySnapshotVO {
     private String pdfUrl;
     private String rawText;
     private String summaryText;
+    private String marketHeadlineText;
+    private String marketDetailText;
     private BigDecimal kospi;
     private BigDecimal kosdaq;
     private BigDecimal nasdaq;

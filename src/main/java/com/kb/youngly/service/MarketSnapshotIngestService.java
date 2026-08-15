@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -20,8 +21,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class MarketSnapshotIngestService {
@@ -30,6 +33,7 @@ public class MarketSnapshotIngestService {
     private static final int SUMMARY_MAX_LENGTH = 4_000;
     private static final Pattern DATE_PATTERN = Pattern.compile("(\\d{4})[-./](\\d{1,2})[-./](\\d{1,2})");
     private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final ZoneId DEFAULT_MARKET_ZONE = ZoneId.of("Asia/Seoul");
 
     private final FssMarketApiClient fssMarketApiClient;
     private final FssMarketPdfDownloadService pdfDownloadService;
@@ -47,14 +51,15 @@ public class MarketSnapshotIngestService {
     }
 
     public MarketSnapshotIngestResult ingestRecentTwoWeeks() {
-        LocalDate endDate = LocalDate.now();
-        return ingest(endDate.minusDays(14), endDate);
+        LocalDate today = LocalDate.now(DEFAULT_MARKET_ZONE);
+        return ingest(today.minusDays(14), today.minusDays(1));
     }
 
     public MarketSnapshotIngestResult ingest(LocalDate startDate, LocalDate endDate) {
         Objects.requireNonNull(startDate, "startDate must not be null");
         Objects.requireNonNull(endDate, "endDate must not be null");
 
+        Set<LocalDate> reusableDates = findReusableDates(startDate, endDate);
         List<FssMarketItem> items = fssMarketApiClient.fetchMarketItems(startDate, endDate);
         int targetPdfCount = 0;
         int savedCount = 0;
@@ -68,6 +73,21 @@ public class MarketSnapshotIngestService {
                 continue;
             }
 
+            Optional<LocalDate> marketDate = resolveMarketDate(item);
+            if (marketDate.isEmpty()) {
+                log.warn("[MARKET_SNAPSHOT_DATE_PARSE_FAILED] subject={}, regDate={}",
+                        item.getSubject(), item.getRegDate());
+                failedCount++;
+                continue;
+            }
+
+            if (reusableDates.contains(marketDate.get())) {
+                skippedCount++;
+                log.info("[MARKET_SNAPSHOT_INGEST_SKIPPED_EXISTING] marketDate={}, subject={}",
+                        marketDate.get(), item.getSubject());
+                continue;
+            }
+
             for (Attachment attachment : attachments) {
                 if (!isTargetAfternoonPdf(attachment.getFileName())) {
                     skippedCount++;
@@ -76,18 +96,10 @@ public class MarketSnapshotIngestService {
 
                 targetPdfCount++;
                 try {
-                    Optional<LocalDate> marketDate = resolveMarketDate(item);
-                    if (marketDate.isEmpty()) {
-                        log.warn("[WARN] 시장동향 항목의 날짜 파싱 실패. subject={}, regDate={}, fileName={}",
-                                item.getSubject(), item.getRegDate(), attachment.getFileName());
-                        failedCount++;
-                        continue;
-                    }
-
                     byte[] pdfBytes = pdfDownloadService.download(attachment.getUrl());
                     String rawText = pdfParseService.extractText(pdfBytes);
                     if (!StringUtils.hasText(rawText)) {
-                        log.warn("[WARN] PDF 텍스트 추출 결과가 비어 있습니다. fileName={}, pdfUrl={}",
+                        log.warn("[MARKET_SNAPSHOT_PDF_TEXT_EMPTY] fileName={}, pdfUrl={}",
                                 attachment.getFileName(), attachment.getUrl());
                     }
 
@@ -102,28 +114,43 @@ public class MarketSnapshotIngestService {
 
                     int affectedRows = marketDailySnapshotMapper.upsertMarketDailySnapshot(snapshot);
                     if (affectedRows < 1) {
-                        throw new IllegalStateException("market_daily_snapshot 저장 결과가 0건입니다.");
+                        throw new IllegalStateException("market_daily_snapshot upsert affected no rows.");
                     }
                     savedCount++;
                 } catch (FssMarketPdfDownloadException e) {
                     failedCount++;
-                    log.error("[ERROR] 시장동향 PDF 다운로드 단계 실패. subject={}, fileName={}, pdfUrl={}",
+                    log.error("[MARKET_SNAPSHOT_PDF_DOWNLOAD_FAILED] subject={}, fileName={}, pdfUrl={}",
                             item.getSubject(), attachment.getFileName(), attachment.getUrl(), e);
                 } catch (PdfParseException e) {
                     failedCount++;
-                    log.error("[ERROR] 시장동향 PDF 파싱 단계 실패. subject={}, fileName={}, pdfUrl={}",
+                    log.error("[MARKET_SNAPSHOT_PDF_PARSE_FAILED] subject={}, fileName={}, pdfUrl={}",
                             item.getSubject(), attachment.getFileName(), attachment.getUrl(), e);
                 } catch (RuntimeException e) {
                     failedCount++;
-                    log.error("[ERROR] 시장동향 DB 저장 단계 실패. subject={}, fileName={}, pdfUrl={}",
+                    log.error("[MARKET_SNAPSHOT_SAVE_FAILED] subject={}, fileName={}, pdfUrl={}",
                             item.getSubject(), attachment.getFileName(), attachment.getUrl(), e);
                 }
             }
         }
 
-        log.info("[INFO] 시장동향 스냅샷 수집 완료. totalItems={}, targetPdfCount={}, savedCount={}, skippedCount={}, failedCount={}",
-                items.size(), targetPdfCount, savedCount, skippedCount, failedCount);
+        log.info("[MARKET_SNAPSHOT_INGEST_DONE] startDate={}, endDate={}, totalItems={}, targetPdfCount={}, savedCount={}, skippedCount={}, failedCount={}",
+                startDate, endDate, items.size(), targetPdfCount, savedCount, skippedCount, failedCount);
         return new MarketSnapshotIngestResult(items.size(), targetPdfCount, savedCount, skippedCount, failedCount);
+    }
+
+    private Set<LocalDate> findReusableDates(LocalDate startDate, LocalDate endDate) {
+        return marketDailySnapshotMapper.findRecentSnapshots(startDate, endDate, 100)
+                .stream()
+                .filter(this::hasReusableSnapshotText)
+                .map(MarketDailySnapshotVO::getMarketDate)
+                .collect(Collectors.toSet());
+    }
+
+    private boolean hasReusableSnapshotText(MarketDailySnapshotVO snapshot) {
+        return snapshot != null
+                && snapshot.getMarketDate() != null
+                && (StringUtils.hasText(snapshot.getRawText())
+                || StringUtils.hasText(snapshot.getSummaryText()));
     }
 
     private List<Attachment> resolveAttachments(FssMarketItem item) {

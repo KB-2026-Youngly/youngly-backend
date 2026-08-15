@@ -101,4 +101,21 @@
         ORDER BY interest_id ASC
     </select>
 
+    <select id="selectBySurveyResultIdAndUserId"
+            resultType="com.kb.youngly.vo.survey.SurveyResultVO">
+        SELECT
+            survey_result_id,
+            user_id,
+            answers_json,
+            total_score,
+            baseline,
+            submitted_at,
+            calculated_at,
+            created_at
+        FROM survey_results
+        WHERE survey_result_id = #{surveyResultId}
+          AND user_id = #{userId}
+        LIMIT 1
+    </select>
+
 </mapper>

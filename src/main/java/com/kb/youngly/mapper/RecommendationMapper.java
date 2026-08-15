@@ -20,10 +20,15 @@ public interface RecommendationMapper {
     ObjectMapper JSON_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     static RecommendationVO toVO(String userId, String baseline, RecommendationResponse response) {
+        return toVO(userId, baseline, null, response);
+    }
+
+    static RecommendationVO toVO(String userId, String baseline, Long surveyResultId, RecommendationResponse response) {
         try {
             return RecommendationVO.builder()
                     .userId(userId)
-                    .baseline(Baseline.valueOf(baseline))
+                    .surveyResultId(surveyResultId)
+                    .baseline(resolveBaseline(baseline))
                     .periodStartDate(response.periodStartDate())
                     .periodEndDate(response.periodEndDate())
                     .settledAmountThisMonth(response.settledAmountThisMonth())
@@ -44,6 +49,19 @@ public interface RecommendationMapper {
                     .build();
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("추천 응답 JSON 직렬화에 실패했습니다.", e);
+        }
+    }
+
+    static Baseline resolveBaseline(String baselineValue) {
+        try {
+            return Baseline.valueOf(baselineValue);
+        } catch (IllegalArgumentException e) {
+            for (Baseline baseline : Baseline.values()) {
+                if (baseline.getLabel().equals(baselineValue)) {
+                    return baseline;
+                }
+            }
+            throw e;
         }
     }
 

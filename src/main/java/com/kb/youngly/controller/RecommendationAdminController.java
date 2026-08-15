@@ -21,9 +21,10 @@ public class RecommendationAdminController {
     private final RecommendationService recommendationService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<RecommendationResponse> generateRecommendation(@PathVariable String userId) {
-        log.info("[INFO] AI 연금 코치 리포트 생성 요청. userId={}", userId);
-        RecommendationResponse response = recommendationService.generateRecommendation(userId);
+    public ResponseEntity<RecommendationResponse> generateRecommendation(@PathVariable String userId,
+                                                                         @RequestParam Long surveyResultId) {
+        log.info("[INFO] AI 연금 코치 리포트 생성 요청. userId={}, surveyResultId={}", userId, surveyResultId);
+        RecommendationResponse response = recommendationService.generateRecommendation(userId, surveyResultId);
         return ResponseEntity.ok(response);
     }
 }

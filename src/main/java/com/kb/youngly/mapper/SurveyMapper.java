@@ -22,4 +22,7 @@ public interface SurveyMapper {
                                            @Param("choiceId") long choiceId);
 
     List<InterestOptionDTO> selectAllInterests();
+
+    SurveyResultVO selectBySurveyResultIdAndUserId(@Param("surveyResultId") Long surveyResultId,
+                                                   @Param("userId") String userId);
 }

@@ -63,7 +63,7 @@ INSERT INTO `interests` (`interest_id`, `interest_name`, `is_investment`) VALUES
       (7, '자동차/모빌리티', TRUE),
       (8, '엔터테인먼트/미디어', TRUE),
       (9, '반도체', TRUE),
-      (10, '기타', TRUE),
+      (10, '해당 없음', TRUE),
       (11, '여행', FALSE),
       (12, '운동/피트니스', FALSE),
       (13, '게임', FALSE),
@@ -1092,6 +1092,46 @@ VALUES
     (9303, 'kb-moim-aiuser02-rd', 9002, 9103, 'DEPOSIT', 'CHARGE', 100000.00, 100000.00,
      'AIUSER02-RD-R1-INITIAL', '독서 챌린지 1라운드 예치금', 'kb-deposit-aiuser02', '국민', '테스트유저',
      '2026-07-05 10:10:00');
+
+
+-- fss 초과용 예시 (추후 삭제 필수)
+# INSERT INTO market_daily_snapshot (
+#     market_date,
+#     source_subject,
+#     pdf_file_name,
+#     pdf_url,
+#     raw_text,
+#     summary_text,
+#     market_headline_text,
+#     market_detail_text,
+#     created_at,
+#     updated_at
+# ) VALUES (
+#              '2026-08-13',
+#              '일일 금융시장 동향[8.13일]',
+#              '260813 오후동향_F.pdf',
+#              'https://example.com/market/260813-afternoon.pdf',
+#              '실제 원문은 개발 시드에서 생략했습니다.',
+#              '최근 14일 시장 흐름을 요약한 개발 테스트 데이터입니다.',
+#              'KOSPI·KOSDAQ 상승세 지속; 미·유럽 주요 지수 혼조; 환율·금리 동향 주시',
+#              '최근 14일간 글로벌 시장은 미국·유럽 주요 지수의 변화와 한국 지수의 동시 상승이 관찰되었습니다. KOSPI는 8월13일 기준 전일 대비 상승했고, KOSDAQ은 소폭 상승 또는 보합 흐름을 보였습니다. 달러인덱스와 주요 환율은 소폭 변동했고, 금리와 원자재 가격은 방향성이 양가적으로 나타났습니다. 8월12일과 8월13일의 수치 비교에서 외국인 자금 흐름과 채권과 주식 간 매매동향이 혼재했습니다.',
+#              NOW(),
+#              NOW()
+#          )
+# ON DUPLICATE KEY UPDATE
+#                      source_subject = VALUES(source_subject),
+#                      pdf_file_name = VALUES(pdf_file_name),
+#                      pdf_url = VALUES(pdf_url),
+#                      raw_text = VALUES(raw_text),
+#                      summary_text = VALUES(summary_text),
+#                      market_headline_text = VALUES(market_headline_text),
+#                      market_detail_text = VALUES(market_detail_text),
+#                      updated_at = NOW();
+
+
+
+
+
 
 
 -- ============================================================================

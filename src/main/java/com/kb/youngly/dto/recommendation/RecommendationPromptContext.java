@@ -9,6 +9,8 @@ public record RecommendationPromptContext(
         String baselineLabel,
         List<String> investmentInterests,
         List<String> hobbyInterests,
+        List<SurveyQuestionAnswer> surveyQuestionAnswers,
+        String surveyQuestionAnswerSummary,
         String recentMarketContext,
         PensionForecastFacts forecastFacts
 ) {

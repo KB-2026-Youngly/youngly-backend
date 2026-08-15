@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 public class RecommendationVO {
     private Long recommendationId;
     private String userId;
+    private Long surveyResultId;
     private Baseline baseline;
     private LocalDate periodStartDate;
     private LocalDate periodEndDate;

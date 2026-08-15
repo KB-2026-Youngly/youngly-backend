@@ -10,6 +10,7 @@
             keyProperty="recommendationId">
         INSERT INTO recommendations (
             user_id,
+            survey_result_id,
             baseline,
             period_start_date,
             period_end_date,
@@ -30,6 +31,7 @@
             generation_mode
         ) VALUES (
             #{userId},
+            #{surveyResultId},
             #{baseline},
             #{periodStartDate},
             #{periodEndDate},
@@ -56,6 +58,7 @@
         SELECT
             recommendation_id,
             user_id,
+            survey_result_id,
             baseline,
             period_start_date,
             period_end_date,
