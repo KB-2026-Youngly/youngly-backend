@@ -1,12 +1,12 @@
 package com.kb.youngly.controller;
 
-import com.kb.youngly.dto.posts.FeedDetailResponseDTO;
-import com.kb.youngly.dto.posts.FeedListResponseDTO;
-import com.kb.youngly.dto.posts.PostApprovalRequestDTO;
-import com.kb.youngly.dto.posts.PostDTO;
+import com.kb.youngly.dto.posts.*;
 import com.kb.youngly.service.PostService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,17 +18,26 @@ public class PostController {
 
     private final PostService postService;
 
-    /**
-     * 인증 게시글 등록 (이미지 업로드 포함)
-     * POST /api/posts
-     */
-    @PostMapping
-    public ResponseEntity<String> createPost(@ModelAttribute PostDTO postDTO) {
-        // 1. 서비스에 비즈니스 로직(파일 저장 + DB INSERT) 위임
-        postService.createPost(postDTO);
 
-        // 2. 성공 시 클라이언트에게 깔끔하게 응답 반환
-        return ResponseEntity.ok("인증 게시글 및 이미지 업로드 성공!");
+    /**
+     * 인증 게시글 등록
+     *
+     * POST /api/posts
+     * Content-Type: multipart/form-data
+     */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CreatePostResponseDTO> createPost(
+            Authentication authentication,
+            @ModelAttribute CreatePostRequestDTO request) {
+
+        String userId = authentication.getName();
+
+        CreatePostResponseDTO response =
+                postService.createPost(userId, request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
 

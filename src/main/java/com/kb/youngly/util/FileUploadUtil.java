@@ -6,56 +6,114 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 import java.util.UUID;
 
 @Component
 public class FileUploadUtil {
 
-    // application.properties에 적어둔 저장 경로
+    private static final long MAX_IMAGE_SIZE =
+            10L * 1024L * 1024L;
+
+    private static final Set<String> ALLOWED_EXTENSIONS =
+            Set.of(".jpg", ".jpeg", ".png", ".webp");
+
     @Value("${upload.location}")
     private String uploadLocation;
 
     public String saveFile(MultipartFile file) {
-        // 1. 파일이 비어있는지 확인
-        if (file.isEmpty()) {
-            throw new RuntimeException("업로드된 파일이 없습니다.");
-        }
+        validateFile(file);
 
         String originalFilename = file.getOriginalFilename();
+        String extension = extractExtension(originalFilename);
+        String savedFilename =
+                UUID.randomUUID() + extension;
 
-        // 2. 파일 확장자 추출 및 소문자 변환
-        String extension = "";
-        if (originalFilename != null && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
-        }
-
-        // 3. 확장자 검사 (jpg, jpeg, png만 허용)
-        if (!extension.equals(".jpg") && !extension.equals(".jpeg") && !extension.equals(".png")) {
-            throw new RuntimeException("지원하지 않는 파일 형식입니다. (jpg, jpeg, png만 가능)");
-        }
-
-        // 4. 고유한 파일명 생성 (UUID 활용)
-        // 사용자들이 올리는 파일 이름이 우연히 똑같은 경우를 막기 위함
-        String savedFilename = UUID.randomUUID().toString() + extension;
-
-        // 5. 폴더가 없으면 새로 생성
         File directory = new File(uploadLocation);
-        if (!directory.exists()) {
-            directory.mkdirs();
+
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IllegalStateException(
+                    "업로드 폴더를 생성할 수 없습니다."
+            );
         }
 
-        // 6. 실제 저장할 파일 객체 생성
-        File savedFile = new File(uploadLocation, savedFilename);
+        File savedFile =
+                new File(directory, savedFilename);
 
-        // 7. 지정한 경로로 파일 물리적 저장
         try {
             file.transferTo(savedFile);
-        } catch (IOException e) {
-            throw new RuntimeException("파일 저장 중 서버에 오류가 발생했습니다.");
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "이미지 저장 중 오류가 발생했습니다.",
+                    exception
+            );
         }
 
-        // 8. 🚨 수정된 부분: 맥북 전체 경로 대신 '파일명'만 반환!
-        // 이렇게 해야 DB photo_url 컬럼에 '랜덤이름.jpg'로 예쁘게 들어가고 나중에 클라우드 연동도 쉬움
         return savedFilename;
+    }
+
+    public void deleteFile(String savedFilename) {
+        if (savedFilename == null || savedFilename.isBlank()) {
+            return;
+        }
+
+        // 디렉터리 이동 문자열 방지
+        String safeFilename =
+                new File(savedFilename).getName();
+
+        File file =
+                new File(uploadLocation, safeFilename);
+
+        if (file.exists() && !file.delete()) {
+            System.err.println(
+                    "[WARN] 업로드 파일 삭제 실패: "
+                            + file.getAbsolutePath()
+            );
+        }
+    }
+
+    private void validateFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "업로드된 이미지가 없습니다."
+            );
+        }
+
+        if (file.getSize() > MAX_IMAGE_SIZE) {
+            throw new IllegalArgumentException(
+                    "이미지는 최대 10MB까지 업로드할 수 있습니다."
+            );
+        }
+
+        String extension =
+                extractExtension(file.getOriginalFilename());
+
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException(
+                    "jpg, jpeg, png, webp 이미지만 업로드할 수 있습니다."
+            );
+        }
+
+        String contentType = file.getContentType();
+
+        if (contentType == null ||
+                !contentType.toLowerCase().startsWith("image/")) {
+            throw new IllegalArgumentException(
+                    "이미지 파일만 업로드할 수 있습니다."
+            );
+        }
+    }
+
+    private String extractExtension(String filename) {
+        if (filename == null ||
+                !filename.contains(".")) {
+            throw new IllegalArgumentException(
+                    "파일 확장자를 확인할 수 없습니다."
+            );
+        }
+
+        return filename
+                .substring(filename.lastIndexOf("."))
+                .toLowerCase();
     }
 }
