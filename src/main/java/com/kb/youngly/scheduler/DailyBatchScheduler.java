@@ -3,9 +3,13 @@ package com.kb.youngly.scheduler;
 import com.kb.youngly.dto.round.DailyBatchExecutionResponse;
 import com.kb.youngly.dto.round.WeeklySettlementTarget;
 import com.kb.youngly.mapper.PostMapper;
+import com.kb.youngly.mapper.RoundMapper;
+import com.kb.youngly.enums.NotificationType;
+import com.kb.youngly.service.NotificationService;
 import com.kb.youngly.service.RoundSettlementService;
 import com.kb.youngly.service.RoundTransitionService;
 import com.kb.youngly.service.WeeklySettlementService;
+import com.kb.youngly.vo.round.RoundVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -54,6 +58,9 @@ public class DailyBatchScheduler {
     /** 주간 결산 전에 시간이 만료된 게시물을 자동 승인하기 위한 Mapper. */
     private final PostMapper postMapper;
 
+    private final NotificationService notificationService;
+    private final RoundMapper roundMapper;
+
     /**
      * 매일 한국시간 00시 00분 00초에 일일 배치를 한 번 실행한다.
      *
@@ -84,6 +91,11 @@ public class DailyBatchScheduler {
 
         // 주간 성공 횟수를 집계하기 전에 시간 만료 게시물의 승인 상태를 먼저 확정한다.
         int autoApprovedPostCount = autoApproveTimedOutPosts(failures);
+
+        // 마감 임박 알림
+        int deadlineNotificationCount =
+                notifyUpcomingRoundDeadlines(batchDate.plusDays(1), failures);
+
         // 아직 ONGOING 상태인 라운드를 대상으로 승인 결과와 성공 횟수를 결산한다.
         WeeklyBatchResult weeklyResult = settleDueWeeklyChallenges(batchDate, failures);
         // 주간 결산을 마친 뒤 전날 종료 라운드를 WAITING_SETTLEMENT로 전환한다.
@@ -239,5 +251,56 @@ public class DailyBatchScheduler {
     /** 그룹 단위 라운드 전환 또는 최종 정산 단계의 API 응답용 집계값. */
     private record GroupBatchResult(
             int targetCount, int succeededCount, int skippedCount, int failedCount) {
+    }
+
+    /**
+     * 다음 날 종료되는 라운드의 참여자에게 마감 하루 전 알림을 전송한다.
+     */
+    private int notifyUpcomingRoundDeadlines(
+            LocalDate deadlineDate,
+            List<String> failures) {
+
+        List<RoundVO> rounds = roundMapper.findRoundsEndingOn(deadlineDate);
+
+        int notificationCount = 0;
+
+        for (RoundVO round : rounds) {
+            try {
+                List<String> userIds =
+                        roundMapper.findRoundNotificationUsers(round.getRoundId());
+
+                for (String userId : userIds) {
+                    notificationService.createNotification(
+                            userId,
+                            NotificationType.REMINDER,
+                            round.getRoundNo() + "라운드 마감이 하루 남았습니다."
+                    );
+
+                    notificationCount++;
+                }
+
+            } catch (RuntimeException exception) {
+                log.error(
+                        "라운드 마감 임박 알림 실패: roundId={}, roundNo={}",
+                        round.getRoundId(),
+                        round.getRoundNo(),
+                        exception
+                );
+
+                failures.add(
+                        "stage=round-deadline-notification"
+                                + ", roundId=" + round.getRoundId()
+                                + ", message=" + exception.getMessage()
+                );
+            }
+        }
+
+        log.info(
+                "라운드 마감 임박 알림 완료: deadlineDate={}, notificationCount={}",
+                deadlineDate,
+                notificationCount
+        );
+
+        return notificationCount;
     }
 }

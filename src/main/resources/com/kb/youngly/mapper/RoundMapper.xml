@@ -16,6 +16,23 @@
         ORDER BY r.group_id
     </select>
 
+    <!-- 지정한 날짜에 종료되는 진행 중 라운드를 조회한다. -->
+    <select id="findRoundsEndingOn"
+            resultType="com.kb.youngly.vo.round.RoundVO">
+        SELECT
+            round_id,
+            group_id,
+            round_no,
+            start_date,
+            end_date,
+            round_status,
+            created_at
+        FROM rounds
+        WHERE round_status = 'ONGOING'
+          AND end_date = #{endDate}
+        ORDER BY group_id, round_no
+    </select>
+
     <!-- 같은 그룹에서 동시에 라운드를 만들 때 round_no가 중복되지 않도록 잠근다. -->
     <select id="findGroupForUpdate"
             resultType="com.kb.youngly.vo.group.GroupVO">
@@ -141,6 +158,14 @@
         WHERE gu.group_id = #{groupId}
           AND gu.group_user_status IN ('PENDING_DEPOSIT', 'ACTIVE')
         ORDER BY gu.group_user_id
+    </select>
+
+    <!-- 라운드 마감 임박 알림 대상 사용자 조회 -->
+    <select id="findRoundNotificationUsers"
+            resultType="string">
+        SELECT user_id
+        FROM round_history
+        WHERE round_id = #{roundId}
     </select>
 
     <!-- 순위, 정산 금액, 정산 시각은 라운드 종료 처리에서 채운다. -->

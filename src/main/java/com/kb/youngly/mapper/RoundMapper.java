@@ -15,6 +15,12 @@ public interface RoundMapper {
     /** 지정한 날짜에 종료되는 진행 중 그룹의 진행 중 라운드 그룹 ID를 조회한다. */
     List<String> findDueRoundGroupIds(@Param("endDate") LocalDate endDate);
 
+    List<RoundVO> findRoundsEndingOn(@Param("endDate") LocalDate endDate);
+    /**
+     * 라운드 마감 임박 알림 대상 사용자 조회
+     */
+    List<String> findRoundNotificationUsers(@Param("roundId") Long roundId);
+
     /** 다음 회차 번호가 중복되지 않도록 그룹 행을 잠근다. */
     GroupVO findGroupForUpdate(String groupId);
 
