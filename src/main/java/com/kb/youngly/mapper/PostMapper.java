@@ -64,4 +64,15 @@ public interface PostMapper {
 
     // 10. 시간 초과된 PENDING 게시글 일괄 자동 승인 처리 (업데이트된 행의 개수 반환)
     int updatePostsToAutoApproved();
+
+    // 인증 게시물 업로드 알림 대상자 조회
+    List<String> findNotificationUserIds(
+            @Param("roundId") Long roundId,
+            @Param("userId") String userId
+    );
+
+    // 인증 게시물 작성자의 닉네임 조회
+    String findUserNickname(
+            @Param("userId") String userId
+    );
 }
