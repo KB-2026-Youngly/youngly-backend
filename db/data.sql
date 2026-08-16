@@ -1246,14 +1246,14 @@ INSERT INTO kb_accounts (
 ),
 (
     'kb-test-pension-04', 'PENSION', '025202-91-100004',
-    '국민', 3010000.00, 2.50, '테스트사', '1998-04-04',
+    '국민', 3000000.00, 2.50, '테스트사', '1998-04-04',
     '2026-07-01 09:17:00', '2026-08-01 09:00:00'
 ),
 
 -- 공용 모임통장
 (
     'kb-test-moim-01', 'MOIM', '025202-92-200001',
-    '국민', 400000.00, 2.50, '테스트일', '1998-01-01',
+    '국민', 410000.00, 2.50, '테스트일', '1998-01-01',
     '2026-07-01 10:00:00', '2026-08-01 09:00:00'
 );
 
@@ -1438,7 +1438,7 @@ INSERT INTO rounds (
     1,
     '2026-07-01',
     '2026-07-28',
-    'SETTLED',
+    'WAITING_SETTLEMENT',
     '2026-07-01 12:00:00'
 );
 
@@ -1634,7 +1634,8 @@ INSERT INTO account_transactions (
 
 -- =========================================================
 -- 9. 모임통장 → 개인연금 정산
--- 모임통장 500,000원 → 정산 후 400,000원
+-- test_user01~03 정산만 성공하여 모임통장 500,000원 → 410,000원
+-- test_user04의 10,000원 정산은 실패했으며 아래 kb_transfer_requests에 FAILED로 남긴다.
 -- =========================================================
 INSERT INTO account_transactions (
     kb_account_id,
@@ -1703,25 +1704,230 @@ INSERT INTO account_transactions (
     '챌린지 미래 적립금 입금',
     '025202-92-200001', '국민', '테스트 공동 저축 챌린지',
     '2026-07-29 09:02:01'
-),
-
--- test_user04: 10,000원 정산
-(
-    'kb-test-moim-01', @test_gu04, @test_round_id,
-    'WITHDRAW', 'SETTLEMENT', 10000.00, 400000.00,
-    'TEST-U04-SETTLEMENT-OUT',
-    '테스트사 미래 적립금 정산',
-    '025202-91-100004', '국민', '테스트사 개인연금',
-    '2026-07-29 09:03:00'
-),
-(
-    'kb-test-pension-04', @test_gu04, @test_round_id,
-    'DEPOSIT', 'SETTLEMENT', 10000.00, 3010000.00,
-    'TEST-U04-SETTLEMENT-IN',
-    '챌린지 미래 적립금 입금',
-    '025202-92-200001', '국민', '테스트 공동 저축 챌린지',
-    '2026-07-29 09:03:01'
 );
+
+-- =========================================================
+-- 10. 라운드별 KB 정산 요청 조회 API 테스트 데이터
+--
+-- Postman 조회 순서:
+--   1) test_user01 / test 로 로그인하여 JWT를 발급받는다.
+--   2) GET /api/groups/group-test-savings-01/rounds 로 @test_round_id를 확인한다.
+--   3) GET /api/rounds/{roundId}/transfer-requests 를 호출한다.
+--   4) FAILED 요청 ID를 골라 POST
+--      /api/rounds/{roundId}/transfer-requests/{transferRequestId}/retry 를 호출한다.
+--
+-- kb_transfer_requests.group_user_id는 실제 정산 수령자의 참여 ID가 아니라 정산 요청을
+-- 관리하는 그룹장의 참여 ID를 뜻한다. 따라서 네 요청 모두 그룹장 test_user01의
+-- @test_gu01을 저장하고, 실제 수령자는 settlement_receiver_id로 각각 구분한다.
+-- test_user02로 같은 API를 호출하면 group_user_id가 일치하지 않아 빈 배열이 반환된다.
+-- =========================================================
+INSERT INTO kb_transfer_requests (
+    idempotency_key,
+    source_kb_account_id,
+    destination_kb_account_id,
+    amount,
+    source_balance_after,
+    destination_balance_after,
+    transaction_category,
+    transfer_status,
+    kb_transaction_id,
+    group_user_id,
+    settlement_receiver_id,
+    round_id,
+    requested_at,
+    completed_at,
+    updated_at
+) VALUES
+(
+    'TEST-KB-U01-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-01',
+    40000.00, 460000.00, 3040000.00,
+    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U01-SETTLEMENT',
+    @test_gu01, 'test_user01', @test_round_id,
+    '2026-07-29 08:59:59', '2026-07-29 09:00:01', '2026-07-29 09:00:01'
+),
+(
+    'TEST-KB-U02-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-02',
+    30000.00, 430000.00, 3030000.00,
+    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U02-SETTLEMENT',
+    @test_gu01, 'test_user02', @test_round_id,
+    '2026-07-29 09:00:59', '2026-07-29 09:01:01', '2026-07-29 09:01:01'
+),
+(
+    'TEST-KB-U03-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-03',
+    20000.00, 410000.00, 3020000.00,
+    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U03-SETTLEMENT',
+    @test_gu01, 'test_user03', @test_round_id,
+    '2026-07-29 09:01:59', '2026-07-29 09:02:01', '2026-07-29 09:02:01'
+);
+
+-- 재정산 API가 새 요청을 INSERT하지 않고 이 FAILED 행 자체를 SUCCESS로 바꾸는지 확인한다.
+INSERT INTO kb_transfer_requests (
+    idempotency_key,
+    source_kb_account_id,
+    destination_kb_account_id,
+    amount,
+    transaction_category,
+    transfer_status,
+    failure_code,
+    failure_message,
+    group_user_id,
+    settlement_receiver_id,
+    round_id,
+    requested_at,
+    completed_at,
+    updated_at
+) VALUES (
+    'TEST-KB-U04-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-04', 10000.00,
+    'SETTLEMENT', 'FAILED', 'INSUFFICIENT_BALANCE',
+    '테스트용 최초 정산 이체 실패',
+    @test_gu01, 'test_user04', @test_round_id,
+    '2026-07-29 09:02:59', '2026-07-29 09:03:01', '2026-07-29 09:03:01'
+);
+
+COMMIT;
+
+
+-- ==========================================================================
+-- KB 송금 실패 기록 및 정산 요청자/수령자 분리 Postman 테스트 데이터
+--
+-- 실행 API: POST /api/dev/round-settlements?date=2026-08-15
+--
+-- 모임통장 잔액을 50,000원으로 두고 처리 순서와 순위를 다음처럼 구성한다.
+--   1. user07: 3등, 70,000원 -> 잔액 부족으로 FAILED(잔액은 그대로 50,000원)
+--   2. user08: 1등, 30,000원 -> SUCCESS(잔액은 20,000원으로 감소)
+--   3. user09: 2등, 50,000원 -> 잔액 부족으로 FAILED
+-- 한 사람의 실패로 중단하지 않고 세 요청을 전부 시도하는 동시에, 실패 사이에 있는
+-- user08의 성공 결과와 거래 원장이 정상적으로 커밋되는지도 확인할 수 있다.
+--
+-- 세 요청에서 공통으로 확인할 값:
+--   - group_user_id: 이 그룹의 그룹장 user07에 해당하는 group_users.group_user_id
+--   - settlement_receiver_id: 각 정산 수령자인 user07, user08, user09
+--   - user07/user09: transfer_status=FAILED, failure_code=INSUFFICIENT_BALANCE
+--   - user08: transfer_status=SUCCESS, failure_code=NULL
+--
+-- 이 데이터도 상태를 변경하므로 재시험 전 tables.sql과 data.sql을 다시 실행한다.
+-- ==========================================================================
+
+START TRANSACTION;
+
+-- 다른 테스트의 모임통장과 잔액을 공유하지 않는 정산 실패 전용 KB 계좌다.
+INSERT INTO kb_accounts (
+    kb_account_id,
+    account_type,
+    account_number,
+    bank_name,
+    balance,
+    interest_rate,
+    name,
+    birthday,
+    created_at,
+    updated_at
+) VALUES (
+    'kb-postman-settlement-fail', 'MOIM', '025202-22-339990', '국민',
+    50000.00, 0.10, '송지아', '2001-02-14',
+    '2026-07-16 09:00:00', '2026-08-14 23:00:00'
+);
+
+INSERT INTO moim_accounts (
+    moim_account_id,
+    user_id,
+    kb_account_id,
+    account_status,
+    account_name,
+    created_at,
+    synced_at,
+    updated_at
+) VALUES (
+    'moim-postman-settlement-fail', 'user07', 'kb-postman-settlement-fail',
+    'ACTIVE', 'Postman 정산 실패 전용 통장',
+    '2026-07-16 09:05:00', '2026-07-16 09:05:00', '2026-08-14 23:00:00'
+);
+
+INSERT INTO `groups` (
+    group_id,
+    moim_account_id,
+    user_id,
+    invite_code,
+    group_name,
+    group_count,
+    created_at,
+    custom_rule,
+    challenge_type,
+    content,
+    future_deposit_ratio_rule,
+    duration_days,
+    min_count,
+    round_cycle_days,
+    default_fail_pass_count,
+    base_deposit_amount,
+    group_status,
+    updated_at
+) VALUES (
+    'group-postman-settlement-fail-01', 'moim-postman-settlement-fail', 'user07',
+    '99000000-0000-4000-8000-000000000001', 'Postman KB 정산 실패 그룹', 3,
+    '2026-07-16 09:10:00', '주 3회 인증', 'READING',
+    '잔액 부족 정산 실패와 실패 요청 저장을 확인하는 전용 그룹',
+    '1:30/2:50/3:70', 7, 3, 28, 1, 100000.00,
+    'ONGOING', '2026-08-14 23:00:00'
+);
+
+-- user07은 그룹장이자 첫 번째 정산 수령자다. user08과 user09는 후속 수령자다.
+INSERT INTO group_users (
+    group_id,
+    user_id,
+    group_user_status,
+    approved_at,
+    current_deposit_amount,
+    streak_count,
+    created_at,
+    updated_at
+) VALUES
+    ('group-postman-settlement-fail-01', 'user07', 'ACTIVE',
+     '2026-07-16 10:00:00', 100000.00, 5, '2026-07-16 10:00:00', '2026-08-14 23:00:00'),
+    ('group-postman-settlement-fail-01', 'user08', 'ACTIVE',
+     '2026-07-16 10:01:00', 100000.00, 3, '2026-07-16 10:01:00', '2026-08-14 23:00:00'),
+    ('group-postman-settlement-fail-01', 'user09', 'ACTIVE',
+     '2026-07-16 10:02:00', 100000.00, 3, '2026-07-16 10:02:00', '2026-08-14 23:00:00');
+
+-- 개발용 정산 API는 요청일의 전날 종료된 WAITING_SETTLEMENT 라운드를 조회한다.
+INSERT INTO rounds (
+    round_id,
+    group_id,
+    round_no,
+    start_date,
+    end_date,
+    round_status,
+    created_at
+) VALUES (
+    9901, 'group-postman-settlement-fail-01', 1,
+    '2026-07-18', '2026-08-14', 'WAITING_SETTLEMENT', '2026-07-17 23:00:00'
+);
+
+-- success_count를 1, 5, 3으로 두어 user07=3등, user08=1등, user09=2등으로 계산한다.
+INSERT INTO round_history (
+    round_history_id,
+    round_id,
+    user_id,
+    account_id,
+    moim_account_id,
+    rank_no,
+    success_count,
+    settlement_amount,
+    remaining_fail_pass_count,
+    prior_failure_response,
+    created_at,
+    settlement_at
+) VALUES
+    (99001, 9901, 'user07', 'account-user07-pension', 'moim-postman-settlement-fail',
+     NULL, 1, NULL, 1, NULL, '2026-07-17 23:00:00', NULL),
+    (99002, 9901, 'user08', 'account-user08-deposit', 'moim-postman-settlement-fail',
+     NULL, 5, NULL, 1, NULL, '2026-07-17 23:00:00', NULL),
+    (99003, 9901, 'user09', 'account-user09-pension', 'moim-postman-settlement-fail',
+     NULL, 3, NULL, 1, NULL, '2026-07-17 23:00:00', NULL);
 
 COMMIT;
 
