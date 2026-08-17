@@ -41,6 +41,9 @@ public interface RoundSettlementMapper {
 
     int insertAccountTransaction(AccountTransactionVO transaction);
 
+    /** 재시도 후 아직 정산 완료 시각이 없는 라운드 참여자 수를 조회한다. */
+    int countUnsettledParticipants(@Param("roundId") Long roundId);
+
     int markRoundSettled(@Param("roundId") Long roundId,
                          @Param("endDate") LocalDate endDate);
 }
