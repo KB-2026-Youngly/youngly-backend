@@ -82,6 +82,11 @@ class PensionInsightPageServiceTest {
         assertEquals(PersonalInsightStatus.SURVEY_REQUIRED, response.personalInsightStatus());
         assertNull(response.personalInsight());
         assertNotNull(response.forecast());
+        assertEquals(new BigDecimal("30000.00"), response.forecast().expectedMinAmount());
+        assertEquals(new BigDecimal("180000.00"), response.forecast().expectedAmount());
+        assertEquals(new BigDecimal("280000.00"), response.forecast().expectedMaxAmount());
+        assertEquals(new BigDecimal("150000.00"), response.forecast().ongoingExpectedAmount());
+        assertEquals(new BigDecimal("250000.00"), response.forecast().ongoingExpectedMaxAmount());
         assertEquals("금리 흐름 안정", response.marketSummary().headline());
         assertEquals(List.of(), response.userInterests().investment());
         assertEquals(List.of("운동"), response.userInterests().general());
@@ -141,6 +146,34 @@ class PensionInsightPageServiceTest {
         assertThrows(NoSuchElementException.class, () -> service.getInsightPage("missing"));
     }
 
+    @Test
+    void noOngoingRoundLeavesOngoingExpectedAmountsNull() {
+        when(pensionForecastService.calculateForecast("user01"))
+                .thenReturn(factsWithoutOngoingRound("user01"));
+        when(surveyMapper.selectLatestResultByUserId("user01")).thenReturn(null);
+
+        PensionInsightPageResponse response = service.getInsightPage("user01");
+
+        assertEquals(new BigDecimal("30000.00"), response.forecast().expectedMinAmount());
+        assertEquals(new BigDecimal("30000.00"), response.forecast().expectedAmount());
+        assertEquals(new BigDecimal("30000.00"), response.forecast().expectedMaxAmount());
+        assertNull(response.forecast().ongoingExpectedAmount());
+        assertNull(response.forecast().ongoingExpectedMaxAmount());
+    }
+
+    @Test
+    void nullForecastAmountLeavesOngoingExpectedAmountsNull() {
+        when(pensionForecastService.calculateForecast("user01"))
+                .thenReturn(factsWithNullExpectedAmount("user01"));
+        when(surveyMapper.selectLatestResultByUserId("user01")).thenReturn(null);
+
+        PensionInsightPageResponse response = service.getInsightPage("user01");
+
+        assertNull(response.forecast().expectedAmount());
+        assertNull(response.forecast().ongoingExpectedAmount());
+        assertNull(response.forecast().ongoingExpectedMaxAmount());
+    }
+
     private static SurveyResultVO survey() {
         SurveyResultVO survey = new SurveyResultVO();
         survey.setSurveyResultId(100L);
@@ -175,6 +208,24 @@ class PensionInsightPageServiceTest {
                 true,
                 LocalDate.of(2026, 8, 10),
                 List.of()
+        );
+    }
+
+    private static PensionForecastFacts factsWithoutOngoingRound(String userId) {
+        return new PensionForecastFacts(
+                userId, LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31),
+                new BigDecimal("30000.00"), BigDecimal.ZERO, BigDecimal.ZERO,
+                new BigDecimal("30000.00"), new BigDecimal("30000.00"),
+                new BigDecimal("5030000.00"), false, null, List.of()
+        );
+    }
+
+    private static PensionForecastFacts factsWithNullExpectedAmount(String userId) {
+        return new PensionForecastFacts(
+                userId, LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31),
+                new BigDecimal("30000.00"), new BigDecimal("150000.00"),
+                new BigDecimal("250000.00"), null, new BigDecimal("280000.00"),
+                new BigDecimal("5030000.00"), true, LocalDate.of(2026, 8, 25), List.of()
         );
     }
 }

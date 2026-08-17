@@ -18,6 +18,8 @@ public record PensionInsightPageResponse(
             BigDecimal expectedMinAmount,
             BigDecimal expectedAmount,
             BigDecimal expectedMaxAmount,
+            BigDecimal ongoingExpectedAmount,
+            BigDecimal ongoingExpectedMaxAmount,
             LocalDate nextDepositDate
     ) {
     }
