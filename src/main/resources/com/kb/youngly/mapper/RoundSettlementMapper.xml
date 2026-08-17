@@ -188,6 +188,18 @@
         )
     </insert>
 
+    <!--
+        개별 실패 송금을 재시도한 뒤 라운드를 최종 완료할 수 있는지 판단한다.
+        settlement_at은 예치금 차감과 양쪽 원장 저장까지 끝난 참여자에게만 채우므로,
+        NULL 행이 한 건이라도 남아 있으면 아직 WAITING_SETTLEMENT를 유지해야 한다.
+    -->
+    <select id="countUnsettledParticipants" resultType="int">
+        SELECT COUNT(*)
+        FROM round_history
+        WHERE round_id = #{roundId}
+          AND settlement_at IS NULL
+    </select>
+
     <!-- 모든 참여자 처리가 끝난 경우에만 정산 대기 라운드를 최종 완료로 바꾼다. -->
     <update id="markRoundSettled">
         UPDATE rounds

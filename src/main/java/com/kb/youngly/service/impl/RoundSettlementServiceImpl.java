@@ -221,6 +221,7 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
                  * 요청을 처리한 직후 애플리케이션이 중단되더라도 송금 의도와 멱등성 키가 남는다.
                  * 재실행 시 같은 키의 기존 요청을 사용하므로 새 송금 요청 행도 만들지 않는다.
                  */
+                KbTransferResult transferResult;
                 try {
                     kbTransferRequestService.createPending(transferCommand);
 
@@ -229,39 +230,51 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
                      * 해당 요청만 롤백한 뒤 FAILED를 기록하며, 여기서는 예외를 수집하고
                      * continue하여 다음 round_history 참여자의 송금을 계속 시도한다.
                      */
-                    KbTransferResult transferResult =
-                            kbTransferAttemptService.transfer(transferCommand);
-
-                    if (roundSettlementMapper.deductCurrentDepositAndUpdateStatus(
-                            participant.getGroupUserId(), settlementAmount,
-                            group.getBaseDepositAmount()) != 1) {
-                        throw new IllegalStateException("참여자 예치금 반영에 실패했습니다.");
-                    }
-
-                    // 직접 계산한 예상값 대신, 이체 메서드가 실제 변경에 사용한 잔액 결과를 원장에 기록한다.
-                    BigDecimal sourceBalanceAfter = transferResult.getSourceBalanceAfter();
-                    BigDecimal destinationBalanceAfter = transferResult.getDestinationBalanceAfter();
-
-                // 실제 돈의 흐름과 동일하게 모임통장 출금, 개인계좌 입금 원장을 각각 만든다.
-                // roundId, roundHistoryId, 계좌 방향을 조합한 키로 같은 정산의 중복 원장을 막는다.
-                    insertTransaction(participant, round.getRoundId(), sourceKbAccountId,
-                            TransactionType.WITHDRAW, settlementAmount, sourceBalanceAfter,
-                            "settlement:" + round.getRoundId() + ":"
-                                    + participant.getRoundHistoryId() + ":moim",
-                            "라운드 미래 적립금 출금", participant.getDestinationAccountNumber(),
-                            participant.getDestinationAccountName());
-                    insertTransaction(participant, round.getRoundId(),
-                            participant.getDestinationKbAccountId(), TransactionType.DEPOSIT,
-                            settlementAmount, destinationBalanceAfter,
-                            "settlement:" + round.getRoundId() + ":"
-                                    + participant.getRoundHistoryId() + ":account",
-                            "라운드 미래 적립금 입금", participant.getSourceAccountNumber(),
-                            participant.getSourceAccountName());
+                    transferResult = kbTransferAttemptService.transfer(transferCommand);
                 } catch (RuntimeException exception) {
+                    /*
+                     * 이 catch는 PENDING 생성 또는 실제 송금 실패만 참가자별 실패로 수집한다.
+                     * 예치금·원장·round_history 반영까지 같은 catch에 넣으면, 첫 번째 원장 저장 후
+                     * 두 번째 원장이 실패해도 마지막 RoundSettlementIncompleteException이 롤백에서
+                     * 제외되어 일부 업무 데이터만 커밋될 수 있다.
+                     */
                     transferFailures.add("userId=" + participant.getUserId()
                             + ", message=" + exception.getMessage());
                     continue;
                 }
+
+                /*
+                 * 송금 성공 뒤의 Youngly 내부 후처리는 참여자별 실패로 삼지 않고 바깥 정산
+                 * 트랜잭션의 필수 작업으로 처리한다. 아래 작업 중 하나라도 실패하면 일반 예외가
+                 * 전파되어 이번 정산의 예치금·원장·이력 변경이 모두 롤백된다. 이미 독립 트랜잭션으로
+                 * 성공한 송금 요청은 멱등성 키와 잔액 결과가 남으므로 다음 배치에서 안전하게
+                 * 재사용하여 내부 후처리를 다시 수행할 수 있다.
+                 */
+                if (roundSettlementMapper.deductCurrentDepositAndUpdateStatus(
+                        participant.getGroupUserId(), settlementAmount,
+                        group.getBaseDepositAmount()) != 1) {
+                    throw new IllegalStateException("참여자 예치금 반영에 실패했습니다.");
+                }
+
+                // 직접 계산한 예상값 대신, 이체 메서드가 실제 변경에 사용한 잔액 결과를 원장에 기록한다.
+                BigDecimal sourceBalanceAfter = transferResult.getSourceBalanceAfter();
+                BigDecimal destinationBalanceAfter = transferResult.getDestinationBalanceAfter();
+
+                // 실제 돈의 흐름과 동일하게 모임통장 출금, 개인계좌 입금 원장을 각각 만든다.
+                // roundId, roundHistoryId, 계좌 방향을 조합한 키로 같은 정산의 중복 원장을 막는다.
+                insertTransaction(participant, round.getRoundId(), sourceKbAccountId,
+                        TransactionType.WITHDRAW, settlementAmount, sourceBalanceAfter,
+                        "settlement:" + round.getRoundId() + ":"
+                                + participant.getRoundHistoryId() + ":moim",
+                        "라운드 미래 적립금 출금", participant.getDestinationAccountNumber(),
+                        participant.getDestinationAccountName());
+                insertTransaction(participant, round.getRoundId(),
+                        participant.getDestinationKbAccountId(), TransactionType.DEPOSIT,
+                        settlementAmount, destinationBalanceAfter,
+                        "settlement:" + round.getRoundId() + ":"
+                                + participant.getRoundHistoryId() + ":account",
+                        "라운드 미래 적립금 입금", participant.getSourceAccountNumber(),
+                        participant.getSourceAccountName());
             }
 
             // 규칙에 없는 순위도 0원으로 확정하고 이전 실패 대응값을 비운다.
