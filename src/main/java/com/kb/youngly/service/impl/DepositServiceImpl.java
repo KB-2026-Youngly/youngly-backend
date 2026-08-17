@@ -19,6 +19,7 @@ import com.kb.youngly.vo.group.GroupUserVO;
 import com.kb.youngly.vo.group.GroupVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -51,9 +52,18 @@ public class DepositServiceImpl implements DepositService {
 
     /**
      * 예치금을 납부한다. 같은 멱등성 키가 이미 처리되었다면 잔액을 다시 변경하지 않는다.
+     *
+     * <p>PENDING 송금 요청은 처리 도중 {@code REQUIRES_NEW} 트랜잭션에서 먼저 생성·커밋된다.
+     * 기본 REPEATABLE_READ를 사용하면 이 메서드가 앞선 일반 SELECT에서 만든 읽기 시점과
+     * 방금 커밋된 요청 행의 버전이 달라, 이후 {@code SELECT ... FOR UPDATE} 잠금 조회에서
+     * 레코드 변경 충돌이 발생할 수 있다. READ_COMMITTED에서는 각 조회가 최신 커밋 상태를
+     * 기준으로 실행되므로 송금 서비스가 새 PENDING 행을 잠그고 처리할 수 있다.</p>
+     *
+     * <p>참여자의 누적 예치금은 아래 {@code findGroupUserForUpdate}가 행 잠금을 획득한 뒤
+     * 변경하므로, 격리 수준을 낮추더라도 동일 참여자의 동시 예치금 갱신은 직렬화된다.</p>
      */
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public DepositResponse deposit(String userId, String groupId, DepositRequest request) {
         String normalizedUserId =
                 requireText(userId, "인증된 사용자 정보가 없습니다.");
