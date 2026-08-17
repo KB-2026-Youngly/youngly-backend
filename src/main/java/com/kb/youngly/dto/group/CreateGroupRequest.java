@@ -35,4 +35,8 @@ public class CreateGroupRequest {
     private Integer roundCycleDays;
 
     private BigDecimal baseDepositAmount;
+
+
+    // 프론트 추가 사항
+    private Integer defaultFailPassCount;
 }

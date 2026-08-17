@@ -125,15 +125,29 @@
     <select id="checkGroupMembership" resultType="boolean">
         SELECT COUNT(*) > 0
         FROM rounds r
-                 JOIN round_history rh
-                      ON rh.round_id = r.round_id
-                          AND rh.user_id = #{userId}
-                 JOIN group_users gu
-                      ON gu.group_id = r.group_id
-                          AND gu.user_id = #{userId}
         WHERE r.round_id = #{roundId}
           AND r.round_status = 'ONGOING'
-          AND gu.group_user_status = 'ACTIVE'
+          AND EXISTS (
+            SELECT 1
+            FROM round_history rh
+            WHERE rh.round_id = r.round_id
+              AND rh.user_id = #{userId}
+        )
+          AND (
+                EXISTS (
+                    SELECT 1
+                    FROM `groups` g
+                    WHERE g.group_id = r.group_id
+                      AND g.user_id = #{userId}
+                )
+                OR EXISTS (
+                SELECT 1
+                FROM group_users gu
+                WHERE gu.group_id = r.group_id
+                  AND gu.user_id = #{userId}
+                  AND gu.group_user_status = 'ACTIVE'
+            )
+            )
     </select>
 
     <!-- 게시물 승인 및 반려 API - 본인 검증 및 과반수 계산용 -->

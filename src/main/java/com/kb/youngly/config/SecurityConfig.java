@@ -58,7 +58,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/swagger-resources/**",
                         "/api/surveys/questions",   // 설문 문항 조회는 공개
                         "/api/dev/**",              // 개발 중 Postman 수동 결산 테스트용
-                        "/api/groups/**",
+//                        "/api/groups/**",
                         "/api/accounts/search",
                         "/api/admin/market-snapshots/ingest", // 시장 동향 - 개발용
                         "/api/pension/insight/**",       // AI 개인연금 인사이트 조회 - 개발용

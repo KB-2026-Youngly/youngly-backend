@@ -40,4 +40,13 @@ public class GroupDetailResponse {
     private BigDecimal baseDepositAmount;
 
     private GroupStatus groupStatus;
+
+
+    // 프론트 작업 중 추가 사항
+    private Integer defaultFailPassCount;
+
+    private String moimAccountId;
+    private Integer memberCount;
+    private Boolean leader;
+
 }

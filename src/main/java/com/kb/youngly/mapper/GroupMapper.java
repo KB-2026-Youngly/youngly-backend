@@ -16,7 +16,10 @@ public interface GroupMapper {
     /**
      * 그룹 목록 조회
      */
-    List<GroupListResponse> findGroupsByUserId(String userId);
+//    List<GroupListResponse> findGroupsByUserId(String userId);
+    List<GroupListResponse> findGroupsByUserId(
+            @Param("userId") String userId
+    );
 
     /**
      * 그룹 상세 조회

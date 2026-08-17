@@ -75,9 +75,11 @@ public class GroupServiceImpl implements GroupService {
 
     // 그룹 생성
     @Override
-    public CreateGroupResponse createGroup(String userId,
-                                           CreateGroupRequest request) {
-
+    @Transactional
+    public CreateGroupResponse createGroup(
+            String userId,
+            CreateGroupRequest request
+    ) {
         GroupVO group = GroupVO.builder()
                 .groupId(UUID.randomUUID().toString())
                 .moimAccountId(request.getMoimAccountId())
@@ -94,9 +96,21 @@ public class GroupServiceImpl implements GroupService {
                 .roundCycleDays(request.getRoundCycleDays())
                 .baseDepositAmount(request.getBaseDepositAmount())
                 .groupStatus(GroupStatus.RECRUITING)
+                .defaultFailPassCount(request.getDefaultFailPassCount())
                 .build();
 
         groupMapper.insertGroup(group);
+
+        // 방장도 그룹 참여자로 등록
+        GroupUserVO leader = GroupUserVO.builder()
+                .groupId(group.getGroupId())
+                .userId(userId)
+                .groupUserStatus(GroupUserStatus.PENDING_DEPOSIT)
+                .currentDepositAmount(BigDecimal.ZERO)
+                .streakCount(0)
+                .build();
+
+        groupUserMapper.insertGroupUser(leader);
 
         return CreateGroupResponse.builder()
                 .groupId(group.getGroupId())
@@ -139,6 +153,7 @@ public class GroupServiceImpl implements GroupService {
                 .minCount(group.getMinCount())
                 .roundCycleDays(group.getRoundCycleDays())
                 .baseDepositAmount(group.getBaseDepositAmount())
+                .defaultFailPassCount(group.getDefaultFailPassCount())
                 .groupStatus(group.getGroupStatus())
                 .build();
     }
@@ -177,19 +192,30 @@ public class GroupServiceImpl implements GroupService {
 
     // 그룹 수정
     @Override
-    public MessageResponse updateGroup(String userId,
-                                       String groupId,
-                                       UpdateGroupRequest request) {
-
+    @Transactional
+    public MessageResponse updateGroup(
+            String userId,
+            String groupId,
+            UpdateGroupRequest request
+    ) {
+        // 방장인지 확인하면서 그룹 조회
         GroupVO group = validateLeader(userId, groupId);
 
         group.setGroupName(request.getGroupName());
         group.setCustomRule(request.getCustomRule());
+
+        // 추가
+        group.setChallengeType(request.getChallengeType());
+
         group.setContent(request.getContent());
         group.setFutureDepositRatioRule(request.getFutureDepositRatioRule());
         group.setDurationDays(request.getDurationDays());
         group.setMinCount(request.getMinCount());
         group.setRoundCycleDays(request.getRoundCycleDays());
+
+        // 추가
+        group.setDefaultFailPassCount(request.getDefaultFailPassCount());
+
         group.setBaseDepositAmount(request.getBaseDepositAmount());
 
         groupMapper.updateGroup(group);
@@ -395,26 +421,32 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public List<GroupUserResponse> getGroupUsers(
             String userId,
-            String groupId) {
-
-        // 그룹 존재 확인
+            String groupId
+    ) {
         GroupVO group = groupMapper.findGroupById(groupId);
 
         if (group == null) {
             throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
         }
 
-        // 로그인한 사용자가 그룹 참여자인지 확인
-        GroupUserVO groupUser =
-                groupUserMapper.findGroupUser(groupId, userId);
+        boolean isLeader = userId.equals(group.getUserId());
 
-        if (groupUser == null ||
-                groupUser.getGroupUserStatus() != GroupUserStatus.ACTIVE) {
+        if (!isLeader) {
+            GroupUserVO groupUser =
+                    groupUserMapper.findGroupUser(groupId, userId);
 
-            throw new IllegalArgumentException("조회 권한이 없습니다.");
+            boolean canRead =
+                    groupUser != null &&
+                            (
+                                    groupUser.getGroupUserStatus() == GroupUserStatus.ACTIVE ||
+                                            groupUser.getGroupUserStatus() == GroupUserStatus.PENDING_DEPOSIT
+                            );
+
+            if (!canRead) {
+                throw new AccessDeniedException("그룹 참여자 조회 권한이 없습니다.");
+            }
         }
 
-        // 참여자 목록 조회
         return groupUserMapper.findGroupUsers(groupId);
     }
 

@@ -1,5 +1,6 @@
 package com.kb.youngly.dto.group;
 
+import com.kb.youngly.enums.ChallengeType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,4 +29,7 @@ public class UpdateGroupRequest {
     private Integer roundCycleDays;
 
     private BigDecimal baseDepositAmount;
+
+    private ChallengeType challengeType;
+    private Integer defaultFailPassCount;
 }

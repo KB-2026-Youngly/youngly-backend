@@ -13,6 +13,7 @@ import com.kb.youngly.dto.posts.CreatePostResponseDTO;
 import com.kb.youngly.enums.PostStatus;
 import com.kb.youngly.enums.NotificationType;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 
@@ -156,7 +157,9 @@ public class PostService {
         System.out.println("[DEBUG] 멤버십 검증 결과 (isMember) : " + isMember + " / userId : " + currentUserId); // 👈 요거 찍어보기
 
         if (!isMember) {
-            throw new RuntimeException("해당 그룹에 접근 권한이 없거나 활성 상태가 아닙니다.");
+            throw new AccessDeniedException(
+                    "해당 그룹에 접근 권한이 없거나 활성 상태가 아닙니다."
+            );
         }
 
         return postMapper.getFeedListByDate(roundId, date);
@@ -279,7 +282,7 @@ public class PostService {
 
         if (content != null && content.trim().length() > 500) {
             throw new IllegalArgumentException(
-                    "인증 소감은 500자 이하로 입력해 주세요."
+                    "인증 소감은 20자 이하로 입력해 주세요."
             );
         }
     }
