@@ -22,6 +22,7 @@
             duration_days,
             min_count,
             round_cycle_days,
+            default_fail_pass_count,
             base_deposit_amount,
             group_status
         )
@@ -39,6 +40,7 @@
                    #{durationDays},
                    #{minCount},
                    #{roundCycleDays},
+                   #{defaultFailPassCount},
                    #{baseDepositAmount},
                    #{groupStatus}
                )
@@ -46,30 +48,45 @@
     </insert>
 
     <select id="findGroupsByUserId"
-            parameterType="string"
             resultType="com.kb.youngly.dto.group.GroupListResponse">
 
         SELECT
-            g.group_id,
-            g.moim_account_id,
-            g.group_name,
-            g.group_count,
-            g.group_status
+            g.group_id AS groupId,
+            g.moim_account_id AS moimAccountId,
+            g.group_name AS groupName,
+            g.group_count AS groupCount,
+            g.challenge_type AS challengeType,
+            g.group_status AS groupStatus,
+            (
+                SELECT COUNT(*)
+                FROM group_users member
+                WHERE member.group_id = g.group_id
+                  AND member.group_user_status IN ('ACTIVE', 'PENDING_DEPOSIT')
+            ) AS memberCount,
+            CASE
+                WHEN g.user_id = #{userId} THEN TRUE
+                ELSE FALSE
+                END AS leader,
+            (
+                SELECT me.group_user_status
+                FROM group_users me
+                WHERE me.group_id = g.group_id
+                  AND me.user_id = #{userId}
+                LIMIT 1
+            ) AS myMembershipStatus
         FROM `groups` g
-                 LEFT JOIN group_users gu
-                           ON g.group_id = gu.group_id
-        WHERE
-            g.user_id = #{userId}
-           OR (
-            gu.user_id = #{userId}
-                AND gu.group_user_status IN ('ACTIVE', 'PENDING_DEPOSIT')
+        WHERE g.user_id = #{userId}
+           OR EXISTS (
+            SELECT 1
+            FROM group_users gu
+            WHERE gu.group_id = g.group_id
+          AND gu.user_id = #{userId}
+          AND gu.group_user_status IN (
+            'ACTIVE',
+            'PENDING_DEPOSIT',
+            'PENDING_APPROVAL'
             )
-        GROUP BY
-            g.group_id,
-            g.moim_account_id,
-            g.group_name,
-            g.group_count,
-            g.group_status
+            )
         ORDER BY g.created_at DESC
 
     </select>
@@ -109,11 +126,13 @@
         SET
             group_name = #{groupName},
             custom_rule = #{customRule},
+            challenge_type = #{challengeType},
             content = #{content},
             future_deposit_ratio_rule = #{futureDepositRatioRule},
             duration_days = #{durationDays},
             min_count = #{minCount},
             round_cycle_days = #{roundCycleDays},
+            default_fail_pass_count = #{defaultFailPassCount},
             base_deposit_amount = #{baseDepositAmount},
             updated_at = NOW()
         WHERE group_id = #{groupId}

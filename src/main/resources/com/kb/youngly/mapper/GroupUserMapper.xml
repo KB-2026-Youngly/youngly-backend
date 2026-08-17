@@ -114,7 +114,7 @@
                  JOIN `groups` g
                       ON gu.group_id = g.group_id
         WHERE gu.group_id = #{groupId}
-          AND gu.group_user_status = 'ACTIVE'
+          AND gu.group_user_status IN ('ACTIVE', 'PENDING_DEPOSIT')
         ORDER BY leader DESC, u.nickname
 
     </select>

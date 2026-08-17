@@ -48,14 +48,15 @@ public class PostController {
      */
     @GetMapping("/groups/{roundId}")
     public ResponseEntity<List<FeedListResponseDTO>> getFeedList(
+            Authentication authentication,
             @PathVariable Long roundId,
-            @RequestParam String date,
-            @RequestParam String userId) { // 👈 임시로 쿼리 스트링이나 세션에서 유저 ID를 받아오도록 추가
-            // @AuthenticationPrincipal CustomUserDetails userDetails) { // 👈 파라미터 대신 시큐리티가 토큰을 까서 유저 정보를 쥐여줌 (로그인/ 보안 설정 이후 이 코드로 대체)
+            @RequestParam String date
+    ) {
+        String userId = authentication.getName();
 
-        // 서비스 호출할 때 userId까지 3개를 넘겨주기
-        List<FeedListResponseDTO> feedList = postService.getFeedList(roundId, date, userId);  // userDetails.getUserId()
-        return ResponseEntity.ok(feedList);
+        return ResponseEntity.ok(
+                postService.getFeedList(roundId, date, userId)
+        );
     }
 
     /**
