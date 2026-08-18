@@ -136,6 +136,9 @@ public class GroupServiceImpl implements GroupService {
             throw new IllegalArgumentException("존재하지 않는 그룹입니다.");
         }
 
+        int memberCount =
+                groupUserMapper.countCurrentGroupUsers(groupId);
+
         return GroupDetailResponse.builder()
                 .groupId(group.getGroupId())
                 .inviteCode(
@@ -155,6 +158,10 @@ public class GroupServiceImpl implements GroupService {
                 .baseDepositAmount(group.getBaseDepositAmount())
                 .defaultFailPassCount(group.getDefaultFailPassCount())
                 .groupStatus(group.getGroupStatus())
+
+                // 추가
+                .memberCount(memberCount)
+
                 .build();
     }
 
@@ -199,7 +206,41 @@ public class GroupServiceImpl implements GroupService {
             UpdateGroupRequest request
     ) {
         // 방장인지 확인하면서 그룹 조회
+
         GroupVO group = validateLeader(userId, groupId);
+
+        if (request.getGroupName() == null
+                || request.getGroupName().isBlank()
+                || request.getGroupName().length() > 20) {
+            throw new IllegalArgumentException("그룹 이름은 1자 이상 20자 이하로 입력해 주세요.");
+        }
+
+        if (request.getContent() == null
+                || request.getContent().isBlank()
+                || request.getContent().length() > 20) {
+            throw new IllegalArgumentException("챌린지 목표는 1자 이상 20자 이하로 입력해 주세요.");
+        }
+
+        if (request.getMinCount() == null
+                || request.getMinCount() < 1
+                || request.getMinCount() > 7) {
+            throw new IllegalArgumentException("주간 인증 횟수는 1~7회로 설정해 주세요.");
+        }
+
+        if (request.getDefaultFailPassCount() == null
+                || request.getDefaultFailPassCount() < 0
+                || request.getDefaultFailPassCount() > 8) {
+            throw new IllegalArgumentException("실패 면제권은 0~8개로 설정해 주세요.");
+        }
+
+        if (request.getBaseDepositAmount() == null
+                || request.getBaseDepositAmount().signum() < 1) {
+            throw new IllegalArgumentException("최소 예치금은 1원 이상이어야 합니다.");
+        }
+
+        if (request.getChallengeType() == null) {
+            throw new IllegalArgumentException("카테고리를 선택해 주세요.");
+        }
 
         group.setGroupName(request.getGroupName());
         group.setCustomRule(request.getCustomRule());

@@ -17,4 +17,9 @@ public class PostDTO {
     // 과반수 로직을 위한 필드 (Mapper 쿼리와 맵핑됨)
     private int approveCount;   // 현재까지의 승인 수
     private int rejectCount;    // 현재까지의 반려 수
+
+    private int likeCount;
+    private int dislikeCount;
+
+    private String photoUrl;
 }

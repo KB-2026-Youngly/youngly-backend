@@ -29,4 +29,9 @@ public interface GroupUserMapper {
 
     // 그룹 참여자 목록 조회
     List<GroupUserResponse> findGroupUsers(String groupId);
+
+    // 현재 그룹 참여자 수 조회
+    int countCurrentGroupUsers(
+            @Param("groupId") String groupId
+    );
 }

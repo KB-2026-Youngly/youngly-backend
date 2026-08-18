@@ -8,6 +8,9 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+import com.kb.youngly.vo.post.PostCommentVO;
+import com.kb.youngly.vo.post.PostReactionVO;
+
 @Mapper
 public interface PostMapper {
 
@@ -30,8 +33,11 @@ public interface PostMapper {
     int insertPost(PostVO postVO);
 
     // 1. 특정 라운드(그룹)의 날짜별 피드 리스트 조회 (최신 댓글 1개 포함)
-    List<FeedListResponseDTO> getFeedListByDate(@Param("roundId") Long roundId, @Param("date") String date);
-
+    List<FeedListResponseDTO> getFeedListByDate(
+            @Param("roundId") Long roundId,
+            @Param("date") String date,
+            @Param("currentUserId") String currentUserId
+    );
     // 2. 특정 게시글의 전체 댓글 목록 조회 (과거순)
     List<CommentDTO> getCommentsByPostId(@Param("postId") Long postId);
 
@@ -48,8 +54,11 @@ public interface PostMapper {
     int checkDuplicateApproval(@Param("postId") Long postId, @Param("userId") String userId);
 
     // 6. 평가 내역 저장 (승인 또는 반려 기록 남기기)
-    void insertPostApproval(@Param("postId") Long postId, @Param("dto") PostApprovalRequestDTO dto);
-
+    void insertPostApproval(
+            @Param("postId") Long postId,
+            @Param("userId") String userId,
+            @Param("dto") PostApprovalRequestDTO dto
+    );
     // 7-1. 승인 시 posts 테이블의 승인 카운트 +1 증가
     void incrementApproveCount(@Param("postId") Long postId);
 
@@ -73,6 +82,49 @@ public interface PostMapper {
 
     // 인증 게시물 작성자의 닉네임 조회
     String findUserNickname(
+            @Param("userId") String userId
+    );
+
+    // 댓글
+    int insertPostComment(PostCommentVO comment);
+
+    void incrementCommentCount(@Param("postId") Long postId);
+
+    CommentDTO getCommentById(
+            @Param("postCommentId") Long postCommentId
+    );
+
+    // 좋아요/싫어요
+    PostReactionVO getPostReaction(
+            @Param("postId") Long postId,
+            @Param("userId") String userId
+    );
+
+    int insertPostReaction(PostReactionVO reaction);
+
+    int updatePostReaction(
+            @Param("postId") Long postId,
+            @Param("userId") String userId,
+            @Param("reactionType") String reactionType
+    );
+
+    int deletePostReaction(
+            @Param("postId") Long postId,
+            @Param("userId") String userId
+    );
+
+    void syncPostReactionCounts(@Param("postId") Long postId);
+
+    // 게시글 삭제 시 관련 데이터 제거
+    int deletePostComments(@Param("postId") Long postId);
+
+    int deletePostReactions(@Param("postId") Long postId);
+
+    int deletePostApprovals(@Param("postId") Long postId);
+
+    // 게시글을 다시 인증 가능한 NONE 상태로 초기화
+    int resetPostForReupload(
+            @Param("postId") Long postId,
             @Param("userId") String userId
     );
 }

@@ -65,9 +65,14 @@ public class PostController {
      * GET /api/posts/{postId}/details
      */
     @GetMapping("/{postId}/details")
-    public ResponseEntity<FeedDetailResponseDTO> getFeedDetails(@PathVariable Long postId) {
+    public ResponseEntity<FeedDetailResponseDTO> getFeedDetails(
+            Authentication authentication,
+            @PathVariable Long postId
+    ) {
+        String userId = authentication.getName();
 
-        FeedDetailResponseDTO responseDTO = postService.getFeedDetails(postId);
+        FeedDetailResponseDTO responseDTO =
+                postService.getFeedDetails(postId, userId);
 
         return ResponseEntity.ok(responseDTO);
     }
@@ -79,12 +84,90 @@ public class PostController {
      */
     @PatchMapping("/{postId}/approval")
     public ResponseEntity<String> processPostApproval(
+            Authentication authentication,
             @PathVariable Long postId,
             @RequestBody PostApprovalRequestDTO requestDTO) {
 
-        postService.processPostApproval(postId, requestDTO);
+        String userId = authentication.getName();
 
-        return ResponseEntity.ok("게시글 평가가 성공적으로 반영되었습니다.");
+        postService.processPostApproval(
+                postId,
+                userId,
+                requestDTO
+        );
+
+        return ResponseEntity.ok(
+                "게시글 평가가 성공적으로 반영되었습니다."
+        );
+    }
+
+    /**
+     * 댓글 등록
+     * POST /api/posts/{postId}/comments
+     */
+    @PostMapping("/{postId}/comments")
+    public ResponseEntity<CommentDTO> createComment(
+            Authentication authentication,
+            @PathVariable Long postId,
+            @RequestBody CreateCommentRequestDTO request
+    ) {
+        String userId = authentication.getName();
+
+        CommentDTO response =
+                postService.createComment(postId, userId, request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    /**
+     * 좋아요 또는 싫어요 등록/변경
+     * PUT /api/posts/{postId}/reaction
+     */
+    @PutMapping("/{postId}/reaction")
+    public ResponseEntity<PostReactionResponseDTO> setReaction(
+            Authentication authentication,
+            @PathVariable Long postId,
+            @RequestBody PostReactionRequestDTO request
+    ) {
+        String userId = authentication.getName();
+
+        return ResponseEntity.ok(
+                postService.setReaction(postId, userId, request)
+        );
+    }
+
+    /**
+     * 좋아요 또는 싫어요 취소
+     * DELETE /api/posts/{postId}/reaction
+     */
+    @DeleteMapping("/{postId}/reaction")
+    public ResponseEntity<PostReactionResponseDTO> deleteReaction(
+            Authentication authentication,
+            @PathVariable Long postId
+    ) {
+        String userId = authentication.getName();
+
+        return ResponseEntity.ok(
+                postService.deleteReaction(postId, userId)
+        );
+    }
+
+    /**
+     * 본인 인증 게시글 삭제
+     * DELETE /api/posts/{postId}
+     */
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<Void> deletePost(
+            Authentication authentication,
+            @PathVariable Long postId
+    ) {
+        String userId = authentication.getName();
+
+        postService.deletePost(postId, userId);
+
+        return ResponseEntity.noContent().build();
     }
 
 }
