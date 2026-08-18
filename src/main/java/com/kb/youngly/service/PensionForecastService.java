@@ -1,6 +1,7 @@
 package com.kb.youngly.service;
 
 import com.kb.youngly.dto.recommendation.PensionForecastFacts;
+import com.kb.youngly.dto.recommendation.PensionForecastParticipant;
 import com.kb.youngly.dto.recommendation.PensionForecastSource;
 import com.kb.youngly.mapper.PensionForecastMapper;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.Map;
 public class PensionForecastService {
 
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
+    private static final int TOTAL_ROUND_WEEKS = 4;
     private static final int MONEY_SCALE = 2;
 
     private final PensionForecastMapper pensionForecastMapper;
@@ -42,6 +44,7 @@ public class PensionForecastService {
         LocalDate periodStartDate = today.withDayOfMonth(1);
         LocalDate periodEndDate = today.withDayOfMonth(today.lengthOfMonth());
 
+        BigDecimal additionalConservative = BigDecimal.ZERO;
         BigDecimal additionalCurrentRank = BigDecimal.ZERO;
         BigDecimal additionalBestCase = BigDecimal.ZERO;
 
@@ -64,31 +67,57 @@ public class PensionForecastService {
                 continue;
             }
 
-            BigDecimal currentRankRatio = source.getRankNo() == null
-                    ? null
-                    : ratiosByRank.get(source.getRankNo());
+            List<PensionForecastParticipant> participants = pensionForecastMapper
+                    .findRoundForecastParticipants(source.getRoundId());
 
-            BigDecimal contributionMin = calculateSettlementAmount(
-                    source.getBaseDepositAmount(),
-                    currentRankRatio
-            );
+            boolean hasParticipantData = participants != null && !participants.isEmpty();
+            int remainingWeeks = remainingWeeks(source.getCompletedWeekCount());
 
-            BigDecimal bestRatio = ratiosByRank.values().stream()
-                    .max(Comparator.naturalOrder())
-                    .orElse(null);
+            Integer currentRank = source.getRankNo();
+            Integer conservativeRank = currentRank;
+            Integer optimisticRank = null;
 
-            BigDecimal contributionMax = calculateSettlementAmount(
-                    source.getBaseDepositAmount(),
-                    bestRatio
-            );
-
-            if (contributionMin.compareTo(contributionMax) > 0) {
-                BigDecimal swap = contributionMin;
-                contributionMin = contributionMax;
-                contributionMax = swap;
+            if (hasParticipantData) {
+                currentRank = calculateRank(participants, userId, 0, 0);
+                conservativeRank = calculateRank(participants, userId, 0, remainingWeeks);
+                optimisticRank = calculateRank(participants, userId, remainingWeeks, 0);
             }
 
-            additionalCurrentRank = additionalCurrentRank.add(contributionMin);
+            BigDecimal contributionConservative = calculateSettlementAmount(
+                    source.getBaseDepositAmount(),
+                    ratiosByRank.get(conservativeRank)
+            );
+
+            BigDecimal contributionCurrent = calculateSettlementAmount(
+                    source.getBaseDepositAmount(),
+                    ratiosByRank.get(currentRank)
+            );
+
+            BigDecimal contributionOptimistic = hasParticipantData
+                    ? calculateSettlementAmount(
+                            source.getBaseDepositAmount(),
+                            ratiosByRank.get(optimisticRank)
+                    )
+                    : calculateSettlementAmount(
+                            source.getBaseDepositAmount(),
+                            ratiosByRank.values().stream()
+                                    .max(Comparator.naturalOrder())
+                                    .orElse(null)
+                    );
+
+            BigDecimal contributionMin = minimum(
+                    contributionConservative,
+                    contributionCurrent,
+                    contributionOptimistic
+            );
+            BigDecimal contributionMax = maximum(
+                    contributionConservative,
+                    contributionCurrent,
+                    contributionOptimistic
+            );
+
+            additionalConservative = additionalConservative.add(contributionMin);
+            additionalCurrentRank = additionalCurrentRank.add(contributionCurrent);
             additionalBestCase = additionalBestCase.add(contributionMax);
 
             double weeklySuccessRate = weeklySuccessRate(
@@ -100,7 +129,7 @@ public class PensionForecastService {
                     source.getGroupName(),
                     source.getChallengeType(),
                     source.getSuccessCount(),
-                    source.getRankNo(),
+                    currentRank,
                     weeklySuccessRate,
                     contributionMin,
                     contributionMax,
@@ -122,6 +151,7 @@ public class PensionForecastService {
                 periodStartDate,
                 periodEndDate,
                 money(settled),
+                money(additionalConservative),
                 money(additionalCurrentRank),
                 money(additionalBestCase),
                 expectedTotal,
@@ -184,6 +214,59 @@ public class PensionForecastService {
                         MONEY_SCALE,
                         RoundingMode.HALF_UP
                 );
+    }
+
+    private int remainingWeeks(Integer completedWeekCount) {
+        int completed = completedWeekCount == null ? 0 : completedWeekCount;
+        return Math.max(0, TOTAL_ROUND_WEEKS - Math.min(completed, TOTAL_ROUND_WEEKS));
+    }
+
+    private BigDecimal minimum(BigDecimal... amounts) {
+        return List.of(amounts).stream()
+                .min(Comparator.naturalOrder())
+                .orElse(BigDecimal.ZERO);
+    }
+
+    private BigDecimal maximum(BigDecimal... amounts) {
+        return List.of(amounts).stream()
+                .max(Comparator.naturalOrder())
+                .orElse(BigDecimal.ZERO);
+    }
+
+    /**
+     * RANK()와 동일하게 자신보다 성공 주차 수가 많은 참여자 수에 1을 더한다.
+     * userAdditionalSuccess와 peerAdditionalSuccess는 남은 주차의 시나리오 가정이다.
+     */
+    private int calculateRank(
+            List<PensionForecastParticipant> participants,
+            String userId,
+            int userAdditionalSuccess,
+            int peerAdditionalSuccess
+    ) {
+        int userSuccessCount = participants.stream()
+                .filter(participant -> userId.equals(participant.getUserId()))
+                .map(PensionForecastParticipant::getSuccessCount)
+                .filter(successCount -> successCount != null)
+                .findFirst()
+                .orElse(0);
+
+        int assumedUserSuccessCount = Math.min(
+                TOTAL_ROUND_WEEKS,
+                Math.max(0, userSuccessCount) + userAdditionalSuccess
+        );
+
+        long higherSuccessCount = participants.stream()
+                .filter(participant -> !userId.equals(participant.getUserId()))
+                .map(PensionForecastParticipant::getSuccessCount)
+                .map(successCount -> successCount == null ? 0 : successCount)
+                .mapToInt(successCount -> Math.min(
+                        TOTAL_ROUND_WEEKS,
+                        Math.max(0, successCount) + peerAdditionalSuccess
+                ))
+                .filter(successCount -> successCount > assumedUserSuccessCount)
+                .count();
+
+        return Math.toIntExact(higherSuccessCount + 1);
     }
 
     /**

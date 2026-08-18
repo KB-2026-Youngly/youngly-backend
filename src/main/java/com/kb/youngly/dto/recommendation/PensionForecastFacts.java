@@ -9,6 +9,7 @@ public record PensionForecastFacts(
         LocalDate periodStartDate,
         LocalDate periodEndDate,
         BigDecimal settledAmountThisMonth,
+        BigDecimal expectedAdditionalAmountConservative,
         BigDecimal expectedAdditionalAmountCurrentRank,
         BigDecimal expectedAdditionalAmountBestCase,
         BigDecimal expectedTotalAmountThisMonth,
@@ -18,6 +19,28 @@ public record PensionForecastFacts(
         LocalDate nextDepositDate,
         List<GroupContribution> groupContributions
 ) {
+    public PensionForecastFacts(
+            String userId,
+            LocalDate periodStartDate,
+            LocalDate periodEndDate,
+            BigDecimal settledAmountThisMonth,
+            BigDecimal expectedAdditionalAmountCurrentRank,
+            BigDecimal expectedAdditionalAmountBestCase,
+            BigDecimal expectedTotalAmountThisMonth,
+            BigDecimal expectedMaxTotalAmountThisMonth,
+            BigDecimal currentPensionBalance,
+            boolean hasOngoingRoundThisMonth,
+            LocalDate nextDepositDate,
+            List<GroupContribution> groupContributions
+    ) {
+        this(
+                userId, periodStartDate, periodEndDate, settledAmountThisMonth,
+                BigDecimal.ZERO, expectedAdditionalAmountCurrentRank,
+                expectedAdditionalAmountBestCase, expectedTotalAmountThisMonth,
+                expectedMaxTotalAmountThisMonth, currentPensionBalance,
+                hasOngoingRoundThisMonth, nextDepositDate, groupContributions
+        );
+    }
     /**
      * 챌린지별 예상 적립 근거.
      * weeklySuccessRate = successCount / 결산 완료 주차 수 (0이면 0).

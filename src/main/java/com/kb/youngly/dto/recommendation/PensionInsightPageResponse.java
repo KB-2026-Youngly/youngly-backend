@@ -15,6 +15,7 @@ public record PensionInsightPageResponse(
 ) {
     public record Forecast(
             BigDecimal currentBalance,
+            BigDecimal settledAmountThisMonth,
             BigDecimal expectedMinAmount,
             BigDecimal expectedAmount,
             BigDecimal expectedMaxAmount,

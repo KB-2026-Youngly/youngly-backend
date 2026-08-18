@@ -113,22 +113,23 @@ public class PensionInsightPageService {
     }
 
     private PensionInsightPageResponse.Forecast toForecast(PensionForecastFacts facts) {
-        BigDecimal expectedMinAmount = facts.settledAmountThisMonth();
+        BigDecimal expectedMinAmount = facts.settledAmountThisMonth()
+                .add(facts.expectedAdditionalAmountConservative());
         BigDecimal expectedAmount = facts.expectedTotalAmountThisMonth();
         BigDecimal expectedMaxAmount = facts.expectedMaxTotalAmountThisMonth();
 
         BigDecimal ongoingExpectedAmount = null;
         BigDecimal ongoingExpectedMaxAmount = null;
         if (facts.hasOngoingRoundThisMonth()
-                && expectedMinAmount != null
-                && expectedAmount != null
-                && expectedMaxAmount != null) {
-            ongoingExpectedAmount = expectedAmount.subtract(expectedMinAmount);
-            ongoingExpectedMaxAmount = expectedMaxAmount.subtract(expectedMinAmount);
+                && facts.expectedAdditionalAmountConservative() != null
+                && facts.expectedAdditionalAmountBestCase() != null) {
+            ongoingExpectedAmount = facts.expectedAdditionalAmountConservative();
+            ongoingExpectedMaxAmount = facts.expectedAdditionalAmountBestCase();
         }
 
         return new PensionInsightPageResponse.Forecast(
                 facts.currentPensionBalance(),
+                facts.settledAmountThisMonth(),
                 expectedMinAmount,
                 expectedAmount,
                 expectedMaxAmount,
