@@ -175,6 +175,14 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
 
         // 한 참여자의 실패로 반복문을 종료하지 않고 모든 실패를 모아 마지막에 보고한다.
         List<String> transferFailures = new ArrayList<>();
+        /*
+         * account_transactions.kb_account_id는 kb_accounts를 참조하는 FK다. 바깥 정산
+         * 트랜잭션에서 첫 성공자의 원장을 즉시 저장하면 공통 모임통장 행에
+         * FK 공유 잠금이 유지된다. 다음 참여자의 REQUIRES_NEW 송금이 같은 행을
+         * FOR UPDATE로 잠그려면 바깥 트랜잭션이 끝나기를 기다리게 되므로, 모든
+         * 독립 송금 시도가 끝난 뒤에만 원장을 저장한다.
+         */
+        List<DeferredSettlementLedger> deferredLedgers = new ArrayList<>();
 
         for (RoundSettlementParticipant participant : participants) {
             // 순위, 참여자, 출발·도착 계좌가 모두 갖춰진 경우에만 금액을 계산한다.
@@ -256,25 +264,9 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
                     throw new IllegalStateException("참여자 예치금 반영에 실패했습니다.");
                 }
 
-                // 직접 계산한 예상값 대신, 이체 메서드가 실제 변경에 사용한 잔액 결과를 원장에 기록한다.
-                BigDecimal sourceBalanceAfter = transferResult.getSourceBalanceAfter();
-                BigDecimal destinationBalanceAfter = transferResult.getDestinationBalanceAfter();
-
-                // 실제 돈의 흐름과 동일하게 모임통장 출금, 개인계좌 입금 원장을 각각 만든다.
-                // roundId, roundHistoryId, 계좌 방향을 조합한 키로 같은 정산의 중복 원장을 막는다.
-                insertTransaction(participant, round.getRoundId(), sourceKbAccountId,
-                        TransactionType.WITHDRAW, settlementAmount, sourceBalanceAfter,
-                        "settlement:" + round.getRoundId() + ":"
-                                + participant.getRoundHistoryId() + ":moim",
-                        "라운드 미래 적립금 출금", participant.getDestinationAccountNumber(),
-                        participant.getDestinationAccountName());
-                insertTransaction(participant, round.getRoundId(),
-                        participant.getDestinationKbAccountId(), TransactionType.DEPOSIT,
-                        settlementAmount, destinationBalanceAfter,
-                        "settlement:" + round.getRoundId() + ":"
-                                + participant.getRoundHistoryId() + ":account",
-                        "라운드 미래 적립금 입금", participant.getSourceAccountNumber(),
-                        participant.getSourceAccountName());
+                // 원장에는 송금이 실제 변경에 사용한 잔액 결과를 나중에 기록한다.
+                deferredLedgers.add(new DeferredSettlementLedger(
+                        participant, settlementAmount, transferResult));
             }
 
             // 규칙에 없는 순위도 0원으로 확정하고 이전 실패 대응값을 비운다.
@@ -282,6 +274,16 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
                     participant.getRoundHistoryId(), settlementAmount) != 1) {
                 throw new IllegalStateException("라운드 참여 이력 정산 반영에 실패했습니다.");
             }
+        }
+
+        /*
+         * 모든 REQUIRES_NEW 송금이 커밋 또는 롤백된 뒤이므로, 이제 FK 공유 잠금이
+         * 생겨도 뒤에 계좌 행을 다시 잠글 독립 송금이 없다. 부분 송금 실패가 있어도
+         * 성공자의 원장은 noRollbackFor 정책에 따라 예치금·정산 이력과 함께 커밋된다.
+         */
+        for (DeferredSettlementLedger deferredLedger : deferredLedgers) {
+            insertDeferredSettlementLedger(
+                    deferredLedger, round.getRoundId(), sourceKbAccountId);
         }
 
         /*
@@ -433,6 +435,35 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
         if (roundSettlementMapper.insertAccountTransaction(transaction) != 1) {
             throw new IllegalStateException("라운드 정산 거래 원장 저장에 실패했습니다.");
         }
+    }
+
+    /** 모든 독립 송금 종료 후 성공한 참여자의 출금·입금 원장을 순서대로 저장한다. */
+    private void insertDeferredSettlementLedger(
+            DeferredSettlementLedger deferredLedger, Long roundId, String sourceKbAccountId) {
+        RoundSettlementParticipant participant = deferredLedger.participant();
+        BigDecimal settlementAmount = deferredLedger.settlementAmount();
+        KbTransferResult transferResult = deferredLedger.transferResult();
+
+        // roundId, roundHistoryId, 계좌 방향을 조합한 키로 같은 정산의 중복 원장을 막는다.
+        insertTransaction(participant, roundId, sourceKbAccountId,
+                TransactionType.WITHDRAW, settlementAmount,
+                transferResult.getSourceBalanceAfter(),
+                "settlement:" + roundId + ":" + participant.getRoundHistoryId() + ":moim",
+                "라운드 미래 적립금 출금", participant.getDestinationAccountNumber(),
+                participant.getDestinationAccountName());
+        insertTransaction(participant, roundId, participant.getDestinationKbAccountId(),
+                TransactionType.DEPOSIT, settlementAmount,
+                transferResult.getDestinationBalanceAfter(),
+                "settlement:" + roundId + ":" + participant.getRoundHistoryId() + ":account",
+                "라운드 미래 적립금 입금", participant.getSourceAccountNumber(),
+                participant.getSourceAccountName());
+    }
+
+    /** 독립 송금 성공 결과를 FK 원장 저장 시점까지 유지하는 불변 값 객체. */
+    private record DeferredSettlementLedger(
+            RoundSettlementParticipant participant,
+            BigDecimal settlementAmount,
+            KbTransferResult transferResult) {
     }
 
     /** 형식 오류 메시지를 한 곳에서 생성하여 모든 규칙 검증 실패 응답을 통일한다. */

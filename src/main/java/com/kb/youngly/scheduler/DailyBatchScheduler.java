@@ -67,7 +67,7 @@ public class DailyBatchScheduler {
      * <p>모든 단계가 동일한 {@code batchDate}를 기준으로 날짜를 계산하므로 작업 도중
      * 날짜가 바뀌거나 서버 기본 시간대가 달라도 대상 날짜가 달라지지 않는다.</p>
      */
-    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 25 11 * * *", zone = "Asia/Seoul")
     public void runDailyBatch() {
         executeDailyBatch(LocalDate.now(SERVICE_ZONE));
     }
