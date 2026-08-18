@@ -2,6 +2,7 @@ package com.kb.youngly.dto.posts;
 
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
+import java.time.LocalDateTime;
 
 @Data // Getter, Setter, toString 등을 알아서 만들어주는 어노테이션
 public class PostDTO {
@@ -22,4 +23,6 @@ public class PostDTO {
     private int dislikeCount;
 
     private String photoUrl;
+
+    private LocalDateTime postedAt;
 }
