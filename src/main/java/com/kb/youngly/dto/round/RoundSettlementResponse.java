@@ -16,4 +16,7 @@ public class RoundSettlementResponse {
     private String userId;
     private BigDecimal settlementAmount;
     private LocalDateTime createdAt;
+
+    private String bankName;
+    private String maskedAccountNumber;
 }
