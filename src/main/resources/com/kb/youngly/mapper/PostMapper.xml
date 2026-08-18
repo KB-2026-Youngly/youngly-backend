@@ -118,6 +118,68 @@
     ORDER BY p.posted_at DESC
 </select>
 
+    <!-- 로그인 사용자의 인증 캘린더 기간 조회: posted_at 오름차순 -->
+    <select id="getMyPostsByPeriod"
+            resultType="com.kb.youngly.dto.posts.MyPostCalendarResponseDTO">
+        SELECT
+            p.post_id AS postId,
+            p.round_id AS roundId,
+            r.group_id AS groupId,
+            g.group_name AS groupName,
+            CASE
+                WHEN p.photo_url IS NULL OR p.photo_url LIKE '/%' THEN p.photo_url
+                ELSE CONCAT('/uploads/', p.photo_url)
+            END AS photoUrl,
+            p.content AS content,
+            p.post_status AS postStatus,
+            p.posted_at AS postedAt,
+            p.status_changed_at AS statusChangedAt,
+            CASE WHEN p.post_status = 'REJECTED' THEN (
+                SELECT pa.reject_reason
+                FROM post_approvals pa
+                WHERE pa.post_id = p.post_id
+                  AND pa.approval_status = 'REJECT'
+                  AND pa.reject_reason IS NOT NULL
+                ORDER BY pa.created_at DESC, pa.post_approval_id DESC
+                LIMIT 1
+            ) ELSE NULL END AS rejectReason
+        FROM posts p
+                 INNER JOIN rounds r ON r.round_id = p.round_id
+                 INNER JOIN `groups` g ON g.group_id = r.group_id
+        WHERE p.user_id = #{userId}
+          AND p.post_status != 'NONE'
+          AND p.posted_at >= #{from}
+          AND p.posted_at &lt; DATE_ADD(#{to}, INTERVAL 1 DAY)
+        <if test="groupId != null">
+            AND r.group_id = #{groupId}
+        </if>
+        ORDER BY p.posted_at ASC, p.post_id ASC
+    </select>
+
+    <!-- 현재 상태와 무관한 그룹 참여 이력 검증. 과거 라운드 기록도 허용한다. -->
+    <select id="checkGroupParticipationHistory" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM `groups` g
+        WHERE g.group_id = #{groupId}
+          AND (
+              g.user_id = #{userId}
+              OR EXISTS (
+                  SELECT 1
+                  FROM group_users gu
+                  WHERE gu.group_id = g.group_id
+                    AND gu.user_id = #{userId}
+                    AND gu.group_user_status IN ('ACTIVE', 'WITHDRAWN')
+              )
+              OR EXISTS (
+                  SELECT 1
+                  FROM rounds r
+                           INNER JOIN round_history rh ON rh.round_id = r.round_id
+                  WHERE r.group_id = g.group_id
+                    AND rh.user_id = #{userId}
+              )
+          )
+    </select>
+
 <!-- 2. 특정 게시글의 전체 댓글 목록 조회 (과거순) -->
 <select id="getCommentsByPostId" resultType="com.kb.youngly.dto.posts.CommentDTO">
     SELECT c.post_comment_id, c.content, c.created_at,

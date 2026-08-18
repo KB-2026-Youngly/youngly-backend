@@ -20,6 +20,7 @@ import com.kb.youngly.vo.post.PostCommentVO;
 import com.kb.youngly.vo.post.PostReactionVO;
 
 import java.util.List;
+import java.time.LocalDate;
 
 @Slf4j
 @Service
@@ -171,6 +172,38 @@ public class PostService {
                 date,
                 currentUserId
         );
+    }
+
+    /**
+     * 로그인 사용자의 인증 캘린더를 위한 기간별 게시물 조회입니다.
+     * posted_at 기준으로 조회하며, 현재 라운드 여부와 무관하게 과거 기록도 포함합니다.
+     */
+    @Transactional(readOnly = true)
+    public List<MyPostCalendarResponseDTO> getMyPostsByPeriod(
+            String userId,
+            LocalDate from,
+            LocalDate to,
+            String groupId
+    ) {
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("조회 시작일과 종료일은 필수입니다.");
+        }
+
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("조회 시작일은 종료일보다 늦을 수 없습니다.");
+        }
+
+        String normalizedGroupId = groupId == null ? null : groupId.trim();
+        if (normalizedGroupId != null && normalizedGroupId.isEmpty()) {
+            normalizedGroupId = null;
+        }
+
+        if (normalizedGroupId != null
+                && !postMapper.checkGroupParticipationHistory(normalizedGroupId, userId)) {
+            throw new AccessDeniedException("해당 그룹의 참여 이력이 없습니다.");
+        }
+
+        return postMapper.getMyPostsByPeriod(userId, from, to, normalizedGroupId);
     }
 
     // 피드 상세 조회 서비스
