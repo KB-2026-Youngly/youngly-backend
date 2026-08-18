@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.time.LocalDate;
 
 import com.kb.youngly.vo.post.PostCommentVO;
 import com.kb.youngly.vo.post.PostReactionVO;
@@ -37,6 +38,18 @@ public interface PostMapper {
             @Param("roundId") Long roundId,
             @Param("date") String date,
             @Param("currentUserId") String currentUserId
+    );
+
+    List<MyPostCalendarResponseDTO> getMyPostsByPeriod(
+            @Param("userId") String userId,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to,
+            @Param("groupId") String groupId
+    );
+
+    boolean checkGroupParticipationHistory(
+            @Param("groupId") String groupId,
+            @Param("userId") String userId
     );
     // 2. 특정 게시글의 전체 댓글 목록 조회 (과거순)
     List<CommentDTO> getCommentsByPostId(@Param("postId") Long postId);

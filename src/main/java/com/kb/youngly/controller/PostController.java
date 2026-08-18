@@ -7,8 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -57,6 +59,21 @@ public class PostController {
         return ResponseEntity.ok(
                 postService.getFeedList(roundId, date, userId)
         );
+    }
+
+    /**
+     * 로그인 사용자의 인증 캘린더용 기간 조회입니다. 결과는 postedAt 오름차순입니다.
+     * GET /api/posts/mine?from=2026-08-01&to=2026-08-31&groupId=group-id
+     */
+    @GetMapping("/mine")
+    public ResponseEntity<List<MyPostCalendarResponseDTO>> getMyPosts(
+            Authentication authentication,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String groupId
+    ) {
+        return ResponseEntity.ok(postService.getMyPostsByPeriod(
+                authentication.getName(), from, to, groupId));
     }
 
     /**
