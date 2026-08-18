@@ -271,8 +271,25 @@
             rh.round_history_id AS settlementId,
             rh.user_id AS userId,
             rh.settlement_amount AS settlementAmount,
-            rh.settlement_at AS createdAt
+            rh.settlement_at AS createdAt,
+            kb.bank_name AS bankName,
+            CASE
+                WHEN kb.account_number IS NULL THEN NULL
+                WHEN CHAR_LENGTH(kb.account_number) &lt;= 8 THEN '****'
+                ELSE CONCAT(
+                    LEFT(kb.account_number, 4),
+                        REPEAT('*', CHAR_LENGTH(kb.account_number) - 8),
+                    RIGHT(kb.account_number, 4)
+            )
+                END AS maskedAccountNumber
         FROM round_history rh
+                 LEFT JOIN kb_transfer_requests ktr
+                           ON ktr.round_id = rh.round_id
+                               AND ktr.settlement_receiver_id = rh.user_id
+                               AND ktr.transaction_category = 'SETTLEMENT'
+                               AND ktr.transfer_status = 'SUCCESS'
+                 LEFT JOIN kb_accounts kb
+                           ON kb.kb_account_id = ktr.destination_kb_account_id
         WHERE rh.round_id = #{roundId}
           AND rh.settlement_at IS NOT NULL
         ORDER BY
