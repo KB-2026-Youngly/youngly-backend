@@ -11,4 +11,5 @@ public enum NotificationType {
     ROUND_END,
     SETTLEMENT_COMPLETED,
     REMINDER,
+    POKE
 }

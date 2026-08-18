@@ -14,6 +14,7 @@ import com.kb.youngly.service.GroupService;
 import com.kb.youngly.service.NotificationService;
 import com.kb.youngly.vo.group.GroupUserVO;
 import com.kb.youngly.vo.group.GroupVO;
+import com.kb.youngly.vo.user.UserVO;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import java.security.SecureRandom;
 @Service
 public class GroupServiceImpl implements GroupService {
 
+    private final UserMapper userMapper;
     private final GroupMapper groupMapper;
     private final GroupUserMapper groupUserMapper;
     private final RoundMapper roundMapper;
@@ -62,11 +64,13 @@ public class GroupServiceImpl implements GroupService {
         return inviteCode;
     }
 
-    public GroupServiceImpl(GroupMapper groupMapper,
+    public GroupServiceImpl(UserMapper userMapper,
+                            GroupMapper groupMapper,
                             GroupUserMapper groupUserMapper,
                             RoundMapper roundMapper,
                             NotificationService notificationService) {
 
+        this.userMapper = userMapper;
         this.groupMapper = groupMapper;
         this.groupUserMapper = groupUserMapper;
         this.roundMapper = roundMapper;
@@ -671,6 +675,72 @@ public class GroupServiceImpl implements GroupService {
 
         return MessageResponse.builder()
                 .message("Success")
+                .build();
+    }
+
+    // 찌르기
+    @Override
+    @Transactional
+    public MessageResponse pokeGroupUser(
+            String userId,
+            String groupId,
+            Long groupUserId) {
+
+        // 1. 요청자가 해당 그룹의 참여자인지 확인
+        GroupUserVO requester =
+                groupUserMapper.findGroupUser(groupId, userId);
+
+        if (requester == null
+                || requester.getGroupUserStatus() != GroupUserStatus.ACTIVE) {
+
+            throw new IllegalArgumentException(
+                    "해당 그룹의 참여자만 찌르기를 사용할 수 있습니다."
+            );
+        }
+
+        // 2. 찌르기 대상 조회
+        GroupUserVO target =
+                groupUserMapper.findGroupUserById(groupUserId);
+
+        if (target == null
+                || !groupId.equals(target.getGroupId())
+                || target.getGroupUserStatus() != GroupUserStatus.ACTIVE) {
+
+            throw new IllegalArgumentException(
+                    "유효하지 않은 그룹 참여자입니다."
+            );
+        }
+
+        // 3. 자기 자신 찌르기 방지
+        if (userId.equals(target.getUserId())) {
+
+            throw new IllegalArgumentException(
+                    "자기 자신을 찌를 수 없습니다."
+            );
+        }
+
+        // 4. 요청자의 닉네임 조회
+        UserVO requesterUser =
+                userMapper.findByUserId(userId);
+
+        if (requesterUser == null) {
+            throw new IllegalArgumentException(
+                    "존재하지 않는 사용자입니다."
+            );
+        }
+
+        // 5. 대상 사용자에게 찌르기 알림 생성
+        String content =
+                requesterUser.getNickname() + "님이 당신을 찔렀습니다.";
+
+        notificationService.createNotification(
+                target.getUserId(),
+                NotificationType.POKE,
+                content
+        );
+
+        return MessageResponse.builder()
+                .message("찌르기를 보냈습니다.")
                 .build();
     }
 }

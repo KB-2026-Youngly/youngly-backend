@@ -194,6 +194,22 @@ public class GroupController {
         );
     }
 
+    // 그룹 참여자 찌르기
+    @PostMapping("/{groupId}/groupusers/{groupUserId}/poke")
+    public ResponseEntity<MessageResponse> pokeGroupUser(
+            Authentication authentication,
+            @PathVariable String groupId,
+            @PathVariable Long groupUserId) {
+
+        return ResponseEntity.ok(
+                groupService.pokeGroupUser(
+                        authentication.getName(),
+                        groupId,
+                        groupUserId
+                )
+        );
+    }
+
     // 그룹 탈퇴
     @DeleteMapping("/{groupId}/leave")
     public ResponseEntity<MessageResponse> leaveGroup(
