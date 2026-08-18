@@ -24,4 +24,13 @@ public class FeedListResponseDTO {
     private String userId;
     private String nickname;
     private String profileImageUrl;
+
+    private String myReaction;
+
+    private Integer approveCount;
+    private Integer rejectCount;
+
+    // 현재 로그인 사용자의 투표
+// APPROVE, REJECT 또는 null
+    private String myApproval;
 }

@@ -85,7 +85,24 @@
 <select id="getFeedListByDate" resultType="com.kb.youngly.dto.posts.FeedListResponseDTO">
     SELECT p.post_id, p.photo_url, p.content, p.posted_at,
     p.like_count, p.dislike_count, p.comment_count, p.post_status,
-    u.user_id, u.nickname, u.profile_image_url,
+    u.user_id, u.nickname, u.profile_image_url, p.approve_count AS approveCount,
+           p.reject_count AS rejectCount,
+
+       (
+           SELECT pr.reaction_type
+           FROM post_reactions pr
+           WHERE pr.post_id = p.post_id
+             AND pr.user_id = #{currentUserId}
+           LIMIT 1
+    ) AS my_reaction,
+
+    (
+    SELECT pa.approval_status
+    FROM post_approvals pa
+    WHERE pa.post_id = p.post_id
+      AND pa.user_id = #{currentUserId}
+            LIMIT 1
+            ) AS myApproval,
 
     (SELECT content
     FROM post_comments
@@ -151,13 +168,18 @@
     </select>
 
     <!-- 게시물 승인 및 반려 API - 본인 검증 및 과반수 계산용 -->
-    <select id="getPostById" resultType="com.kb.youngly.dto.posts.PostDTO">
-        SELECT post_id,
-        user_id,
-        post_status,
-        round_id,
-        approve_count,
-        reject_count
+    <select id="getPostById"
+            resultType="com.kb.youngly.dto.posts.PostDTO">
+        SELECT
+            post_id,
+            user_id,
+            photo_url,
+            post_status,
+            round_id,
+            approve_count,
+            reject_count,
+            like_count,
+            dislike_count
         FROM posts
         WHERE post_id = #{postId}
     </select>
@@ -170,10 +192,24 @@
 </select>
 
 <!-- 6. 평가 내역 저장 -->
-<insert id="insertPostApproval">
-    INSERT INTO post_approvals (user_id, post_id, approval_status, reject_reason, created_at, updated_at)
-    VALUES (#{dto.userId}, #{postId}, #{dto.approvalStatus}, #{dto.rejectReason}, NOW(), NOW())
-</insert>
+    <insert id="insertPostApproval">
+        INSERT INTO post_approvals (
+            user_id,
+            post_id,
+            approval_status,
+            reject_reason,
+            created_at,
+            updated_at
+        )
+        VALUES (
+                   #{userId},
+                   #{postId},
+                   #{dto.approvalStatus},
+                   #{dto.rejectReason},
+                   NOW(),
+                   NOW()
+               )
+    </insert>
 
 <!-- 7-1. 승인 시 posts 테이블의 승인 카운트 +1 증가 -->
 <update id="incrementApproveCount">
@@ -236,5 +272,155 @@
         FROM users
         WHERE user_id = #{userId}
     </select>
+
+    <!-- 댓글 등록 -->
+    <insert id="insertPostComment"
+            parameterType="com.kb.youngly.vo.post.PostCommentVO"
+            useGeneratedKeys="true"
+            keyProperty="postCommentId">
+        INSERT INTO post_comments (
+            user_id,
+            post_id,
+            content,
+            created_at,
+            updated_at
+        )
+        VALUES (
+                   #{userId},
+                   #{postId},
+                   #{content},
+                   NOW(),
+                   NOW()
+               )
+    </insert>
+
+    <!-- 게시글 댓글 수 증가 -->
+    <update id="incrementCommentCount">
+        UPDATE posts
+        SET comment_count = comment_count + 1
+        WHERE post_id = #{postId}
+    </update>
+
+    <!-- 방금 등록한 댓글 조회 -->
+    <select id="getCommentById"
+            resultType="com.kb.youngly.dto.posts.CommentDTO">
+        SELECT
+            c.post_comment_id,
+            c.content,
+            c.created_at,
+            u.user_id,
+            u.nickname,
+            u.profile_image_url
+        FROM post_comments c
+                 JOIN users u ON u.user_id = c.user_id
+        WHERE c.post_comment_id = #{postCommentId}
+    </select>
+
+    <!-- 현재 사용자의 반응 조회 -->
+    <select id="getPostReaction"
+            resultType="com.kb.youngly.vo.post.PostReactionVO">
+        SELECT
+            reaction_id,
+            post_id,
+            user_id,
+            reaction_type,
+            created_at,
+            updated_at
+        FROM post_reactions
+        WHERE post_id = #{postId}
+          AND user_id = #{userId}
+    </select>
+
+    <!-- 최초 반응 등록 -->
+    <insert id="insertPostReaction"
+            parameterType="com.kb.youngly.vo.post.PostReactionVO"
+            useGeneratedKeys="true"
+            keyProperty="reactionId">
+        INSERT INTO post_reactions (
+            post_id,
+            user_id,
+            reaction_type,
+            created_at,
+            updated_at
+        )
+        VALUES (
+                   #{postId},
+                   #{userId},
+                   #{reactionType},
+                   NOW(),
+                   NOW()
+               )
+    </insert>
+
+    <!-- 좋아요와 싫어요 변경 -->
+    <update id="updatePostReaction">
+        UPDATE post_reactions
+        SET reaction_type = #{reactionType},
+            updated_at = NOW()
+        WHERE post_id = #{postId}
+          AND user_id = #{userId}
+    </update>
+
+    <!-- 반응 취소 -->
+    <delete id="deletePostReaction">
+        DELETE FROM post_reactions
+        WHERE post_id = #{postId}
+          AND user_id = #{userId}
+    </delete>
+
+    <!-- 실제 반응 데이터를 기준으로 게시글 카운트 동기화 -->
+    <update id="syncPostReactionCounts">
+        UPDATE posts
+        SET like_count = (
+            SELECT COUNT(*)
+            FROM post_reactions
+            WHERE post_id = #{postId}
+              AND reaction_type = 'LIKE'
+        ),
+            dislike_count = (
+                SELECT COUNT(*)
+                FROM post_reactions
+                WHERE post_id = #{postId}
+                  AND reaction_type = 'DISLIKE'
+            )
+        WHERE post_id = #{postId}
+    </update>
+
+    <!-- 게시글의 댓글 삭제 -->
+    <delete id="deletePostComments">
+        DELETE FROM post_comments
+        WHERE post_id = #{postId}
+    </delete>
+
+    <!-- 게시글의 좋아요/싫어요 삭제 -->
+    <delete id="deletePostReactions">
+        DELETE FROM post_reactions
+        WHERE post_id = #{postId}
+    </delete>
+
+    <!-- 게시글의 승인/반려 내역 삭제 -->
+    <delete id="deletePostApprovals">
+        DELETE FROM post_approvals
+        WHERE post_id = #{postId}
+    </delete>
+
+    <!-- 다시 인증할 수 있도록 빈 게시글로 초기화 -->
+    <update id="resetPostForReupload">
+        UPDATE posts
+        SET photo_url = NULL,
+            content = NULL,
+            post_status = 'NONE',
+            posted_at = NULL,
+            status_changed_at = NULL,
+            like_count = 0,
+            dislike_count = 0,
+            comment_count = 0,
+            approve_count = 0,
+            reject_count = 0,
+            updated_at = NOW()
+        WHERE post_id = #{postId}
+          AND user_id = #{userId}
+          AND post_status != 'NONE'
+    </update>
 
 </mapper>

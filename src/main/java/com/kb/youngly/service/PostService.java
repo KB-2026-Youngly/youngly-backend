@@ -15,6 +15,10 @@ import com.kb.youngly.enums.NotificationType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 
+import com.kb.youngly.enums.ReactionType;
+import com.kb.youngly.vo.post.PostCommentVO;
+import com.kb.youngly.vo.post.PostReactionVO;
+
 import java.util.List;
 
 @Slf4j
@@ -162,67 +166,112 @@ public class PostService {
             );
         }
 
-        return postMapper.getFeedListByDate(roundId, date);
+        return postMapper.getFeedListByDate(
+                roundId,
+                date,
+                currentUserId
+        );
     }
 
     // 피드 상세 조회 서비스
     // : 게시글 상세 정보(댓글 + 공감 내역)를 한 번에 조립해서 반환
-    public FeedDetailResponseDTO getFeedDetails(Long postId) {
-        // 1. 댓글 목록 긁어오기
-        List<CommentDTO> comments = postMapper.getCommentsByPostId(postId);
+    @Transactional(readOnly = true)
+    public FeedDetailResponseDTO getFeedDetails(
+            Long postId,
+            String userId
+    ) {
+        // 게시글 존재 여부와 그룹 참여 권한 확인
+        PostDTO post = getAccessiblePost(postId, userId);
 
-        // 2. 좋아요 누른 유저 목록 긁어오기 (Enum 타입에 맞춰서 'LIKE' 파라미터 전달)
-        List<ReactionUserDTO> likers = postMapper.getReactionUsersByPostId(postId, "LIKE");
+        // 과반수 승인 완료 게시글만 상세 조회 가능
+        if (!"APPROVED".equals(post.getPostStatus())) {
+            throw new AccessDeniedException(
+                    "과반수 승인이 완료된 게시글만 상세 내용을 볼 수 있습니다."
+            );
+        }
 
-        // 3. 싫어요 누른 유저 목록 긁어오기
-        List<ReactionUserDTO> dislikers = postMapper.getReactionUsersByPostId(postId, "DISLIKE");
+        List<CommentDTO> comments =
+                postMapper.getCommentsByPostId(postId);
 
-        // 4. 하나의 종합 DTO로 포장해서 리턴
-        return new FeedDetailResponseDTO(comments, likers, dislikers);
+        List<ReactionUserDTO> likers =
+                postMapper.getReactionUsersByPostId(postId, "LIKE");
+
+        List<ReactionUserDTO> dislikers =
+                postMapper.getReactionUsersByPostId(postId, "DISLIKE");
+
+        return FeedDetailResponseDTO.builder()
+                .postStatus(post.getPostStatus())
+                .approveCount(post.getApproveCount())
+                .rejectCount(post.getRejectCount())
+                .comments(comments)
+                .likers(likers)
+                .dislikers(dislikers)
+                .build();
     }
 
     // 게시물 승인 or 반려 프로세스
     // : 방어 로직 1 - 본인 평가 방지
     // : 방어 로직 2 - 중복 평가 방지
-    @Transactional // 둘 중 하나라도 쿼리 실패 시 롤백시키기 위한 애노테이션
-    public void processPostApproval(Long postId, PostApprovalRequestDTO requestDTO) {
+    @Transactional
+        public void processPostApproval(
+                Long postId,
+                String userId,
+                PostApprovalRequestDTO requestDTO
+        ) {
 
-        // 1. 게시글 존재 여부 및 작성자 정보 가져오기
-        PostDTO post = postMapper.getPostById(postId);
-        if (post == null) {
-            throw new IllegalArgumentException("존재하지 않는 인증 게시물입니다.");
+        PostDTO post = getAccessiblePost(postId, userId);
+
+        if (post.getUserId().equals(userId)) {
+            throw new IllegalArgumentException(
+                    "본인의 인증 게시물은 스스로 평가할 수 없습니다."
+            );
         }
 
-        // 2. 방어 로직: 본인 게시물 스스로 평가 불가
-        if (post.getUserId().equals(requestDTO.getUserId())) {
-            throw new IllegalArgumentException("본인의 인증 게시물은 스스로 평가할 수 없습니다.");
+        if (requestDTO == null
+                || requestDTO.getApprovalStatus() == null) {
+            throw new IllegalArgumentException(
+                    "승인 또는 반려를 선택해 주세요."
+            );
         }
 
-        // 2-2. 방어 로직: 아직 인증샷이 안올라온 게시글 (NONE) 차단
-        if ("NONE".equals(post.getPostStatus())) {
-            throw new IllegalStateException("아직 인증이 올라오지 않은 빈 게시글은 평가할 수 없습니다.");
+        String approvalStatus =
+                requestDTO.getApprovalStatus().trim().toUpperCase();
+
+        if (!"APPROVE".equals(approvalStatus)
+                && !"REJECT".equals(approvalStatus)) {
+            throw new IllegalArgumentException(
+                    "승인 상태는 APPROVE 또는 REJECT만 가능합니다."
+            );
         }
 
-        // 3. 방어 로직: 반려(REJECT) 시 사유 필수
-        if ("REJECT".equals(requestDTO.getApprovalStatus())) {
-            if (requestDTO.getRejectReason() == null || requestDTO.getRejectReason().trim().isEmpty()) {
-                throw new IllegalArgumentException("반려 시 사유를 반드시 입력해야 합니다.");
-            }
+        requestDTO.setApprovalStatus(approvalStatus);
+
+        if ("REJECT".equals(approvalStatus)
+                && (requestDTO.getRejectReason() == null
+                || requestDTO.getRejectReason().trim().isEmpty())) {
+            throw new IllegalArgumentException(
+                    "반려 시 사유를 반드시 입력해야 합니다."
+            );
         }
 
-        // 4. 방어 로직: 이미 평가한 내역이 있는지 중복 검증 (UNIQUE 제약조건 위배 방지)
-        int duplicateCheck = postMapper.checkDuplicateApproval(postId, requestDTO.getUserId());
+        int duplicateCheck =
+                postMapper.checkDuplicateApproval(postId, userId);
+
         if (duplicateCheck > 0) {
-            throw new IllegalArgumentException("이미 해당 게시물에 대한 평가를 완료했습니다.");
+            throw new IllegalArgumentException(
+                    "이미 해당 게시물에 대한 평가를 완료했습니다."
+            );
         }
 
-        // 5. 평가 내역 저장 (post_approvals 테이블 INSERT)
-        postMapper.insertPostApproval(postId, requestDTO);
+        postMapper.insertPostApproval(
+                postId,
+                userId,
+                requestDTO
+        );
 
-        // 6. 게시글 카운트 업데이트 (posts 테이블 UPDATE)
-        if ("APPROVE".equals(requestDTO.getApprovalStatus())) {
+        if ("APPROVE".equals(approvalStatus)) {
             postMapper.incrementApproveCount(postId);
-        } else if ("REJECT".equals(requestDTO.getApprovalStatus())) {
+        } else {
             postMapper.incrementRejectCount(postId);
         }
 
@@ -280,11 +329,222 @@ public class PostService {
 
         String content = request.getContent();
 
-        if (content != null && content.trim().length() > 500) {
+        if (content != null && content.trim().length() > 20) {
             throw new IllegalArgumentException(
-                    "인증 소감은 20자 이하로 입력해 주세요."
+                    "인증 내용은 20자 이하로 입력해 주세요."
             );
         }
+    }
+
+    @Transactional
+    public CommentDTO createComment(
+            Long postId,
+            String userId,
+            CreateCommentRequestDTO request
+    ) {
+        PostDTO post = getAccessiblePost(postId, userId);
+
+        String content = request == null || request.getContent() == null
+                ? ""
+                : request.getContent().trim();
+
+        if (content.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "댓글 내용을 입력해 주세요."
+            );
+        }
+
+        if (content.length() > 100) {
+            throw new IllegalArgumentException(
+                    "댓글은 100자 이하로 입력해 주세요."
+            );
+        }
+
+        PostCommentVO comment = PostCommentVO.builder()
+                .postId(postId)
+                .userId(userId)
+                .content(content)
+                .build();
+
+        int insertedCount =
+                postMapper.insertPostComment(comment);
+
+        if (insertedCount != 1
+                || comment.getPostCommentId() == null) {
+            throw new IllegalStateException(
+                    "댓글 등록에 실패했습니다."
+            );
+        }
+
+        postMapper.incrementCommentCount(postId);
+
+        return postMapper.getCommentById(
+                comment.getPostCommentId()
+        );
+    }
+
+    @Transactional
+    public PostReactionResponseDTO setReaction(
+            Long postId,
+            String userId,
+            PostReactionRequestDTO request
+    ) {
+        getAccessiblePost(postId, userId);
+
+        if (request == null
+                || request.getReactionType() == null) {
+            throw new IllegalArgumentException(
+                    "반응 종류를 선택해 주세요."
+            );
+        }
+
+        ReactionType reactionType;
+
+        try {
+            reactionType = ReactionType.valueOf(
+                    request.getReactionType()
+                            .trim()
+                            .toUpperCase()
+            );
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException(
+                    "반응은 LIKE 또는 DISLIKE만 가능합니다."
+            );
+        }
+
+        if (reactionType == ReactionType.PENDING) {
+            throw new IllegalArgumentException(
+                    "반응은 LIKE 또는 DISLIKE만 가능합니다."
+            );
+        }
+
+        PostReactionVO existingReaction =
+                postMapper.getPostReaction(postId, userId);
+
+        if (existingReaction == null) {
+            PostReactionVO reaction =
+                    PostReactionVO.builder()
+                            .postId(postId)
+                            .userId(userId)
+                            .reactionType(reactionType)
+                            .build();
+
+            postMapper.insertPostReaction(reaction);
+        } else if (existingReaction.getReactionType()
+                != reactionType) {
+            postMapper.updatePostReaction(
+                    postId,
+                    userId,
+                    reactionType.name()
+            );
+        }
+
+        postMapper.syncPostReactionCounts(postId);
+
+        return buildReactionResponse(
+                postId,
+                reactionType.name()
+        );
+    }
+
+    @Transactional
+    public PostReactionResponseDTO deleteReaction(
+            Long postId,
+            String userId
+    ) {
+        getAccessiblePost(postId, userId);
+
+        postMapper.deletePostReaction(postId, userId);
+        postMapper.syncPostReactionCounts(postId);
+
+        return buildReactionResponse(postId, null);
+    }
+
+    private PostDTO getAccessiblePost(
+            Long postId,
+            String userId
+    ) {
+        PostDTO post = postMapper.getPostById(postId);
+
+        if (post == null) {
+            throw new IllegalArgumentException(
+                    "존재하지 않는 인증 게시글입니다."
+            );
+        }
+
+        if ("NONE".equals(post.getPostStatus())) {
+            throw new IllegalStateException(
+                    "아직 인증되지 않은 게시글입니다."
+            );
+        }
+
+        boolean isMember =
+                postMapper.checkGroupMembership(
+                        post.getRoundId(),
+                        userId
+                );
+
+        if (!isMember) {
+            throw new AccessDeniedException(
+                    "해당 게시글에 접근할 권한이 없습니다."
+            );
+        }
+
+        return post;
+    }
+
+    private PostReactionResponseDTO buildReactionResponse(
+            Long postId,
+            String myReaction
+    ) {
+        PostDTO updatedPost =
+                postMapper.getPostById(postId);
+
+        return PostReactionResponseDTO.builder()
+                .myReaction(myReaction)
+                .likeCount(updatedPost.getLikeCount())
+                .dislikeCount(updatedPost.getDislikeCount())
+                .build();
+    }
+
+    @Transactional
+    public void deletePost(Long postId, String userId) {
+        PostDTO post = postMapper.getPostById(postId);
+
+        if (post == null) {
+            throw new IllegalArgumentException(
+                    "존재하지 않는 인증 게시글입니다."
+            );
+        }
+
+        if (!userId.equals(post.getUserId())) {
+            throw new AccessDeniedException(
+                    "본인이 작성한 인증 게시글만 삭제할 수 있습니다."
+            );
+        }
+
+        if ("NONE".equals(post.getPostStatus())) {
+            throw new IllegalStateException(
+                    "이미 삭제된 인증 게시글입니다."
+            );
+        }
+
+        // 외래키 오류를 막기 위해 자식 데이터부터 제거
+        postMapper.deletePostComments(postId);
+        postMapper.deletePostReactions(postId);
+        postMapper.deletePostApprovals(postId);
+
+        int updatedCount =
+                postMapper.resetPostForReupload(postId, userId);
+
+        if (updatedCount != 1) {
+            throw new IllegalStateException(
+                    "인증 게시글 삭제에 실패했습니다."
+            );
+        }
+
+        // 실제 업로드 사진도 제거
+        fileUploadUtil.deleteFile(post.getPhotoUrl());
     }
 
 }

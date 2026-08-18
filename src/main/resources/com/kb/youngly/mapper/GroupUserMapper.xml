@@ -118,4 +118,15 @@
         ORDER BY leader DESC, u.nickname
 
     </select>
+
+    <select id="countCurrentGroupUsers"
+            parameterType="string"
+            resultType="int">
+
+        SELECT COUNT(*)
+        FROM group_users
+        WHERE group_id = #{groupId}
+          AND group_user_status IN ('ACTIVE', 'PENDING_DEPOSIT')
+
+    </select>
 </mapper>
