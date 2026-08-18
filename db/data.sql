@@ -916,12 +916,12 @@ VALUES
     ('aiuser02', '테스트유저', 'aiuser02', 'AI테스트02', 'aiuser02@youngly.test', NULL,
      '2026-06-15 09:00:00', '2026-08-10 09:00:00', '$2a$10$AFf3cAQ7PrvLZImN6rwaz.JdxNuVNK0ty/vkq/8A3o0ahid8naerS', 'ACTIVE', 60, '1999-05-20 00:00:00');
 
-INSERT INTO `survey_results`
-(`survey_result_id`, `user_id`, `answers_json`, `total_score`, `baseline`,
- `submitted_at`, `calculated_at`, `created_at`)
-VALUES
-    (2001, 'aiuser02', '{"Q1":4,"Q2":4,"Q3":3,"Q4":4,"Q5":3,"Q6":4}', 22, 'AGGRESSIVE',
-     '2026-08-01 10:00:00', '2026-08-01 10:00:10', '2026-08-01 10:00:10');
+# INSERT INTO `survey_results`
+# (`survey_result_id`, `user_id`, `answers_json`, `total_score`, `baseline`,
+#  `submitted_at`, `calculated_at`, `created_at`)
+# VALUES
+#     (2001, 'aiuser02', '{"Q1":4,"Q2":4,"Q3":3,"Q4":4,"Q5":3,"Q6":4}', 22, 'AGGRESSIVE',
+#      '2026-08-01 10:00:00', '2026-08-01 10:00:10', '2026-08-01 10:00:10');
 
 -- 아래 interest_id는 실제 값 확인 후 필요시 수정: SELECT interest_id, interest_name FROM interests;
 INSERT INTO `interest_users` (`interest_id`, `user_id`, `created_at`)
@@ -938,9 +938,9 @@ VALUES
      '테스트유저', '1999-05-20 00:00:00', '2026-06-15 09:10:00', '2026-08-10 09:00:00'),
     ('kb-pension-aiuser02', 'PENSION', '025202-11-229902', '국민', 5030000.00, 2.50,
      '테스트유저', '1999-05-20 00:00:00', '2026-06-15 09:11:00', '2026-08-10 09:00:00'),
-    ('kb-moim-aiuser02-ex', 'MOIM', '025202-22-339901', '국민', 400000.00, 2.50,
+    ('kb-moim-aiuser02-ex', 'MOIM', '025202-22-339901', '국민', 300000.00, 2.50,
      '테스트유저', '1999-05-20 00:00:00', '2026-07-01 09:50:00', '2026-08-10 09:00:00'),
-    ('kb-moim-aiuser02-rd', 'MOIM', '025202-22-339902', '국민', 200000.00, 2.50,
+    ('kb-moim-aiuser02-rd', 'MOIM', '025202-22-339902', '국민', 150000.00, 2.50,
      '테스트유저', '1999-05-20 00:00:00', '2026-07-01 09:50:00', '2026-08-10 09:00:00');
 
 INSERT INTO `accounts`
@@ -966,11 +966,11 @@ VALUES
     ('group-aiuser02-exercise', 'kb-moim-aiuser02-ex', 'aiuser02',
      'aaaaaaaa-0002-4aaa-8aaa-aaaaaaaaaaaa', '아침 운동 챌린지(AI테스트)', 3,
      '2026-07-01 10:00:00', '주 3회 이상 인증', 'EXERCISE', '아침 운동 인증 챌린지',
-     '1:40/2:60/3:80', 7, 3, 28, 200000.00, 'ONGOING', '2026-08-10 09:00:00'),
+     '1:80/2:60/3:40', 7, 3, 28, 100000.00, 'ONGOING', '2026-08-18 09:00:00'),
     ('group-aiuser02-reading', 'kb-moim-aiuser02-rd', 'aiuser02',
      'bbbbbbbb-0002-4bbb-8bbb-bbbbbbbbbbbb', '독서 습관 챌린지(AI테스트)', 3,
      '2026-07-05 10:00:00', '주 4회 이상 인증', 'READING', '매일 20분 독서 인증',
-     '1:50/2:70/3:90', 7, 4, 28, 100000.00, 'ONGOING', '2026-08-10 09:00:00');
+     '1:90/2:70/3:50', 7, 4, 28, 50000.00, 'ONGOING', '2026-08-10 09:00:00');
 
 -- 순위 비교용 참가자 (독서 1위 success_count=4, 3위 success_count=1)
 INSERT INTO `users`
@@ -1005,17 +1005,17 @@ INSERT INTO `group_users`
  `current_deposit_amount`, `streak_count`, `created_at`, `updated_at`)
 VALUES
     (9001, 'group-aiuser02-exercise', 'aiuser02', 'ACTIVE', '2026-07-01 10:05:00',
-     200000.00, 1, '2026-07-01 10:05:00', '2026-08-10 09:00:00'),
+     100000.00, 1, '2026-07-01 10:05:00', '2026-08-18 09:00:00'),
     (9002, 'group-aiuser02-reading', 'aiuser02', 'ACTIVE', '2026-07-05 10:05:00',
-     100000.00, 3, '2026-07-05 10:05:00', '2026-08-10 09:00:00'),
+     50000.00, 3, '2026-07-05 10:05:00', '2026-08-10 09:00:00'),
     (9003, 'group-aiuser02-exercise', 'aipeer01', 'ACTIVE', '2026-07-01 10:06:00',
-     200000.00, 0, '2026-07-01 10:06:00', '2026-08-10 09:00:00'),
+     100000.00, 2, '2026-07-01 10:06:00', '2026-08-18 09:00:00'),
     (9004, 'group-aiuser02-exercise', 'aipeer02', 'ACTIVE', '2026-07-01 10:07:00',
-     200000.00, 0, '2026-07-01 10:07:00', '2026-08-10 09:00:00'),
+     100000.00, 0, '2026-07-01 10:07:00', '2026-08-10 09:00:00'),
     (9005, 'group-aiuser02-reading', 'aipeer01', 'ACTIVE', '2026-07-05 10:06:00',
-     100000.00, 4, '2026-07-05 10:06:00', '2026-08-10 09:00:00'),
+     50000.00, 4, '2026-07-05 10:06:00', '2026-08-10 09:00:00'),
     (9006, 'group-aiuser02-reading', 'aipeer02', 'ACTIVE', '2026-07-05 10:07:00',
-     100000.00, 1, '2026-07-05 10:07:00', '2026-08-10 09:00:00');
+     50000.00, 1, '2026-07-05 10:07:00', '2026-08-10 09:00:00');
 
 INSERT INTO `rounds`
 (`round_id`, `group_id`, `round_no`, `start_date`, `end_date`, `round_status`, `created_at`)
@@ -1023,7 +1023,7 @@ VALUES
     (9101, 'group-aiuser02-exercise', 1, '2026-07-01', '2026-07-28', 'SETTLED', '2026-06-30 23:00:00'),
     (9102, 'group-aiuser02-exercise', 2, '2026-07-29', '2026-08-25', 'ONGOING', '2026-07-28 23:00:00'),
     -- 종료일 경과 후 정산 대기: 예상 적립 대상에 반드시 포함되어야 한다 (ONGOING만 보면 0원이 됨)
-    (9103, 'group-aiuser02-reading', 1, '2026-07-05', '2026-08-10', 'WAITING_SETTLEMENT', '2026-07-04 23:00:00');
+    (9103, 'group-aiuser02-reading', 1, '2026-07-05', '2026-08-16', 'WAITING_SETTLEMENT', '2026-07-04 23:00:00');
 
 INSERT INTO `round_history`
 (`round_history_id`, `round_id`, `user_id`, `account_id`, `moim_account_id`,
@@ -1032,12 +1032,14 @@ INSERT INTO `round_history`
 VALUES
     (9201, 9101, 'aiuser02', 'account-aiuser02-pension', 'kb-moim-aiuser02-ex',
      1, 3, 30000.00, 0, NULL, '2026-06-30 23:00:00', '2026-08-01 09:00:00'),
-    -- 2026-08-11 기준 완료 주차는 week1(8/05)만. success_count는 완료 주차와 일치해야 함.
-    -- 운동 9102: aiuser02(1)=1위, aipeer01(0)=2위(동률), aipeer02(0)=2위(동률) / rank_no NULL 유지
+    -- 2026-08-18 기준 운동 라운드는 4주 중 2주가 끝났다.
+    -- 현재는 aipeer01(2)=1위, aiuser02(1)=2위, aipeer02(0)=3위다.
+    -- 남은 두 주에 aiuser02가 모두 실패하고 친구들이 모두 성공하면 3위,
+    -- aiuser02만 모두 성공하면 1위가 되어 보수적·현재·긍정적 시나리오를 검증할 수 있다.
     (9202, 9102, 'aiuser02', 'account-aiuser02-pension', 'kb-moim-aiuser02-ex',
      NULL, 1, NULL, 0, NULL, '2026-07-28 23:00:00', NULL),
     (9204, 9102, 'aipeer01', 'account-aipeer01-pension', 'kb-moim-aiuser02-ex',
-     NULL, 0, NULL, 0, NULL, '2026-07-28 23:00:00', NULL),
+     NULL, 2, NULL, 0, NULL, '2026-07-28 23:00:00', NULL),
     (9205, 9102, 'aipeer02', 'account-aipeer02-pension', 'kb-moim-aiuser02-ex',
      NULL, 0, NULL, 0, NULL, '2026-07-28 23:00:00', NULL),
     -- 독서 9103: aipeer01(4)=1위, aiuser02(3)=2위, aipeer02(1)=3위 → 현재순위 추가분 15만
@@ -1049,20 +1051,17 @@ VALUES
      NULL, 1, NULL, 0, NULL, '2026-07-04 23:00:00', NULL);
 
 -- weeklySuccessRate 분모 = created_at <= NOW() 인 DISTINCT week_no 만
--- 2026-08-11: 운동 week1만 완료(1), week2(8/12)·week3(8/19)는 미래 fixture로 분모 제외
+-- 2026-08-18: 운동 week1·week2만 완료되어 있다. 아직 오지 않은 주차의 정산 기록은 넣지 않는다.
 -- 독서 week1~4 전부 과거 → completed=4, aiuser02 성공률 3/4
 INSERT INTO `weekly_settlements`
 (`weekly_settlement_id`, `round_id`, `week_no`, `user_id`, `approved_post_count`, `created_at`)
 VALUES
     (9401, 9102, 1, 'aiuser02', 3, '2026-08-05 23:59:00'),
-    (9402, 9102, 2, 'aiuser02', 3, '2026-08-12 23:59:00'),
-    (9403, 9102, 3, 'aiuser02', 3, '2026-08-19 23:59:00'),
-    (9404, 9102, 1, 'aipeer01', 1, '2026-08-05 23:59:00'),
+    (9402, 9102, 2, 'aiuser02', 1, '2026-08-12 23:59:00'),
+    (9404, 9102, 1, 'aipeer01', 3, '2026-08-05 23:59:00'),
     (9405, 9102, 2, 'aipeer01', 3, '2026-08-12 23:59:00'),
-    (9406, 9102, 3, 'aipeer01', 1, '2026-08-19 23:59:00'),
     (9407, 9102, 1, 'aipeer02', 0, '2026-08-05 23:59:00'),
     (9408, 9102, 2, 'aipeer02', 1, '2026-08-12 23:59:00'),
-    (9409, 9102, 3, 'aipeer02', 0, '2026-08-19 23:59:00'),
     (9410, 9103, 1, 'aiuser02', 4, '2026-07-12 23:59:00'),
     (9411, 9103, 2, 'aiuser02', 4, '2026-07-19 23:59:00'),
     (9412, 9103, 3, 'aiuser02', 4, '2026-07-26 23:59:00'),
@@ -1082,14 +1081,14 @@ INSERT INTO `account_transactions`
  `idempotency_key`, `description`, `another_account_number`, `another_bank_name`,
  `another_name`, `created_at`)
 VALUES
-    (9301, 'kb-moim-aiuser02-ex', 9001, 9101, 'DEPOSIT', 'CHARGE', 200000.00, 200000.00,
+    (9301, 'kb-moim-aiuser02-ex', 9001, 9101, 'DEPOSIT', 'CHARGE', 100000.00, 100000.00,
      'AIUSER02-EX-R1-INITIAL', '운동 챌린지 1라운드 예치금', 'kb-deposit-aiuser02', '국민', '테스트유저',
      '2026-07-01 10:10:00'),
     -- 이번 달(8월) 확정 적립금: settledAmountThisMonth 에만 반영, 예상치(ONGOING/WAITING)에는 미포함
     (9302, 'kb-pension-aiuser02', 9001, 9101, 'DEPOSIT', 'SETTLEMENT', 30000.00, 5030000.00,
      'AIUSER02-EX-R1-SETTLEMENT', '운동 챌린지 1라운드 정산 - 개인연금 적립', 'kb-moim-aiuser02-ex', '국민', '테스트유저',
      '2026-08-01 09:00:00'),
-    (9303, 'kb-moim-aiuser02-rd', 9002, 9103, 'DEPOSIT', 'CHARGE', 100000.00, 100000.00,
+    (9303, 'kb-moim-aiuser02-rd', 9002, 9103, 'DEPOSIT', 'CHARGE', 50000.00, 50000.00,
      'AIUSER02-RD-R1-INITIAL', '독서 챌린지 1라운드 예치금', 'kb-deposit-aiuser02', '국민', '테스트유저',
      '2026-07-05 10:10:00');
 

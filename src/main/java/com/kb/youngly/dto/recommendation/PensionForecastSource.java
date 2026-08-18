@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class PensionForecastSource {
 
+    private Long roundId;
     private String groupId;
     private String groupName;
     private String challengeType;
@@ -27,4 +28,23 @@ public class PensionForecastSource {
     /** 해당 라운드에서 결산 완료된 주차 수 (weekly_settlements 중 created_at <= NOW() DISTINCT week_no) */
     private Integer completedWeekCount;
     private LocalDate roundEndDate;
+
+    public PensionForecastSource(
+            String groupId,
+            String groupName,
+            String challengeType,
+            BigDecimal baseDepositAmount,
+            String futureDepositRatioRule,
+            Integer minCount,
+            Integer successCount,
+            Integer rankNo,
+            Integer completedWeekCount,
+            LocalDate roundEndDate
+    ) {
+        this(
+                null, groupId, groupName, challengeType, baseDepositAmount,
+                futureDepositRatioRule, minCount, successCount, rankNo,
+                completedWeekCount, roundEndDate
+        );
+    }
 }

@@ -14,6 +14,7 @@
     <select id="findOngoingForecastSources"
             resultType="com.kb.youngly.dto.recommendation.PensionForecastSource">
         SELECT
+            r.round_id,
             g.group_id,
             g.group_name,
             g.challenge_type,
@@ -54,27 +55,26 @@
         ORDER BY r.end_date ASC, g.group_id ASC
     </select>
 
+    <select id="findRoundForecastParticipants"
+            resultType="com.kb.youngly.dto.recommendation.PensionForecastParticipant">
+        SELECT user_id, success_count
+        FROM round_history
+        WHERE round_id = #{roundId}
+    </select>
+
     <select id="sumConfirmedPensionSettlementThisMonth" resultType="java.math.BigDecimal">
         SELECT COALESCE(SUM(at.amount), 0)
         FROM account_transactions at
         WHERE at.transaction_category = 'SETTLEMENT'
+          AND at.transaction_type = 'DEPOSIT'
           AND at.created_at &gt;= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
           AND at.created_at &lt; DATE_ADD(DATE_FORMAT(CURRENT_DATE, '%Y-%m-01'), INTERVAL 1 MONTH)
-          AND (
-              at.kb_account_id IN (
-                  SELECT a.kb_account_id
-                  FROM accounts a
-                  INNER JOIN kb_accounts k ON k.kb_account_id = a.kb_account_id
-                  WHERE a.user_id = #{userId}
-                    AND k.account_type = 'PENSION'
-              )
-              OR at.another_account_number IN (
-                  SELECT k.account_number
-                  FROM accounts a
-                  INNER JOIN kb_accounts k ON k.kb_account_id = a.kb_account_id
-                  WHERE a.user_id = #{userId}
-                    AND k.account_type = 'PENSION'
-              )
+          AND at.kb_account_id IN (
+              SELECT a.kb_account_id
+              FROM accounts a
+              INNER JOIN kb_accounts k ON k.kb_account_id = a.kb_account_id
+              WHERE a.user_id = #{userId}
+                AND k.account_type = 'PENSION'
           )
     </select>
 

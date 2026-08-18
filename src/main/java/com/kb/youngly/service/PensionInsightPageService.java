@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -112,11 +113,28 @@ public class PensionInsightPageService {
     }
 
     private PensionInsightPageResponse.Forecast toForecast(PensionForecastFacts facts) {
+        BigDecimal expectedMinAmount = facts.settledAmountThisMonth()
+                .add(facts.expectedAdditionalAmountConservative());
+        BigDecimal expectedAmount = facts.expectedTotalAmountThisMonth();
+        BigDecimal expectedMaxAmount = facts.expectedMaxTotalAmountThisMonth();
+
+        BigDecimal ongoingExpectedAmount = null;
+        BigDecimal ongoingExpectedMaxAmount = null;
+        if (facts.hasOngoingRoundThisMonth()
+                && facts.expectedAdditionalAmountConservative() != null
+                && facts.expectedAdditionalAmountBestCase() != null) {
+            ongoingExpectedAmount = facts.expectedAdditionalAmountConservative();
+            ongoingExpectedMaxAmount = facts.expectedAdditionalAmountBestCase();
+        }
+
         return new PensionInsightPageResponse.Forecast(
                 facts.currentPensionBalance(),
                 facts.settledAmountThisMonth(),
-                facts.expectedTotalAmountThisMonth(),
-                facts.expectedMaxTotalAmountThisMonth(),
+                expectedMinAmount,
+                expectedAmount,
+                expectedMaxAmount,
+                ongoingExpectedAmount,
+                ongoingExpectedMaxAmount,
                 facts.nextDepositDate()
         );
     }

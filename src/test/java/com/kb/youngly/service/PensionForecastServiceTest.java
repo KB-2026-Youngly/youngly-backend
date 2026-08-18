@@ -1,6 +1,7 @@
 package com.kb.youngly.service;
 
 import com.kb.youngly.dto.recommendation.PensionForecastSource;
+import com.kb.youngly.dto.recommendation.PensionForecastParticipant;
 import com.kb.youngly.mapper.PensionForecastMapper;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +25,84 @@ import static org.mockito.Mockito.*;
  *   규칙에 없는 순위는 정확히 0원이다 (다른 순위 비율을 대신 쓰지 않는다).
  */
 class PensionForecastServiceTest {
+
+    @Test
+    void calculatesConservativeCurrentAndOptimisticRankScenariosFromParticipantSuccessWeeks() {
+        PensionForecastMapper mapper = mock(PensionForecastMapper.class);
+        LocalDate roundEndDate = LocalDate.now().withDayOfMonth(
+                LocalDate.now().lengthOfMonth()
+        );
+        when(mapper.findOngoingForecastSources("aiuser02")).thenReturn(List.of(
+                new PensionForecastSource(
+                        9102L,
+                        "group-aiuser02-exercise",
+                        "아침 운동 챌린지",
+                        "EXERCISE",
+                        new BigDecimal("200000.00"),
+                        "1:80/2:60/3:40",
+                        3,
+                        1,
+                        2,
+                        2,
+                        roundEndDate
+                )
+        ));
+        when(mapper.findRoundForecastParticipants(9102L)).thenReturn(List.of(
+                new PensionForecastParticipant("aiuser02", 1),
+                new PensionForecastParticipant("aipeer01", 2),
+                new PensionForecastParticipant("aipeer02", 0)
+        ));
+        when(mapper.sumConfirmedPensionSettlementThisMonth("aiuser02"))
+                .thenReturn(new BigDecimal("30000.00"));
+        when(mapper.findPensionBalance("aiuser02"))
+                .thenReturn(new BigDecimal("5030000.00"));
+
+        var facts = new PensionForecastService(mapper).calculateForecast("aiuser02");
+
+        assertEquals(new BigDecimal("80000.00"), facts.expectedAdditionalAmountConservative());
+        assertEquals(new BigDecimal("120000.00"), facts.expectedAdditionalAmountCurrentRank());
+        assertEquals(new BigDecimal("160000.00"), facts.expectedAdditionalAmountBestCase());
+        assertEquals(new BigDecimal("150000.00"), facts.expectedTotalAmountThisMonth());
+        assertEquals(new BigDecimal("190000.00"), facts.expectedMaxTotalAmountThisMonth());
+        assertEquals(2, facts.groupContributions().get(0).provisionalRank());
+    }
+
+    @Test
+    void choosesMoneyRangePerChallengeWhenHigherRanksHaveSmallerRatios() {
+        PensionForecastMapper mapper = mock(PensionForecastMapper.class);
+        LocalDate roundEndDate = LocalDate.now().withDayOfMonth(
+                LocalDate.now().lengthOfMonth()
+        );
+        when(mapper.findOngoingForecastSources("aiuser02")).thenReturn(List.of(
+                new PensionForecastSource(
+                        9102L,
+                        "group-aiuser02-exercise",
+                        "아침 운동 챌린지",
+                        "EXERCISE",
+                        new BigDecimal("100000.00"),
+                        "1:40/2:60/3:80",
+                        3,
+                        1,
+                        2,
+                        2,
+                        roundEndDate
+                )
+        ));
+        when(mapper.findRoundForecastParticipants(9102L)).thenReturn(List.of(
+                new PensionForecastParticipant("aiuser02", 1),
+                new PensionForecastParticipant("aipeer01", 2),
+                new PensionForecastParticipant("aipeer02", 0)
+        ));
+        when(mapper.sumConfirmedPensionSettlementThisMonth("aiuser02"))
+                .thenReturn(BigDecimal.ZERO);
+        when(mapper.findPensionBalance("aiuser02")).thenReturn(BigDecimal.ZERO);
+
+        var facts = new PensionForecastService(mapper).calculateForecast("aiuser02");
+
+        assertEquals(new BigDecimal("40000.00"), facts.expectedAdditionalAmountConservative());
+        assertEquals(new BigDecimal("60000.00"), facts.expectedAdditionalAmountCurrentRank());
+        assertEquals(new BigDecimal("80000.00"), facts.expectedAdditionalAmountBestCase());
+    }
 
     @Test
     void calculatesForecastFromOngoingGroupsAndConfirmedSettlement() {
