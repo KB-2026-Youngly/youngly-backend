@@ -234,8 +234,8 @@ public class GroupServiceImpl implements GroupService {
         }
 
         if (request.getBaseDepositAmount() == null
-                || request.getBaseDepositAmount().signum() < 0) {
-            throw new IllegalArgumentException("최소 예치금은 0원 이상이어야 합니다.");
+                || request.getBaseDepositAmount().signum() < 1) {
+            throw new IllegalArgumentException("최소 예치금은 1원 이상이어야 합니다.");
         }
 
         if (request.getChallengeType() == null) {
