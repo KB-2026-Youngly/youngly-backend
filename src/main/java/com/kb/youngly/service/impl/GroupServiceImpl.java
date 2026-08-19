@@ -165,6 +165,7 @@ public class GroupServiceImpl implements GroupService {
 
                 // 추가
                 .memberCount(memberCount)
+                .moimAccountId(group.getMoimAccountId())
 
                 .build();
     }
@@ -359,6 +360,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     // 그룹 참여 승인
+    // 그룹 참여 승인
     @Override
     @Transactional
     public MessageResponse approveJoinRequest(
@@ -366,20 +368,34 @@ public class GroupServiceImpl implements GroupService {
             String groupId,
             Long groupUserId) {
 
-        validateLeader(userId, groupId);
+        // 그룹 조회 + 그룹장 권한 확인
+        GroupVO group = validateLeader(userId, groupId);
 
+        // 승인하려는 참여 신청 조회
         GroupUserVO groupUser =
                 validateGroupUser(groupUserId, groupId);
 
+        // 승인 대기 상태인지 확인
         if (groupUser.getGroupUserStatus() != GroupUserStatus.PENDING_APPROVAL) {
             throw new IllegalArgumentException("승인 가능한 상태가 아닙니다.");
         }
 
+        // 현재 그룹 참여자 수 조회
+        int currentMemberCount =
+                groupUserMapper.countCurrentGroupUsers(groupId);
+
+        // 최대 인원에 도달한 경우 승인 불가
+        if (currentMemberCount >= group.getGroupCount()) {
+            throw new IllegalArgumentException("그룹 정원이 가득 찼습니다.");
+        }
+
+        // 참여 승인
         groupUserMapper.updateGroupUserStatus(
                 groupUserId,
                 GroupUserStatus.PENDING_DEPOSIT
         );
 
+        // 승인 알림 전송
         notificationService.createNotification(
                 groupUser.getUserId(),
                 NotificationType.APPROVED,

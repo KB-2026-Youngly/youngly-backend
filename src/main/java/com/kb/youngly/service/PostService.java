@@ -19,6 +19,7 @@ import com.kb.youngly.enums.ReactionType;
 import com.kb.youngly.vo.post.PostCommentVO;
 import com.kb.youngly.vo.post.PostReactionVO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.time.LocalDate;
 
@@ -253,6 +254,24 @@ public class PostService {
         ) {
 
         PostDTO post = getAccessiblePost(postId, userId);
+
+        if (!"PENDING".equals(post.getPostStatus())) {
+            throw new IllegalArgumentException(
+                    "이미 승인 또는 반려가 완료된 게시물입니다."
+            );
+        }
+
+        LocalDateTime reviewDeadline =
+                post.getPostedAt()
+                        .toLocalDate()
+                        .plusDays(2)
+                        .atStartOfDay();
+
+        if (!LocalDateTime.now().isBefore(reviewDeadline)) {
+            throw new IllegalArgumentException(
+                    "인증 게시물의 승인/반려 가능 시간이 종료되었습니다."
+            );
+        }
 
         if (post.getUserId().equals(userId)) {
             throw new IllegalArgumentException(

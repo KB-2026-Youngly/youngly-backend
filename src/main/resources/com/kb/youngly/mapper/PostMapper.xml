@@ -241,7 +241,8 @@
             approve_count,
             reject_count,
             like_count,
-            dislike_count
+            dislike_count,
+            posted_at AS postedAt
         FROM posts
         WHERE post_id = #{postId}
     </select>
