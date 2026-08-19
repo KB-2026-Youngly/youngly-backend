@@ -53,9 +53,9 @@ public class RoundTransitionServiceImpl implements RoundTransitionService {
     /**
      * 한 그룹의 종료 라운드를 정산 대기로 전환하고 다음 라운드를 생성한다.
      *
-     * <p>다음 라운드는 이전 라운드의 종료일 다음 날 시작하며, 종료일은 새 시작일에
-     * 그룹의 {@code roundCycleDays}를 더해 계산한다. 회차 번호는 이전 회차보다
-     * 1 증가하고 상태는 {@code ONGOING}으로 저장한다.</p>
+     * <p>다음 라운드는 이전 라운드의 종료일 다음 날 시작하며, 시작일을 첫날로 포함하여
+     * 정확히 그룹의 {@code roundCycleDays}일 동안 진행되도록 종료일을 계산한다.
+     * 회차 번호는 이전 회차보다 1 증가하고 상태는 {@code ONGOING}으로 저장한다.</p>
      *
      * <p>그룹 행을 잠근 뒤 대상 라운드를 다시 확인하므로 스케줄러가 중복 실행되더라도
      * 동일한 다음 회차가 두 번 생성되지 않는다. 이미 처리됐거나 전환 대상이 아닌
@@ -113,12 +113,12 @@ public class RoundTransitionServiceImpl implements RoundTransitionService {
         // 새 라운드는 이전 라운드 종료일의 다음 날부터 공백 없이 시작한다.
         LocalDate nextStartDate = previousRound.getEndDate().plusDays(1);
 
-        // 회차 번호, 기간 및 초기 상태는 이전 라운드와 그룹 설정을 기준으로 서버에서 확정한다.
+        // 시작일을 첫날로 포함하여 정확히 roundCycleDays일이 되도록 종료일을 계산한다.
         RoundVO nextRound = RoundVO.builder()
                 .groupId(groupId.trim())
                 .roundNo(previousRound.getRoundNo() + 1)
                 .startDate(nextStartDate)
-                .endDate(nextStartDate.plusDays(group.getRoundCycleDays()))
+                .endDate(nextStartDate.plusDays(group.getRoundCycleDays() - 1L))
                 .roundStatus(RoundStatus.ONGOING)
                 .build();
 
