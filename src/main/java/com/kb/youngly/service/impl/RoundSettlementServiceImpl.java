@@ -17,6 +17,7 @@ import com.kb.youngly.vo.group.GroupVO;
 import com.kb.youngly.vo.round.RoundVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -98,7 +99,10 @@ public class RoundSettlementServiceImpl implements RoundSettlementService {
      * @return 정산을 완료했으면 true, 이미 처리됐거나 대상이 아니면 false
      */
     @Override
-    @Transactional(noRollbackFor = RoundSettlementIncompleteException.class)
+    @Transactional(
+            isolation = Isolation.READ_COMMITTED,
+            noRollbackFor = RoundSettlementIncompleteException.class
+    )
     public boolean settleRound(String groupId, LocalDate settlementDate) {
         // 잠금 쿼리 실행 전에 필수 식별자와 날짜를 검증한다.
         if (groupId == null || groupId.trim().isEmpty() || settlementDate == null) {

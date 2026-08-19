@@ -100,6 +100,8 @@ public class RootConfig {
         sqlSessionFactory.setConfigLocation(
                 applicationContext.getResource("classpath:/mybatis-config.xml"));
         sqlSessionFactory.setDataSource(dataSource());
+        sqlSessionFactory.setPlugins(
+                new org.apache.ibatis.plugin.Interceptor[]{new YounglyTimeSqlInterceptor()});
         // [INFO] XML 매퍼는 Mapper 인터페이스와 동일한 패키지 경로에 둔다.
         //        예) src/main/resources/com/kb/youngly/mapper/UserMapper.xml
         sqlSessionFactory.setMapperLocations(

@@ -24,6 +24,7 @@ import com.kb.youngly.vo.post.PostReactionVO;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.time.LocalDate;
+import com.kb.youngly.util.YounglyTime;
 
 @Slf4j
 @Service
@@ -56,7 +57,7 @@ public class PostService {
             );
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = YounglyTime.today();
 
         if (today.isBefore(round.getStartDate())
                 || today.isAfter(round.getEndDate())) {
@@ -284,7 +285,7 @@ public class PostService {
                         .plusDays(2)
                         .atStartOfDay();
 
-        if (!LocalDateTime.now().isBefore(reviewDeadline)) {
+        if (!YounglyTime.now().isBefore(reviewDeadline)) {
             throw new IllegalArgumentException(
                     "인증 게시물의 승인/반려 가능 시간이 종료되었습니다."
             );
@@ -364,11 +365,10 @@ public class PostService {
                 updatedPost.getRoundId()
         );
 
-// 작성자 본인은 투표할 수 없으므로 투표 가능 인원은 총 인원 - 1
-        int eligibleVoters = Math.max(totalMembers - 1, 0);
-
-// 투표 가능 인원의 절반을 초과해야 과반수
-        int majorityThreshold = eligibleVoters / 2;
+        // 작성자는 자신의 게시물을 평가할 수 없으므로 투표 가능 인원에서 제외한다.
+        // 전체 4명이면 투표 가능 인원은 3명이고, 3 / 2 = 1을 초과하는 2표부터 과반수다.
+        int eligibleVoterCount = Math.max(totalMembers - 1, 0);
+        int majorityThreshold = eligibleVoterCount / 2;
 
         if (updatedPost.getApproveCount() > majorityThreshold) {
             postMapper.updatePostStatus(postId, "APPROVED");

@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
+import com.kb.youngly.util.YounglyTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -62,7 +63,7 @@ public class SurveyService {
 
         int totalScore = calculateTotalScore(answerJsonList);
         String baseline = classifyInvestorType(totalScore);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = YounglyTime.now();
 
         SurveyResultVO result = new SurveyResultVO();
         result.setUserId(userId);

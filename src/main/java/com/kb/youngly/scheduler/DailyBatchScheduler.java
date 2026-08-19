@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import com.kb.youngly.util.YounglyTime;
 
 /**
  * 자정에 실행되는 챌린지 일일 배치 작업을 순서대로 처리하는 통합 스케줄러.
@@ -69,7 +70,7 @@ public class DailyBatchScheduler {
      */
     @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
     public void runDailyBatch() {
-        executeDailyBatch(LocalDate.now(SERVICE_ZONE));
+        executeDailyBatch(YounglyTime.today());
     }
 
     /**

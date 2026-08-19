@@ -16,11 +16,6 @@
         <setting name="useGeneratedKeys" value="true"/>
     </settings>
 
-    <typeAliases>
-        <!-- [INFO] 매퍼 XML 에서 패키지명 없이 클래스명만으로 참조할 수 있게 한다. -->
-        <package name="com.kb.youngly.domain"/>
-        <package name="com.kb.youngly.dto"/>
-        <package name="com.kb.youngly.vo"/>
-    </typeAliases>
+
 
 </configuration>

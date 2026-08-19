@@ -22,6 +22,7 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.kb.youngly.util.YounglyTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -140,7 +141,7 @@ public class PensionInsightPageService {
     }
 
     private PensionInsightPageResponse.MarketSummary findMarketSummary() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = YounglyTime.today();
         MarketDailySnapshotVO snapshot = marketDailySnapshotMapper.findLatestSnapshotWithMarketSummary(
                 today.minusDays(14),
                 today.minusDays(1)

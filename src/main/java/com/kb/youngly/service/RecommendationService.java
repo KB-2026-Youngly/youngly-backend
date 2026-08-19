@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import com.kb.youngly.util.YounglyTime;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
@@ -455,7 +456,7 @@ public class RecommendationService {
             return "미상";
         }
 
-        int age = Period.between(birthday, LocalDate.now()).getYears();
+        int age = Period.between(birthday, YounglyTime.today()).getYears();
         int ageBand = Math.max(age / 10 * 10, 0);
 
         return ageBand + "대";
@@ -666,7 +667,7 @@ public class RecommendationService {
     }
 
     private RecentMarketContext buildRecentMarketContextWithFallback() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = YounglyTime.today();
         LocalDate start = today.minusDays(14);
         LocalDate end = today.minusDays(1);
 

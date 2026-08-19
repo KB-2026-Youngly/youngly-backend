@@ -10,6 +10,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import com.kb.youngly.util.YounglyTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class CommonExceptionAdvice {
                                                       String message,
                                                       HttpServletRequest request) {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        body.put("timestamp", YounglyTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         body.put("status", status.value());
         body.put("error", status.getReasonPhrase());
         body.put("message", message);

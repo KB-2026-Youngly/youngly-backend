@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import com.kb.youngly.util.YounglyTime;
 
 @Service
 @Log4j2
@@ -28,7 +29,7 @@ public class MarketSnapshotOrchestrationService {
         this(
                 marketSnapshotIngestService,
                 marketSnapshotSummaryService,
-                Clock.system(ZONE_ID)
+                YounglyTime.clock()
         );
     }
 

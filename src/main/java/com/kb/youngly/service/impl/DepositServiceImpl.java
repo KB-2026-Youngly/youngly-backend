@@ -95,10 +95,6 @@ public class DepositServiceImpl implements DepositService {
             return toResponse(group, member, existing.getTransactionCategory());
         }
 
-        // 누적 예치금을 읽고 변경하는 동안 참여자 행을 잠근다.
-        member = depositMapper.findGroupUserForUpdate(normalizedGroupId, normalizedUserId);
-        validateDepositableMember(member);
-
         BigDecimal currentAmount = zeroIfNull(member.getCurrentDepositAmount());
         BigDecimal remainingAmount = group.getBaseDepositAmount().subtract(currentAmount).max(BigDecimal.ZERO);
 
@@ -137,6 +133,16 @@ public class DepositServiceImpl implements DepositService {
          * 멱등성 키로 처리 결과를 조회하거나 재처리 여부를 판단할 수 있다.
          */
         kbTransferRequestService.createPending(transferCommand);
+
+        /*
+         * PENDING 요청은 group_users를 외래 키로 참조하며 REQUIRES_NEW 트랜잭션에서 저장된다.
+         * 따라서 참여자 행을 먼저 FOR UPDATE로 잠그면 안쪽 트랜잭션의 외래 키 검사가
+         * 바깥 트랜잭션의 잠금 해제를 기다리는 자기 교착 상태가 생긴다.
+         * PENDING 커밋이 끝난 뒤 참여자 행을 잠가 누적 예치금 갱신만 직렬화한다.
+         */
+        member = depositMapper.findGroupUserForUpdate(normalizedGroupId, normalizedUserId);
+        validateDepositableMember(member);
+        currentAmount = zeroIfNull(member.getCurrentDepositAmount());
 
         /*
          * 계좌 존재·잔액 부족·동시 이체·중복 요청 검사는 KbTransferService에 위임한다.

@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.kb.youngly.util.YounglyTime;
 
 @Service
 public class PensionForecastService {
@@ -40,7 +41,7 @@ public class PensionForecastService {
                 pensionForecastMapper.findPensionBalance(userId)
         );
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = YounglyTime.today();
         LocalDate periodStartDate = today.withDayOfMonth(1);
         LocalDate periodEndDate = today.withDayOfMonth(today.lengthOfMonth());
 

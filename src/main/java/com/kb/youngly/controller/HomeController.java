@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import com.kb.youngly.util.YounglyTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,7 +30,7 @@ public class HomeController {
         body.put("status", "UP");
         body.put("service", "youngly-backend");
         body.put("javaVersion", System.getProperty("java.version"));
-        body.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        body.put("timestamp", YounglyTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         return body;
     }
 }

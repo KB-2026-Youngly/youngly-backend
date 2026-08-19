@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import com.kb.youngly.util.YounglyTime;
 
 @Service
 public class MarketSnapshotIngestService {
@@ -51,7 +52,7 @@ public class MarketSnapshotIngestService {
     }
 
     public MarketSnapshotIngestResult ingestRecentTwoWeeks() {
-        LocalDate today = LocalDate.now(DEFAULT_MARKET_ZONE);
+        LocalDate today = YounglyTime.today();
         return ingest(today.minusDays(14), today.minusDays(1));
     }
 
