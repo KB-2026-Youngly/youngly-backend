@@ -59,7 +59,16 @@ public class RoundServiceImpl implements RoundService {
             throw new IllegalStateException("그룹에 연결된 모임통장이 없습니다.");
         }
 
-        RoundVO latestRound = roundMapper.findLatestRound(normalizedGroupId);
+        RoundVO latestRound =
+                roundMapper.findLatestRound(normalizedGroupId);
+
+        if (latestRound != null
+                && request != null
+                && request.getStartDate() != null) {
+            throw new IllegalStateException(
+                    "챌린지 시작일은 최초 한 번만 설정할 수 있습니다."
+            );
+        }
         boolean isFirstRound = latestRound == null;
         int roundNo = isFirstRound ? 1 : latestRound.getRoundNo() + 1;
         LocalDate startDate = resolveStartDate(request, latestRound);
@@ -69,7 +78,7 @@ public class RoundServiceImpl implements RoundService {
                 .groupId(normalizedGroupId)
                 .roundNo(roundNo)
                 .startDate(startDate)
-                .endDate(startDate.plusDays(group.getRoundCycleDays()))
+                .endDate(startDate.plusDays(group.getRoundCycleDays() - 1))
                 .roundStatus(RoundStatus.ONGOING)
                 .build();
 

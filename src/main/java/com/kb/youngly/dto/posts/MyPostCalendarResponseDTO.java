@@ -17,6 +17,10 @@ public class MyPostCalendarResponseDTO {
     private String photoUrl;
     private String content;
     private String postStatus;
+
+    private Integer likeCount;
+    private Integer dislikeCount;
+
     private LocalDateTime postedAt;
     private LocalDateTime statusChangedAt;
     private String rejectReason;
