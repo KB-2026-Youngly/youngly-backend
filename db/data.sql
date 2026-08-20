@@ -63,7 +63,7 @@ INSERT INTO `interests` (`interest_id`, `interest_name`, `is_investment`) VALUES
       (7, '자동차/모빌리티', TRUE),
       (8, '엔터테인먼트/미디어', TRUE),
       (9, '반도체', TRUE),
-      (10, '기타', TRUE),
+      (10, '해당 없음', TRUE),
       (11, '여행', FALSE),
       (12, '운동/피트니스', FALSE),
       (13, '게임', FALSE),
@@ -74,8 +74,8 @@ INSERT INTO `interests` (`interest_id`, `interest_name`, `is_investment`) VALUES
       (18, '자기계발', FALSE),
       (19, '음악/공연', FALSE),
       (20, '재테크/경제', FALSE);
-      
-      
+
+
 -- ==================================================
 -- MOCK 종합 데이터
 -- ============================================================================
@@ -916,12 +916,12 @@ VALUES
     ('aiuser02', '테스트유저', 'aiuser02', 'AI테스트02', 'aiuser02@youngly.test', NULL,
      '2026-06-15 09:00:00', '2026-08-10 09:00:00', '$2a$10$AFf3cAQ7PrvLZImN6rwaz.JdxNuVNK0ty/vkq/8A3o0ahid8naerS', 'ACTIVE', 60, '1999-05-20 00:00:00');
 
-INSERT INTO `survey_results`
-(`survey_result_id`, `user_id`, `answers_json`, `total_score`, `baseline`,
- `submitted_at`, `calculated_at`, `created_at`)
-VALUES
-    (2001, 'aiuser02', '{"Q1":4,"Q2":4,"Q3":3,"Q4":4,"Q5":3,"Q6":4}', 22, 'AGGRESSIVE',
-     '2026-08-01 10:00:00', '2026-08-01 10:00:10', '2026-08-01 10:00:10');
+# INSERT INTO `survey_results`
+# (`survey_result_id`, `user_id`, `answers_json`, `total_score`, `baseline`,
+#  `submitted_at`, `calculated_at`, `created_at`)
+# VALUES
+#     (2001, 'aiuser02', '{"Q1":4,"Q2":4,"Q3":3,"Q4":4,"Q5":3,"Q6":4}', 22, 'AGGRESSIVE',
+#      '2026-08-01 10:00:00', '2026-08-01 10:00:10', '2026-08-01 10:00:10');
 
 -- 아래 interest_id는 실제 값 확인 후 필요시 수정: SELECT interest_id, interest_name FROM interests;
 INSERT INTO `interest_users` (`interest_id`, `user_id`, `created_at`)
@@ -938,9 +938,9 @@ VALUES
      '테스트유저', '1999-05-20 00:00:00', '2026-06-15 09:10:00', '2026-08-10 09:00:00'),
     ('kb-pension-aiuser02', 'PENSION', '025202-11-229902', '국민', 5030000.00, 2.50,
      '테스트유저', '1999-05-20 00:00:00', '2026-06-15 09:11:00', '2026-08-10 09:00:00'),
-    ('kb-moim-aiuser02-ex', 'MOIM', '025202-22-339901', '국민', 400000.00, 2.50,
+    ('kb-moim-aiuser02-ex', 'MOIM', '025202-22-339901', '국민', 300000.00, 2.50,
      '테스트유저', '1999-05-20 00:00:00', '2026-07-01 09:50:00', '2026-08-10 09:00:00'),
-    ('kb-moim-aiuser02-rd', 'MOIM', '025202-22-339902', '국민', 200000.00, 2.50,
+    ('kb-moim-aiuser02-rd', 'MOIM', '025202-22-339902', '국민', 150000.00, 2.50,
      '테스트유저', '1999-05-20 00:00:00', '2026-07-01 09:50:00', '2026-08-10 09:00:00');
 
 INSERT INTO `accounts`
@@ -966,11 +966,11 @@ VALUES
     ('group-aiuser02-exercise', 'kb-moim-aiuser02-ex', 'aiuser02',
      'aaaaaaaa-0002-4aaa-8aaa-aaaaaaaaaaaa', '아침 운동 챌린지(AI테스트)', 3,
      '2026-07-01 10:00:00', '주 3회 이상 인증', 'EXERCISE', '아침 운동 인증 챌린지',
-     '1:40/2:60/3:80', 7, 3, 28, 200000.00, 'ONGOING', '2026-08-10 09:00:00'),
+     '1:80/2:60/3:40', 7, 3, 28, 100000.00, 'ONGOING', '2026-08-18 09:00:00'),
     ('group-aiuser02-reading', 'kb-moim-aiuser02-rd', 'aiuser02',
      'bbbbbbbb-0002-4bbb-8bbb-bbbbbbbbbbbb', '독서 습관 챌린지(AI테스트)', 3,
      '2026-07-05 10:00:00', '주 4회 이상 인증', 'READING', '매일 20분 독서 인증',
-     '1:50/2:70/3:90', 7, 4, 28, 100000.00, 'ONGOING', '2026-08-10 09:00:00');
+     '1:90/2:70/3:50', 7, 4, 28, 50000.00, 'ONGOING', '2026-08-10 09:00:00');
 
 -- 순위 비교용 참가자 (독서 1위 success_count=4, 3위 success_count=1)
 INSERT INTO `users`
@@ -1005,17 +1005,17 @@ INSERT INTO `group_users`
  `current_deposit_amount`, `streak_count`, `created_at`, `updated_at`)
 VALUES
     (9001, 'group-aiuser02-exercise', 'aiuser02', 'ACTIVE', '2026-07-01 10:05:00',
-     200000.00, 1, '2026-07-01 10:05:00', '2026-08-10 09:00:00'),
+     100000.00, 1, '2026-07-01 10:05:00', '2026-08-18 09:00:00'),
     (9002, 'group-aiuser02-reading', 'aiuser02', 'ACTIVE', '2026-07-05 10:05:00',
-     100000.00, 3, '2026-07-05 10:05:00', '2026-08-10 09:00:00'),
+     50000.00, 3, '2026-07-05 10:05:00', '2026-08-10 09:00:00'),
     (9003, 'group-aiuser02-exercise', 'aipeer01', 'ACTIVE', '2026-07-01 10:06:00',
-     200000.00, 0, '2026-07-01 10:06:00', '2026-08-10 09:00:00'),
+     100000.00, 2, '2026-07-01 10:06:00', '2026-08-18 09:00:00'),
     (9004, 'group-aiuser02-exercise', 'aipeer02', 'ACTIVE', '2026-07-01 10:07:00',
-     200000.00, 0, '2026-07-01 10:07:00', '2026-08-10 09:00:00'),
+     100000.00, 0, '2026-07-01 10:07:00', '2026-08-10 09:00:00'),
     (9005, 'group-aiuser02-reading', 'aipeer01', 'ACTIVE', '2026-07-05 10:06:00',
-     100000.00, 4, '2026-07-05 10:06:00', '2026-08-10 09:00:00'),
+     50000.00, 4, '2026-07-05 10:06:00', '2026-08-10 09:00:00'),
     (9006, 'group-aiuser02-reading', 'aipeer02', 'ACTIVE', '2026-07-05 10:07:00',
-     100000.00, 1, '2026-07-05 10:07:00', '2026-08-10 09:00:00');
+     50000.00, 1, '2026-07-05 10:07:00', '2026-08-10 09:00:00');
 
 INSERT INTO `rounds`
 (`round_id`, `group_id`, `round_no`, `start_date`, `end_date`, `round_status`, `created_at`)
@@ -1023,7 +1023,7 @@ VALUES
     (9101, 'group-aiuser02-exercise', 1, '2026-07-01', '2026-07-28', 'SETTLED', '2026-06-30 23:00:00'),
     (9102, 'group-aiuser02-exercise', 2, '2026-07-29', '2026-08-25', 'ONGOING', '2026-07-28 23:00:00'),
     -- 종료일 경과 후 정산 대기: 예상 적립 대상에 반드시 포함되어야 한다 (ONGOING만 보면 0원이 됨)
-    (9103, 'group-aiuser02-reading', 1, '2026-07-05', '2026-08-10', 'WAITING_SETTLEMENT', '2026-07-04 23:00:00');
+    (9103, 'group-aiuser02-reading', 1, '2026-07-05', '2026-08-16', 'WAITING_SETTLEMENT', '2026-07-04 23:00:00');
 
 INSERT INTO `round_history`
 (`round_history_id`, `round_id`, `user_id`, `account_id`, `moim_account_id`,
@@ -1032,12 +1032,14 @@ INSERT INTO `round_history`
 VALUES
     (9201, 9101, 'aiuser02', 'account-aiuser02-pension', 'kb-moim-aiuser02-ex',
      1, 3, 30000.00, 0, NULL, '2026-06-30 23:00:00', '2026-08-01 09:00:00'),
-    -- 2026-08-11 기준 완료 주차는 week1(8/05)만. success_count는 완료 주차와 일치해야 함.
-    -- 운동 9102: aiuser02(1)=1위, aipeer01(0)=2위(동률), aipeer02(0)=2위(동률) / rank_no NULL 유지
+    -- 2026-08-18 기준 운동 라운드는 4주 중 2주가 끝났다.
+    -- 현재는 aipeer01(2)=1위, aiuser02(1)=2위, aipeer02(0)=3위다.
+    -- 남은 두 주에 aiuser02가 모두 실패하고 친구들이 모두 성공하면 3위,
+    -- aiuser02만 모두 성공하면 1위가 되어 보수적·현재·긍정적 시나리오를 검증할 수 있다.
     (9202, 9102, 'aiuser02', 'account-aiuser02-pension', 'kb-moim-aiuser02-ex',
      NULL, 1, NULL, 0, NULL, '2026-07-28 23:00:00', NULL),
     (9204, 9102, 'aipeer01', 'account-aipeer01-pension', 'kb-moim-aiuser02-ex',
-     NULL, 0, NULL, 0, NULL, '2026-07-28 23:00:00', NULL),
+     NULL, 2, NULL, 0, NULL, '2026-07-28 23:00:00', NULL),
     (9205, 9102, 'aipeer02', 'account-aipeer02-pension', 'kb-moim-aiuser02-ex',
      NULL, 0, NULL, 0, NULL, '2026-07-28 23:00:00', NULL),
     -- 독서 9103: aipeer01(4)=1위, aiuser02(3)=2위, aipeer02(1)=3위 → 현재순위 추가분 15만
@@ -1049,20 +1051,17 @@ VALUES
      NULL, 1, NULL, 0, NULL, '2026-07-04 23:00:00', NULL);
 
 -- weeklySuccessRate 분모 = created_at <= NOW() 인 DISTINCT week_no 만
--- 2026-08-11: 운동 week1만 완료(1), week2(8/12)·week3(8/19)는 미래 fixture로 분모 제외
+-- 2026-08-18: 운동 week1·week2만 완료되어 있다. 아직 오지 않은 주차의 정산 기록은 넣지 않는다.
 -- 독서 week1~4 전부 과거 → completed=4, aiuser02 성공률 3/4
 INSERT INTO `weekly_settlements`
 (`weekly_settlement_id`, `round_id`, `week_no`, `user_id`, `approved_post_count`, `created_at`)
 VALUES
     (9401, 9102, 1, 'aiuser02', 3, '2026-08-05 23:59:00'),
-    (9402, 9102, 2, 'aiuser02', 3, '2026-08-12 23:59:00'),
-    (9403, 9102, 3, 'aiuser02', 3, '2026-08-19 23:59:00'),
-    (9404, 9102, 1, 'aipeer01', 1, '2026-08-05 23:59:00'),
+    (9402, 9102, 2, 'aiuser02', 1, '2026-08-12 23:59:00'),
+    (9404, 9102, 1, 'aipeer01', 3, '2026-08-05 23:59:00'),
     (9405, 9102, 2, 'aipeer01', 3, '2026-08-12 23:59:00'),
-    (9406, 9102, 3, 'aipeer01', 1, '2026-08-19 23:59:00'),
     (9407, 9102, 1, 'aipeer02', 0, '2026-08-05 23:59:00'),
     (9408, 9102, 2, 'aipeer02', 1, '2026-08-12 23:59:00'),
-    (9409, 9102, 3, 'aipeer02', 0, '2026-08-19 23:59:00'),
     (9410, 9103, 1, 'aiuser02', 4, '2026-07-12 23:59:00'),
     (9411, 9103, 2, 'aiuser02', 4, '2026-07-19 23:59:00'),
     (9412, 9103, 3, 'aiuser02', 4, '2026-07-26 23:59:00'),
@@ -1082,16 +1081,56 @@ INSERT INTO `account_transactions`
  `idempotency_key`, `description`, `another_account_number`, `another_bank_name`,
  `another_name`, `created_at`)
 VALUES
-    (9301, 'kb-moim-aiuser02-ex', 9001, 9101, 'DEPOSIT', 'CHARGE', 200000.00, 200000.00,
+    (9301, 'kb-moim-aiuser02-ex', 9001, 9101, 'DEPOSIT', 'CHARGE', 100000.00, 100000.00,
      'AIUSER02-EX-R1-INITIAL', '운동 챌린지 1라운드 예치금', 'kb-deposit-aiuser02', '국민', '테스트유저',
      '2026-07-01 10:10:00'),
     -- 이번 달(8월) 확정 적립금: settledAmountThisMonth 에만 반영, 예상치(ONGOING/WAITING)에는 미포함
     (9302, 'kb-pension-aiuser02', 9001, 9101, 'DEPOSIT', 'SETTLEMENT', 30000.00, 5030000.00,
      'AIUSER02-EX-R1-SETTLEMENT', '운동 챌린지 1라운드 정산 - 개인연금 적립', 'kb-moim-aiuser02-ex', '국민', '테스트유저',
      '2026-08-01 09:00:00'),
-    (9303, 'kb-moim-aiuser02-rd', 9002, 9103, 'DEPOSIT', 'CHARGE', 100000.00, 100000.00,
+    (9303, 'kb-moim-aiuser02-rd', 9002, 9103, 'DEPOSIT', 'CHARGE', 50000.00, 50000.00,
      'AIUSER02-RD-R1-INITIAL', '독서 챌린지 1라운드 예치금', 'kb-deposit-aiuser02', '국민', '테스트유저',
      '2026-07-05 10:10:00');
+
+
+-- fss 초과용 예시 (추후 삭제 필수)
+# INSERT INTO market_daily_snapshot (
+#     market_date,
+#     source_subject,
+#     pdf_file_name,
+#     pdf_url,
+#     raw_text,
+#     summary_text,
+#     market_headline_text,
+#     market_detail_text,
+#     created_at,
+#     updated_at
+# ) VALUES (
+#              '2026-08-13',
+#              '일일 금융시장 동향[8.13일]',
+#              '260813 오후동향_F.pdf',
+#              'https://example.com/market/260813-afternoon.pdf',
+#              '실제 원문은 개발 시드에서 생략했습니다.',
+#              '최근 14일 시장 흐름을 요약한 개발 테스트 데이터입니다.',
+#              'KOSPI·KOSDAQ 상승세 지속; 미·유럽 주요 지수 혼조; 환율·금리 동향 주시',
+#              '최근 14일간 글로벌 시장은 미국·유럽 주요 지수의 변화와 한국 지수의 동시 상승이 관찰되었습니다. KOSPI는 8월13일 기준 전일 대비 상승했고, KOSDAQ은 소폭 상승 또는 보합 흐름을 보였습니다. 달러인덱스와 주요 환율은 소폭 변동했고, 금리와 원자재 가격은 방향성이 양가적으로 나타났습니다. 8월12일과 8월13일의 수치 비교에서 외국인 자금 흐름과 채권과 주식 간 매매동향이 혼재했습니다.',
+#              NOW(),
+#              NOW()
+#          )
+# ON DUPLICATE KEY UPDATE
+#                      source_subject = VALUES(source_subject),
+#                      pdf_file_name = VALUES(pdf_file_name),
+#                      pdf_url = VALUES(pdf_url),
+#                      raw_text = VALUES(raw_text),
+#                      summary_text = VALUES(summary_text),
+#                      market_headline_text = VALUES(market_headline_text),
+#                      market_detail_text = VALUES(market_detail_text),
+#                      updated_at = NOW();
+
+
+
+
+
 
 
 -- ============================================================================
@@ -1206,14 +1245,14 @@ INSERT INTO kb_accounts (
 ),
 (
     'kb-test-pension-04', 'PENSION', '025202-91-100004',
-    '국민', 3010000.00, 2.50, '테스트사', '1998-04-04',
+    '국민', 3000000.00, 2.50, '테스트사', '1998-04-04',
     '2026-07-01 09:17:00', '2026-08-01 09:00:00'
 ),
 
 -- 공용 모임통장
 (
     'kb-test-moim-01', 'MOIM', '025202-92-200001',
-    '국민', 400000.00, 2.50, '테스트일', '1998-01-01',
+    '국민', 410000.00, 2.50, '테스트일', '1998-01-01',
     '2026-07-01 10:00:00', '2026-08-01 09:00:00'
 );
 
@@ -1398,7 +1437,7 @@ INSERT INTO rounds (
     1,
     '2026-07-01',
     '2026-07-28',
-    'SETTLED',
+    'WAITING_SETTLEMENT',
     '2026-07-01 12:00:00'
 );
 
@@ -1594,7 +1633,8 @@ INSERT INTO account_transactions (
 
 -- =========================================================
 -- 9. 모임통장 → 개인연금 정산
--- 모임통장 500,000원 → 정산 후 400,000원
+-- test_user01~03 정산만 성공하여 모임통장 500,000원 → 410,000원
+-- test_user04의 10,000원 정산은 실패했으며 아래 kb_transfer_requests에 FAILED로 남긴다.
 -- =========================================================
 INSERT INTO account_transactions (
     kb_account_id,
@@ -1663,25 +1703,230 @@ INSERT INTO account_transactions (
     '챌린지 미래 적립금 입금',
     '025202-92-200001', '국민', '테스트 공동 저축 챌린지',
     '2026-07-29 09:02:01'
-),
-
--- test_user04: 10,000원 정산
-(
-    'kb-test-moim-01', @test_gu04, @test_round_id,
-    'WITHDRAW', 'SETTLEMENT', 10000.00, 400000.00,
-    'TEST-U04-SETTLEMENT-OUT',
-    '테스트사 미래 적립금 정산',
-    '025202-91-100004', '국민', '테스트사 개인연금',
-    '2026-07-29 09:03:00'
-),
-(
-    'kb-test-pension-04', @test_gu04, @test_round_id,
-    'DEPOSIT', 'SETTLEMENT', 10000.00, 3010000.00,
-    'TEST-U04-SETTLEMENT-IN',
-    '챌린지 미래 적립금 입금',
-    '025202-92-200001', '국민', '테스트 공동 저축 챌린지',
-    '2026-07-29 09:03:01'
 );
+
+-- =========================================================
+-- 10. 라운드별 KB 정산 요청 조회 API 테스트 데이터
+--
+-- Postman 조회 순서:
+--   1) test_user01 / test 로 로그인하여 JWT를 발급받는다.
+--   2) GET /api/groups/group-test-savings-01/rounds 로 @test_round_id를 확인한다.
+--   3) GET /api/rounds/{roundId}/transfer-requests 를 호출한다.
+--   4) FAILED 요청 ID를 골라 POST
+--      /api/rounds/{roundId}/transfer-requests/{transferRequestId}/retry 를 호출한다.
+--
+-- kb_transfer_requests.group_user_id는 실제 정산 수령자의 참여 ID가 아니라 정산 요청을
+-- 관리하는 그룹장의 참여 ID를 뜻한다. 따라서 네 요청 모두 그룹장 test_user01의
+-- @test_gu01을 저장하고, 실제 수령자는 settlement_receiver_id로 각각 구분한다.
+-- test_user02로 같은 API를 호출하면 group_user_id가 일치하지 않아 빈 배열이 반환된다.
+-- =========================================================
+INSERT INTO kb_transfer_requests (
+    idempotency_key,
+    source_kb_account_id,
+    destination_kb_account_id,
+    amount,
+    source_balance_after,
+    destination_balance_after,
+    transaction_category,
+    transfer_status,
+    kb_transaction_id,
+    group_user_id,
+    settlement_receiver_id,
+    round_id,
+    requested_at,
+    completed_at,
+    updated_at
+) VALUES
+(
+    'TEST-KB-U01-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-01',
+    40000.00, 460000.00, 3040000.00,
+    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U01-SETTLEMENT',
+    @test_gu01, 'test_user01', @test_round_id,
+    '2026-07-29 08:59:59', '2026-07-29 09:00:01', '2026-07-29 09:00:01'
+),
+(
+    'TEST-KB-U02-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-02',
+    30000.00, 430000.00, 3030000.00,
+    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U02-SETTLEMENT',
+    @test_gu01, 'test_user02', @test_round_id,
+    '2026-07-29 09:00:59', '2026-07-29 09:01:01', '2026-07-29 09:01:01'
+),
+(
+    'TEST-KB-U03-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-03',
+    20000.00, 410000.00, 3020000.00,
+    'SETTLEMENT', 'SUCCESS', 'TEST-KB-TX-U03-SETTLEMENT',
+    @test_gu01, 'test_user03', @test_round_id,
+    '2026-07-29 09:01:59', '2026-07-29 09:02:01', '2026-07-29 09:02:01'
+);
+
+-- 재정산 API가 새 요청을 INSERT하지 않고 이 FAILED 행 자체를 SUCCESS로 바꾸는지 확인한다.
+INSERT INTO kb_transfer_requests (
+    idempotency_key,
+    source_kb_account_id,
+    destination_kb_account_id,
+    amount,
+    transaction_category,
+    transfer_status,
+    failure_code,
+    failure_message,
+    group_user_id,
+    settlement_receiver_id,
+    round_id,
+    requested_at,
+    completed_at,
+    updated_at
+) VALUES (
+    'TEST-KB-U04-SETTLEMENT',
+    'kb-test-moim-01', 'kb-test-pension-04', 10000.00,
+    'SETTLEMENT', 'FAILED', 'INSUFFICIENT_BALANCE',
+    '테스트용 최초 정산 이체 실패',
+    @test_gu01, 'test_user04', @test_round_id,
+    '2026-07-29 09:02:59', '2026-07-29 09:03:01', '2026-07-29 09:03:01'
+);
+
+COMMIT;
+
+
+-- ==========================================================================
+-- KB 송금 실패 기록 및 정산 요청자/수령자 분리 Postman 테스트 데이터
+--
+-- 실행 API: POST /api/dev/round-settlements?date=2026-08-15
+--
+-- 모임통장 잔액을 50,000원으로 두고 처리 순서와 순위를 다음처럼 구성한다.
+--   1. user07: 3등, 70,000원 -> 잔액 부족으로 FAILED(잔액은 그대로 50,000원)
+--   2. user08: 1등, 30,000원 -> SUCCESS(잔액은 20,000원으로 감소)
+--   3. user09: 2등, 50,000원 -> 잔액 부족으로 FAILED
+-- 한 사람의 실패로 중단하지 않고 세 요청을 전부 시도하는 동시에, 실패 사이에 있는
+-- user08의 성공 결과와 거래 원장이 정상적으로 커밋되는지도 확인할 수 있다.
+--
+-- 세 요청에서 공통으로 확인할 값:
+--   - group_user_id: 이 그룹의 그룹장 user07에 해당하는 group_users.group_user_id
+--   - settlement_receiver_id: 각 정산 수령자인 user07, user08, user09
+--   - user07/user09: transfer_status=FAILED, failure_code=INSUFFICIENT_BALANCE
+--   - user08: transfer_status=SUCCESS, failure_code=NULL
+--
+-- 이 데이터도 상태를 변경하므로 재시험 전 tables.sql과 data.sql을 다시 실행한다.
+-- ==========================================================================
+
+START TRANSACTION;
+
+-- 다른 테스트의 모임통장과 잔액을 공유하지 않는 정산 실패 전용 KB 계좌다.
+INSERT INTO kb_accounts (
+    kb_account_id,
+    account_type,
+    account_number,
+    bank_name,
+    balance,
+    interest_rate,
+    name,
+    birthday,
+    created_at,
+    updated_at
+) VALUES (
+    'kb-postman-settlement-fail', 'MOIM', '025202-22-339990', '국민',
+    50000.00, 0.10, '송지아', '2001-02-14',
+    '2026-07-16 09:00:00', '2026-08-14 23:00:00'
+);
+
+INSERT INTO moim_accounts (
+    moim_account_id,
+    user_id,
+    kb_account_id,
+    account_status,
+    account_name,
+    created_at,
+    synced_at,
+    updated_at
+) VALUES (
+    'moim-postman-settlement-fail', 'user07', 'kb-postman-settlement-fail',
+    'ACTIVE', 'Postman 정산 실패 전용 통장',
+    '2026-07-16 09:05:00', '2026-07-16 09:05:00', '2026-08-14 23:00:00'
+);
+
+INSERT INTO `groups` (
+    group_id,
+    moim_account_id,
+    user_id,
+    invite_code,
+    group_name,
+    group_count,
+    created_at,
+    custom_rule,
+    challenge_type,
+    content,
+    future_deposit_ratio_rule,
+    duration_days,
+    min_count,
+    round_cycle_days,
+    default_fail_pass_count,
+    base_deposit_amount,
+    group_status,
+    updated_at
+) VALUES (
+    'group-postman-settlement-fail-01', 'moim-postman-settlement-fail', 'user07',
+    '99000000-0000-4000-8000-000000000001', 'Postman KB 정산 실패 그룹', 3,
+    '2026-07-16 09:10:00', '주 3회 인증', 'READING',
+    '잔액 부족 정산 실패와 실패 요청 저장을 확인하는 전용 그룹',
+    '1:30/2:50/3:70', 7, 3, 28, 1, 100000.00,
+    'ONGOING', '2026-08-14 23:00:00'
+);
+
+-- user07은 그룹장이자 첫 번째 정산 수령자다. user08과 user09는 후속 수령자다.
+INSERT INTO group_users (
+    group_id,
+    user_id,
+    group_user_status,
+    approved_at,
+    current_deposit_amount,
+    streak_count,
+    created_at,
+    updated_at
+) VALUES
+    ('group-postman-settlement-fail-01', 'user07', 'ACTIVE',
+     '2026-07-16 10:00:00', 100000.00, 5, '2026-07-16 10:00:00', '2026-08-14 23:00:00'),
+    ('group-postman-settlement-fail-01', 'user08', 'ACTIVE',
+     '2026-07-16 10:01:00', 100000.00, 3, '2026-07-16 10:01:00', '2026-08-14 23:00:00'),
+    ('group-postman-settlement-fail-01', 'user09', 'ACTIVE',
+     '2026-07-16 10:02:00', 100000.00, 3, '2026-07-16 10:02:00', '2026-08-14 23:00:00');
+
+-- 개발용 정산 API는 요청일의 전날 종료된 WAITING_SETTLEMENT 라운드를 조회한다.
+INSERT INTO rounds (
+    round_id,
+    group_id,
+    round_no,
+    start_date,
+    end_date,
+    round_status,
+    created_at
+) VALUES (
+    9901, 'group-postman-settlement-fail-01', 1,
+    '2026-07-18', '2026-08-14', 'WAITING_SETTLEMENT', '2026-07-17 23:00:00'
+);
+
+-- success_count를 1, 5, 3으로 두어 user07=3등, user08=1등, user09=2등으로 계산한다.
+INSERT INTO round_history (
+    round_history_id,
+    round_id,
+    user_id,
+    account_id,
+    moim_account_id,
+    rank_no,
+    success_count,
+    settlement_amount,
+    remaining_fail_pass_count,
+    prior_failure_response,
+    created_at,
+    settlement_at
+) VALUES
+    (99001, 9901, 'user07', 'account-user07-pension', 'moim-postman-settlement-fail',
+     NULL, 1, NULL, 1, NULL, '2026-07-17 23:00:00', NULL),
+    (99002, 9901, 'user08', 'account-user08-deposit', 'moim-postman-settlement-fail',
+     NULL, 5, NULL, 1, NULL, '2026-07-17 23:00:00', NULL),
+    (99003, 9901, 'user09', 'account-user09-pension', 'moim-postman-settlement-fail',
+     NULL, 3, NULL, 1, NULL, '2026-07-17 23:00:00', NULL);
 
 COMMIT;
 
@@ -1868,5 +2113,122 @@ INSERT INTO posts (
      'APPROVED', '2026-08-08 08:00:00', '2026-08-08 08:00:00', '2026-08-08 10:00:00', 2, 0),
     (9801, 'user03', '/test/daily-batch/user03-approved-1.jpg', '통합배치 user03 승인 1',
      'APPROVED', '2026-08-07 08:30:00', '2026-08-07 08:30:00', '2026-08-07 10:30:00', 2, 0);
+
+COMMIT;
+
+-- ============================================================================
+-- 캐릭터 뽑기 마스터 데이터
+--
+-- 같은 표시 이름의 캐릭터는 item_id와 image_url로 각각 구분한다.
+-- 이미지 경로를 기준으로 누락된 캐릭터만 추가하므로 이 구간을 재실행해도 중복되지 않는다.
+-- ============================================================================
+START TRANSACTION;
+
+SET @character_master_data = JSON_ARRAY(
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-01.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-02.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-03.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-04.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-05.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-06.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-07.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-08.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-01.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-02.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-03.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-04.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-05.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-06.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-07.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-08.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-01.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-02.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-03.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-04.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-05.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-06.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-07.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-08.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-01.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-02.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-03.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-04.png', 'drop_rate', 3.13),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-05.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-06.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-07.png', 'drop_rate', 3.12),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-08.png', 'drop_rate', 3.12)
+);
+
+SET @existing_character_paths = COALESCE(
+    (SELECT JSON_ARRAYAGG(image_url) FROM collectible_items),
+    JSON_ARRAY()
+);
+
+SET @previous_group_concat_max_len = @@SESSION.group_concat_max_len;
+SET SESSION group_concat_max_len = 100000;
+
+SELECT GROUP_CONCAT(
+    CONCAT(
+        '(''CHARACTER'', ',
+        QUOTE(new_character.item_name), ', ',
+        QUOTE(new_character.image_url), ', ',
+        CAST(new_character.drop_rate AS CHAR),
+        ', ''ETC'', NULL)'
+    )
+    ORDER BY new_character.image_url
+    SEPARATOR ', '
+)
+INTO @character_insert_values
+FROM JSON_TABLE(
+    @character_master_data,
+    '$[*]' COLUMNS (
+        item_name VARCHAR(50) PATH '$.item_name',
+        image_url VARCHAR(255) PATH '$.image_url',
+        drop_rate DECIMAL(5,2) PATH '$.drop_rate'
+    )
+) new_character
+WHERE JSON_CONTAINS(
+    @existing_character_paths,
+    JSON_QUOTE(new_character.image_url)
+) = 0;
+
+SET @character_insert_sql = IF(
+    @character_insert_values IS NULL,
+    'DO 0',
+    CONCAT(
+        'INSERT INTO collectible_items ',
+        '(item_category, item_name, image_url, drop_rate, base_character, acc_part) VALUES ',
+        @character_insert_values
+    )
+);
+
+PREPARE insert_missing_characters FROM @character_insert_sql;
+EXECUTE insert_missing_characters;
+DEALLOCATE PREPARE insert_missing_characters;
+
+SET SESSION group_concat_max_len = @previous_group_concat_max_len;
+
+-- 같은 이미지 경로의 기존 행도 최종 마스터 값과 일치시킨다.
+UPDATE collectible_items existing_character
+    INNER JOIN JSON_TABLE(
+        @character_master_data,
+        '$[*]' COLUMNS (
+            item_name VARCHAR(50) PATH '$.item_name',
+            image_url VARCHAR(255) PATH '$.image_url',
+            drop_rate DECIMAL(5,2) PATH '$.drop_rate'
+        )
+    ) master_character
+        ON master_character.image_url = existing_character.image_url
+SET existing_character.item_category = 'CHARACTER',
+    existing_character.item_name = master_character.item_name,
+    existing_character.drop_rate = master_character.drop_rate,
+    existing_character.base_character = 'ETC',
+    existing_character.acc_part = NULL;
+
+SET @character_master_data = NULL;
+SET @existing_character_paths = NULL;
+SET @character_insert_values = NULL;
+SET @character_insert_sql = NULL;
+SET @previous_group_concat_max_len = NULL;
 
 COMMIT;
