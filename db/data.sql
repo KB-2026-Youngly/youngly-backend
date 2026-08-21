@@ -74,8 +74,8 @@ INSERT INTO `interests` (`interest_id`, `interest_name`, `is_investment`) VALUES
       (18, '자기계발', FALSE),
       (19, '음악/공연', FALSE),
       (20, '재테크/경제', FALSE);
-      
-      
+
+
 -- ==================================================
 -- MOCK 종합 데이터
 -- ============================================================================
@@ -2113,5 +2113,130 @@ INSERT INTO posts (
      'APPROVED', '2026-08-08 08:00:00', '2026-08-08 08:00:00', '2026-08-08 10:00:00', 2, 0),
     (9801, 'user03', '/test/daily-batch/user03-approved-1.jpg', '통합배치 user03 승인 1',
      'APPROVED', '2026-08-07 08:30:00', '2026-08-07 08:30:00', '2026-08-07 10:30:00', 2, 0);
+
+COMMIT;
+
+-- ============================================================================
+-- 캐릭터 뽑기 마스터 데이터
+--
+-- 같은 표시 이름의 캐릭터는 item_id와 image_url로 각각 구분한다.
+-- 이미지 경로를 기준으로 누락된 캐릭터만 추가하므로 이 구간을 재실행해도 중복되지 않는다.
+-- ============================================================================
+START TRANSACTION;
+
+SET @character_master_data = JSON_ARRAY(
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-01.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-02.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-03.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-04.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-05.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-06.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-07.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '키키', 'image_url', '/characters/kiki-08.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-01.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-02.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-03.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-04.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-05.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-06.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-07.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '아거', 'image_url', '/characters/ager-08.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-01.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-02.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-03.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-04.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-05.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-06.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-07.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '비비', 'image_url', '/characters/bibi-08.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-01.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-02.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-03.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-04.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-05.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-06.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-07.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-08.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-01.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-02.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-03.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-04.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-05.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-06.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-07.png', 'drop_rate', 2.50),
+    JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-08.png', 'drop_rate', 2.50)
+);
+
+SET @existing_character_paths = COALESCE(
+    (SELECT JSON_ARRAYAGG(image_url) FROM collectible_items),
+    JSON_ARRAY()
+);
+
+SET @previous_group_concat_max_len = @@SESSION.group_concat_max_len;
+SET SESSION group_concat_max_len = 100000;
+
+SELECT GROUP_CONCAT(
+    CONCAT(
+        '(''CHARACTER'', ',
+        QUOTE(new_character.item_name), ', ',
+        QUOTE(new_character.image_url), ', ',
+        CAST(new_character.drop_rate AS CHAR),
+        ', ''ETC'', NULL)'
+    )
+    ORDER BY new_character.image_url
+    SEPARATOR ', '
+)
+INTO @character_insert_values
+FROM JSON_TABLE(
+    @character_master_data,
+    '$[*]' COLUMNS (
+        item_name VARCHAR(50) PATH '$.item_name',
+        image_url VARCHAR(255) PATH '$.image_url',
+        drop_rate DECIMAL(5,2) PATH '$.drop_rate'
+    )
+) new_character
+WHERE JSON_CONTAINS(
+    @existing_character_paths,
+    JSON_QUOTE(new_character.image_url)
+) = 0;
+
+SET @character_insert_sql = IF(
+    @character_insert_values IS NULL,
+    'DO 0',
+    CONCAT(
+        'INSERT INTO collectible_items ',
+        '(item_category, item_name, image_url, drop_rate, base_character, acc_part) VALUES ',
+        @character_insert_values
+    )
+);
+
+PREPARE insert_missing_characters FROM @character_insert_sql;
+EXECUTE insert_missing_characters;
+DEALLOCATE PREPARE insert_missing_characters;
+
+SET SESSION group_concat_max_len = @previous_group_concat_max_len;
+
+-- 같은 이미지 경로의 기존 행도 최종 마스터 값과 일치시킨다.
+UPDATE collectible_items existing_character
+    INNER JOIN JSON_TABLE(
+        @character_master_data,
+        '$[*]' COLUMNS (
+            item_name VARCHAR(50) PATH '$.item_name',
+            image_url VARCHAR(255) PATH '$.image_url',
+            drop_rate DECIMAL(5,2) PATH '$.drop_rate'
+        )
+    ) master_character
+        ON master_character.image_url = existing_character.image_url
+SET existing_character.item_category = 'CHARACTER',
+    existing_character.item_name = master_character.item_name,
+    existing_character.drop_rate = master_character.drop_rate,
+    existing_character.base_character = 'ETC',
+    existing_character.acc_part = NULL;
+
+SET @character_master_data = NULL;
+SET @existing_character_paths = NULL;
+SET @character_insert_values = NULL;
+SET @character_insert_sql = NULL;
+SET @previous_group_concat_max_len = NULL;
 
 COMMIT;
