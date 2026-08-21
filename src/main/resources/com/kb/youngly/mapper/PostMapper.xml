@@ -83,7 +83,10 @@
     </insert>
 <!-- 1. 특정 라운드(그룹)의 날짜별 피드 리스트 조회 (최신 댓글 1개 포함) -->
 <select id="getFeedListByDate" resultType="com.kb.youngly.dto.posts.FeedListResponseDTO">
-    SELECT p.post_id, p.photo_url, p.content, p.posted_at,
+    SELECT p.post_id, CASE
+                          WHEN p.photo_url IS NULL OR p.photo_url LIKE '/%' THEN p.photo_url
+                          ELSE CONCAT('/uploads/', p.photo_url)
+        END AS photoUrl, p.content, p.posted_at,
     p.like_count, p.dislike_count, p.comment_count, p.post_status,
     u.user_id, u.nickname, u.profile_image_url, p.approve_count AS approveCount,
            p.reject_count AS rejectCount,
@@ -133,7 +136,9 @@
             p.content AS content,
             p.post_status AS postStatus,
             p.posted_at AS postedAt,
-            p.status_changed_at AS statusChangedAt,
+            p.status_changed_at AS statusChangedAt
+            p.like_count AS likeCount,
+            p.dislike_count AS dislikeCount,
             CASE WHEN p.post_status = 'REJECTED' THEN (
                 SELECT pa.reject_reason
                 FROM post_approvals pa

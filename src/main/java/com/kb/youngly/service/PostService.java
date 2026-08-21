@@ -2,8 +2,10 @@ package com.kb.youngly.service;
 
 import com.kb.youngly.dto.posts.*;
 import com.kb.youngly.mapper.PostMapper;
+import com.kb.youngly.mapper.RoundMapper;
 import com.kb.youngly.util.FileUploadUtil;
 import com.kb.youngly.vo.post.PostVO;
+import com.kb.youngly.vo.round.RoundVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,8 @@ public class PostService {
     private final PostMapper postMapper;
     private final FileUploadUtil fileUploadUtil;
     private final NotificationService notificationService;
+    private final RoundMapper roundMapper;
+
 
     @Transactional
     public CreatePostResponseDTO createPost(
@@ -40,6 +44,24 @@ public class PostService {
         validateCreatePostRequest(request);
 
         Long roundId = request.getRoundId();
+
+        // 라운드 존재 여부 및 인증 가능 기간 확인
+        RoundVO round = roundMapper.findRoundById(roundId);
+
+        if (round == null) {
+            throw new IllegalArgumentException(
+                    "존재하지 않는 라운드입니다."
+            );
+        }
+
+        LocalDate today = LocalDate.now();
+
+        if (today.isBefore(round.getStartDate())
+                || today.isAfter(round.getEndDate())) {
+            throw new IllegalArgumentException(
+                    "현재 인증 가능한 기간이 아닙니다."
+            );
+        }
 
         // 해당 라운드의 활성 참여자인지 확인
         boolean isMember =
@@ -214,15 +236,8 @@ public class PostService {
             Long postId,
             String userId
     ) {
-        // 게시글 존재 여부와 그룹 참여 권한 확인
-        PostDTO post = getAccessiblePost(postId, userId);
-
-        // 과반수 승인 완료 게시글만 상세 조회 가능
-        if (!"APPROVED".equals(post.getPostStatus())) {
-            throw new AccessDeniedException(
-                    "과반수 승인이 완료된 게시글만 상세 내용을 볼 수 있습니다."
-            );
-        }
+        PostDTO post =
+                getInteractivePost(postId, userId);
 
         List<CommentDTO> comments =
                 postMapper.getCommentsByPostId(postId);
@@ -337,20 +352,20 @@ public class PostService {
         PostDTO updatedPost = postMapper.getPostById(postId);
 
         // 2. 이 게시글이 속한 라운드의 전체 그룹 멤버(ACTIVE) 수 조회
-        int totalMembers = postMapper.getTotalGroupMembersByRoundId(updatedPost.getRoundId());
+        int totalMembers = postMapper.getTotalGroupMembersByRoundId(
+                updatedPost.getRoundId()
+        );
 
-        // 3. 과반수 기준치 계산 (정수 나눗셈)
-        // 5명이면 5/2 = 2 (3명부터 과반수)
-        // 4명이면 4/2 = 2 (3명부터 과반수)
-        int majorityThreshold = totalMembers / 2;
+// 작성자 본인은 투표할 수 없으므로 투표 가능 인원은 총 인원 - 1
+        int eligibleVoters = Math.max(totalMembers - 1, 0);
 
-        // 4. 과반수 달성 여부 체크 후 게시물 최종 상태 업데이트
+// 투표 가능 인원의 절반을 초과해야 과반수
+        int majorityThreshold = eligibleVoters / 2;
+
         if (updatedPost.getApproveCount() > majorityThreshold) {
-            // 승인 카운트가 과반수를 넘으면? APPROVED(승인) 확정!
             postMapper.updatePostStatus(postId, "APPROVED");
 
         } else if (updatedPost.getRejectCount() > majorityThreshold) {
-            // 반려 카운트가 과반수를 넘으면? REJECTED(반려) 확정!
             postMapper.updatePostStatus(postId, "REJECTED");
         }
         // 둘 다 과반수를 못 넘었으면? 아직 투표가 진행 중인 거니까 그냥 종료(PASS)!
@@ -394,7 +409,8 @@ public class PostService {
             String userId,
             CreateCommentRequestDTO request
     ) {
-        PostDTO post = getAccessiblePost(postId, userId);
+        PostDTO post =
+                getInteractivePost(postId, userId);
 
         String content = request == null || request.getContent() == null
                 ? ""
@@ -441,7 +457,7 @@ public class PostService {
             String userId,
             PostReactionRequestDTO request
     ) {
-        getAccessiblePost(postId, userId);
+        getInteractivePost(postId, userId);
 
         if (request == null
                 || request.getReactionType() == null) {
@@ -504,7 +520,7 @@ public class PostService {
             Long postId,
             String userId
     ) {
-        getAccessiblePost(postId, userId);
+        getInteractivePost(postId, userId);
 
         postMapper.deletePostReaction(postId, userId);
         postMapper.syncPostReactionCounts(postId);
@@ -539,6 +555,31 @@ public class PostService {
         if (!isMember) {
             throw new AccessDeniedException(
                     "해당 게시글에 접근할 권한이 없습니다."
+            );
+        }
+
+        return post;
+    }
+
+    private PostDTO getInteractivePost(
+            Long postId,
+            String userId
+    ) {
+        PostDTO post =
+                getAccessiblePost(postId, userId);
+
+        boolean isAuthor =
+                userId.equals(post.getUserId());
+
+        boolean hasVoted =
+                postMapper.checkDuplicateApproval(
+                        postId,
+                        userId
+                ) > 0;
+
+        if (!isAuthor && !hasVoted) {
+            throw new AccessDeniedException(
+                    "승인 또는 반려 투표 후 게시글에 반응할 수 있습니다."
             );
         }
 
