@@ -100,22 +100,18 @@ public class PostController {
      * PATCH /api/posts/{postId}/approval
      */
     @PatchMapping("/{postId}/approval")
-    public ResponseEntity<String> processPostApproval(
+    public ResponseEntity<PostApprovalResponseDTO> processPostApproval(
             Authentication authentication,
             @PathVariable Long postId,
             @RequestBody PostApprovalRequestDTO requestDTO) {
 
         String userId = authentication.getName();
 
-        postService.processPostApproval(
+        return ResponseEntity.ok(postService.processPostApproval(
                 postId,
                 userId,
                 requestDTO
-        );
-
-        return ResponseEntity.ok(
-                "게시글 평가가 성공적으로 반영되었습니다."
-        );
+        ));
     }
 
     /**

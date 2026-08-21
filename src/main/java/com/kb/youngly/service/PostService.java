@@ -29,7 +29,9 @@ import java.time.LocalDate;
 @Service
 @RequiredArgsConstructor // final이 붙은 변수들을 알아서 조립해 주는 어노테이션
 public class PostService {
+    private static final int REVIEW_REWARD_POINT = 10;
 
+    private final PointService pointService;
     private final PostMapper postMapper;
     private final FileUploadUtil fileUploadUtil;
     private final NotificationService notificationService;
@@ -262,7 +264,7 @@ public class PostService {
     // : 방어 로직 1 - 본인 평가 방지
     // : 방어 로직 2 - 중복 평가 방지
     @Transactional
-        public void processPostApproval(
+        public PostApprovalResponseDTO processPostApproval(
                 Long postId,
                 String userId,
                 PostApprovalRequestDTO requestDTO
@@ -336,6 +338,12 @@ public class PostService {
                 requestDTO
         );
 
+        pointService.earnPoint(
+                userId,
+                REVIEW_REWARD_POINT,
+                "인증 승인·반려 참여 보상"
+        );
+
         if ("APPROVE".equals(approvalStatus)) {
             postMapper.incrementApproveCount(postId);
         } else {
@@ -368,6 +376,12 @@ public class PostService {
         } else if (updatedPost.getRejectCount() > majorityThreshold) {
             postMapper.updatePostStatus(postId, "REJECTED");
         }
+        return PostApprovalResponseDTO.builder()
+                .approvalStatus(approvalStatus)
+                .earnedPoint(REVIEW_REWARD_POINT)
+                .currentPoint(pointService.getPoint(userId))
+                .message("인증 평가에 참여하고 10포인트를 받았어요.")
+                .build();
         // 둘 다 과반수를 못 넘었으면? 아직 투표가 진행 중인 거니까 그냥 종료(PASS)!
     }
 
