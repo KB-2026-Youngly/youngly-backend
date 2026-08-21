@@ -2157,8 +2157,6 @@ SET @character_master_data = JSON_ARRAY(
     JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-06.png', 'drop_rate', 2.50),
     JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-07.png', 'drop_rate', 2.50),
     JSON_OBJECT('item_name', '콜리', 'image_url', '/characters/colli-08.png', 'drop_rate', 2.50),
-    JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-01.png', 'drop_rate', 2.50),
-    JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-02.png', 'drop_rate', 2.50),
     JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-03.png', 'drop_rate', 2.50),
     JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-04.png', 'drop_rate', 2.50),
     JSON_OBJECT('item_name', '라무', 'image_url', '/characters/ramu-05.png', 'drop_rate', 2.50),
