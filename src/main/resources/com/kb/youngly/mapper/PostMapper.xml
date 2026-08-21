@@ -136,7 +136,7 @@
             p.content AS content,
             p.post_status AS postStatus,
             p.posted_at AS postedAt,
-            p.status_changed_at AS statusChangedAt
+            p.status_changed_at AS statusChangedAt,
             p.like_count AS likeCount,
             p.dislike_count AS dislikeCount,
             CASE WHEN p.post_status = 'REJECTED' THEN (
