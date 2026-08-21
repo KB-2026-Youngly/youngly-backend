@@ -27,7 +27,7 @@ public class CreateRoundResponse {
     /** 프론트엔드가 지정한 라운드 시작일. */
     private LocalDate startDate;
 
-    /** 시작일에 그룹의 roundCycleDays를 더해 계산한 종료일. */
+    /** 시작일을 포함하여 그룹의 roundCycleDays일 동안 진행되도록 계산한 종료일. */
     private LocalDate endDate;
 
     /** 생성 시점에는 항상 ONGOING이다. */

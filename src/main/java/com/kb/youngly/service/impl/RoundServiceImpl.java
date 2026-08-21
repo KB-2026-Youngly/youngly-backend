@@ -73,7 +73,7 @@ public class RoundServiceImpl implements RoundService {
         int roundNo = isFirstRound ? 1 : latestRound.getRoundNo() + 1;
         LocalDate startDate = resolveStartDate(request, latestRound);
 
-        // 종료일과 상태는 서버에서 그룹 설정을 기준으로 확정한다.
+        // 시작일을 첫날로 포함하여 정확히 roundCycleDays일이 되도록 종료일을 계산한다.
         RoundVO round = RoundVO.builder()
                 .groupId(normalizedGroupId)
                 .roundNo(roundNo)
